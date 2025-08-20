@@ -282,11 +282,11 @@
       }
 
       /* Tooltip */
-      .tooltip {
+      .tooltip-container {
         position: relative;
       }
       
-      .tooltip .tooltip-text {
+      .tooltip-container .tooltip-text {
         visibility: hidden;
         width: 140px;
         background-color: #111827;
@@ -304,14 +304,49 @@
         font-size: 0.875rem;
       }
       
-      .tooltip:hover .tooltip-text {
+      .tooltip-container:hover .tooltip-text {
         visibility: visible;
         opacity: 1;
       }
       
-      .dark .tooltip .tooltip-text {
+      .dark .tooltip-container .tooltip-text {
         background-color: #f9fafb;
         color: #111827;
+      }
+      
+      /* Redesigned Footer Styles */
+      .footer-link {
+        color: #4b5563; /* text-secondary-light */
+        transition: color 0.2s ease-in-out;
+      }
+      .footer-link:hover {
+        color: #111827; /* text-primary-light */
+        text-decoration: underline;
+      }
+      .dark .footer-link {
+        color: #d1d5db; /* text-secondary-dark */
+      }
+      .dark .footer-link:hover {
+        color: #f9fafb; /* text-primary-dark */
+      }
+
+      .social-icon {
+        color: #4b5563; /* text-secondary-light */
+        transition: all 0.2s ease-in-out;
+      }
+      .social-icon:hover {
+        color: #111827; /* text-primary-light */
+        transform: scale(1.1);
+      }
+      .dark .social-icon {
+        color: #d1d5db; /* text-secondary-dark */
+      }
+      .dark .social-icon:hover {
+        color: #f9fafb; /* text-primary-dark */
+      }
+      .social-icon svg {
+        width: 1.5rem; /* 24px */
+        height: 1.5rem; /* 24px */
       }
 
       /* Theme Switcher */

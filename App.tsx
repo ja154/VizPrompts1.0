@@ -71,11 +71,19 @@ const masterPromptPresets = [
     }
 ];
 
-const Uploader = ({ onAddToHistory, masterPrompt, selectedHistoryItem, onHistoryItemLoaded }: {
+interface UploaderProps {
     onAddToHistory: (item: PromptHistoryItem) => void;
     masterPrompt: string;
     selectedHistoryItem: PromptHistoryItem | null;
     onHistoryItemLoaded: () => void;
+    setIsLibraryOpen: (isOpen: boolean) => void;
+    selectedTemplate: PromptTemplate | null;
+    onTemplateConsumed: () => void;
+}
+
+const Uploader: React.FC<UploaderProps> = ({ 
+    onAddToHistory, masterPrompt, selectedHistoryItem, onHistoryItemLoaded, 
+    setIsLibraryOpen, selectedTemplate, onTemplateConsumed 
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -98,7 +106,6 @@ const Uploader = ({ onAddToHistory, masterPrompt, selectedHistoryItem, onHistory
   const [refineCamera, setRefineCamera] = useState('');
   const [refineLighting, setRefineLighting] = useState('');
   const [negativePrompt, setNegativePrompt] = useState('');
-  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [extractedFrames, setExtractedFrames] = useState<string[]>([]);
   const [isTestingConsistency, setIsTestingConsistency] = useState(false);
   const [consistencyResult, setConsistencyResult] = useState<ConsistencyResult | null>(null);
@@ -398,8 +405,7 @@ const Uploader = ({ onAddToHistory, masterPrompt, selectedHistoryItem, onHistory
       }
   };
 
-  const handleSelectFromLibrary = async (template: PromptTemplate) => {
-    setIsLibraryOpen(false);
+  const loadTemplate = useCallback(async (template: PromptTemplate) => {
     resetState();
     setAnalysisState(AnalysisState.PROCESSING);
     setProgressMessage('Loading template...');
@@ -426,16 +432,17 @@ const Uploader = ({ onAddToHistory, masterPrompt, selectedHistoryItem, onHistory
       setError(err instanceof Error ? `Failed to load template: ${err.message}` : 'An unknown error occurred.');
       resetState();
     }
-  };
+  }, [masterPrompt, resetState]);
+
+  useEffect(() => {
+    if (selectedTemplate) {
+        loadTemplate(selectedTemplate);
+        onTemplateConsumed();
+    }
+  }, [selectedTemplate, loadTemplate, onTemplateConsumed]);
 
   return (
     <>
-      <PromptLibrary 
-          isOpen={isLibraryOpen}
-          onClose={() => setIsLibraryOpen(false)}
-          onSelectPrompt={handleSelectFromLibrary}
-      />
-
       <div className="flex flex-col items-center">
           <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
               <LibraryIcon className="h-5 w-5 mr-2"/>
@@ -443,7 +450,7 @@ const Uploader = ({ onAddToHistory, masterPrompt, selectedHistoryItem, onHistory
           </BlurryButton>
 
           {analysisState === AnalysisState.IDLE && (
-            <div className="relative flex py-5 items-center w-full max-w-3xl">
+            <div className="relative flex py-5 items-center w-full max-w-4xl">
               <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
               <span className="flex-shrink mx-4 text-xs uppercase font-semibold text-text-secondary-light dark:text-text-secondary-dark">Or</span>
               <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
@@ -452,7 +459,7 @@ const Uploader = ({ onAddToHistory, masterPrompt, selectedHistoryItem, onHistory
       </div>
 
       {analysisState !== AnalysisState.SUCCESS && (
-        <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 max-w-3xl mx-auto shadow-lg border border-border-primary-light dark:border-border-primary-dark animate-scale-in animation-delay-200">
+        <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 max-w-4xl mx-auto shadow-lg border border-border-primary-light dark:border-border-primary-dark animate-scale-in animation-delay-200">
             {analysisState === AnalysisState.IDLE && (
               <div 
                   onClick={() => fileInputRef.current?.click()}
@@ -613,76 +620,69 @@ const MasterPromptSection = ({ masterPrompt, setMasterPrompt, presets }: {
     );
 };
 
-const Footer = ({ onNavigate }: { onNavigate: (view: AppView) => void }) => (
-    <footer className="mt-24">
-      <div className="container mx-auto px-4 py-12 flex flex-col items-center">
-        {/* Logo and Name at the top, centered */}
-        <div onClick={() => onNavigate('main')} className="flex flex-col items-center cursor-pointer group mb-8">
-            <LogoLoader />
-            <AnimatedAppName />
-        </div>
+const socialLinks = [
+    { name: 'Facebook', href: 'https://www.facebook.com/profile.php?id=100089838724125', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0.01-1.93.93-2H17V2.04C16.38 2 15.65 2 14.96 2 12.57 2 11 3.6 11 6.22V9.5H8.5v4H11v7h3v-7z"/></svg> },
+    { name: 'Twitter', href: 'https://x.com/aicreatorske?t=vIB_Wqjo1QWtb-9x-204zQ&s=08', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+    { name: 'Instagram', href: 'https://www.instagram.com/aicreatorske?igsh=MWwybG5rYnZncmFsNQ==', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153a4.908 4.908 0 011.153 1.772c.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122s-.013 3.056-.06 4.122c-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772c-.556.556-1.112.9-1.772 1.153-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06s-3.056-.013-4.122-.06c-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12s.013-3.056.06-4.122c.05-1.065.217-1.79.465-2.428a4.88 4.88 0 011.153-1.772A4.897 4.897 0 015.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 5a5 5 0 100 10 5 5 0 000-10zm0 8a3 3 0 110-6 3 3 0 010 6zm5-8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg> },
+    { name: 'Linktree', href: 'https://linktr.ee/Jaygraphicz254', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.723 1.95h-1.446L3.332 9.496l.723.723L12 2.275l7.945 7.944.723-.723-7.945-7.546zM12 5.512l-5.617 5.617 5.617 5.617 5.617-5.617-5.617-5.617zm-7.945 2.328L12 15.785l7.945-7.945.723.723L12 17.23 3.332 9.563l.723-.723z"/></svg> },
+    { name: 'WhatsApp', href: 'https://chat.whatsapp.com/JdOhcFcENmsDpl7nQvJjPd', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.52 3.48 1.44 4.93l-1.54 5.62 5.76-1.52c1.4.88 3.03 1.4 4.75 1.4h.01c5.46 0 9.9-4.44 9.9-9.9C21.94 6.45 17.5 2 12.04 2zM9.51 8.24c.2-.35.49-.57.65-.6.2-.04.44-.04.64-.04.22 0 .5.02.72.31.22.29.84 1.01.84 2.4s0 1.63-.12 1.84c-.12.21-.49.52-1.04.52s-.88-.15-1.71-1.08c-.83-.93-1.37-2.06-1.37-2.06s-.11-.15-.11-.27.28-.42.28-.42zm7.42 5.09c-.19-.1-.4-.19-.67-.34s-1.6-.79-1.85-.88c-.25-.09-.43-.15-.61.15-.18.29-.7.88-.86 1.06-.16.18-.32.2-.47.05-.15-.15-.64-.23-1.22-.76-.45-.41-.75-.9-1.04-1.55-.29-.65-.6-1.29-.6-1.29s-.14-.23.09-.46c.23-.23.41-.39.56-.58.15-.19.2-.32.3-.53s.05-.28-.02-.43c-.07-.15-.61-1.47-.84-2-.23-.53-.46-.45-.6-.45s-.36-.01-.52-.01l-.43.01s-.41.06-.63.31c-.22.25-.84.82-.84 2s.84 2.32.96 2.47c.12.15 1.69 2.59 4.1 3.61.59.25 1.05.4 1.41.51.61.19 1.17.16 1.62.1.5-.06 1.59-.65 1.81-1.28.22-.63.22-1.17.15-1.28z"/></svg> },
+    { name: 'Reddit', href: 'https://www.reddit.com/u/AIcreatorske/s/Bb8Y6bErp1', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1.69,14.23a1.4,1.4,0,0,1-3.38,0,1.39,1.39,0,0,1,1.69-2.31,1.39,1.39,0,0,1,1.69,2.31Zm.37-3.47a.79.79,0,0,1-.72.5,1.4,1.4,0,0,1-1.34,0,.79.79,0,0,1-.72-.5,1,1,0,0,1,1-1.15,3.48,3.48,0,0,1,1.75.49,1,1,0,0,1-.49,1.16ZM8.73,12.5a1.14,1.14,0,1,1,1.14-1.14A1.14,1.14,0,0,1,8.73,12.5Zm6.54,0a1.14,1.14,0,1,1,1.14-1.14A1.14,1.14,0,0,1,15.27,12.5Z"/></svg> },
+];
 
-        {/* Social Icons */}
-        <div className="mb-8">
-          <ul className="wrapper">
-            <li className="icon facebook">
-              <a href="https://www.facebook.com/profile.php?id=100089838724125" target="_blank" rel="noopener noreferrer">
-                <span className="tooltip">Facebook</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14 13.5h2.5l1-4H14v-2c0-1.03 0.01-1.93.93-2H17V2.04C16.38 2 15.65 2 14.96 2 12.57 2 11 3.6 11 6.22V9.5H8.5v4H11v7h3v-7z"/></svg>
-              </a>
-            </li>
-            <li className="icon twitter">
-              <a href="https://x.com/aicreatorske?t=vIB_Wqjo1QWtb-9x-204zQ&s=08" target="_blank" rel="noopener noreferrer">
-                <span className="tooltip">Twitter</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-              </a>
-            </li>
-            <li className="icon instagram">
-              <a href="https://www.instagram.com/aicreatorske?igsh=MWwybG5rYnZncmFsNQ==" target="_blank" rel="noopener noreferrer">
-                <span className="tooltip">Instagram</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c2.717 0 3.056.01 4.122.06 1.065.05 1.79.217 2.428.465.66.254 1.216.598 1.772 1.153a4.908 4.908 0 011.153 1.772c.247.637.415 1.363.465 2.428.047 1.066.06 1.405.06 4.122s-.013 3.056-.06 4.122c-.05 1.065-.218 1.79-.465 2.428a4.883 4.883 0 01-1.153 1.772c-.556.556-1.112.9-1.772 1.153-.637.247-1.363.415-2.428.465-1.066.047-1.405.06-4.122.06s-3.056-.013-4.122-.06c-1.065-.05-1.79-.218-2.428-.465a4.89 4.89 0 01-1.772-1.153 4.904 4.904 0 01-1.153-1.772c-.248-.637-.415-1.363-.465-2.428C2.013 15.056 2 14.717 2 12s.013-3.056.06-4.122c.05-1.065.217-1.79.465-2.428a4.88 4.88 0 011.153-1.772A4.897 4.897 0 015.45 2.525c.638-.248 1.362-.415 2.428-.465C8.944 2.013 9.283 2 12 2zm0 5a5 5 0 100 10 5 5 0 000-10zm0 8a3 3 0 110-6 3 3 0 010 6zm5-8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/></svg>
-              </a>
-            </li>
-             <li className="icon linktree">
-              <a href="https://linktr.ee/Jaygraphicz254" target="_blank" rel="noopener noreferrer">
-                <span className="tooltip">Linktree</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12.723 1.95h-1.446L3.332 9.496l.723.723L12 2.275l7.945 7.944.723-.723-7.945-7.546zM12 5.512l-5.617 5.617 5.617 5.617 5.617-5.617-5.617-5.617zm-7.945 2.328L12 15.785l7.945-7.945.723.723L12 17.23 3.332 9.563l.723-.723z"/>
-                </svg>
-              </a>
-            </li>
-            <li className="icon whatsapp">
-              <a href="https://chat.whatsapp.com/JdOhcFcENmsDpl7nQvJjPd" target="_blank" rel="noopener noreferrer">
-                <span className="tooltip">WhatsApp</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.52 3.48 1.44 4.93l-1.54 5.62 5.76-1.52c1.4.88 3.03 1.4 4.75 1.4h.01c5.46 0 9.9-4.44 9.9-9.9C21.94 6.45 17.5 2 12.04 2zM9.51 8.24c.2-.35.49-.57.65-.6.2-.04.44-.04.64-.04.22 0 .5.02.72.31.22.29.84 1.01.84 2.4s0 1.63-.12 1.84c-.12.21-.49.52-1.04.52s-.88-.15-1.71-1.08c-.83-.93-1.37-2.06-1.37-2.06s-.11-.15-.11-.27.28-.42.28-.42zm7.42 5.09c-.19-.1-.4-.19-.67-.34s-1.6-.79-1.85-.88c-.25-.09-.43-.15-.61.15-.18.29-.7.88-.86 1.06-.16.18-.32.2-.47.05-.15-.15-.64-.23-1.22-.76-.45-.41-.75-.9-1.04-1.55-.29-.65-.6-1.29-.6-1.29s-.14-.23.09-.46c.23-.23.41-.39.56-.58.15-.19.2-.32.3-.53s.05-.28-.02-.43c-.07-.15-.61-1.47-.84-2-.23-.53-.46-.45-.6-.45s-.36-.01-.52-.01l-.43.01s-.41.06-.63.31c-.22.25-.84.82-.84 2s.84 2.32.96 2.47c.12.15 1.69 2.59 4.1 3.61.59.25 1.05.4 1.41.51.61.19 1.17.16 1.62.1.5-.06 1.59-.65 1.81-1.28.22-.63.22-1.17.15-1.28z"/></svg>
-              </a>
-            </li>
-            <li className="icon reddit">
-              <a href="https://www.reddit.com/u/AIcreatorske/s/Bb8Y6bErp1" target="_blank" rel="noopener noreferrer">
-                <span className="tooltip">Reddit</span>
-                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                   <path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1.69,14.23a1.4,1.4,0,0,1-3.38,0,1.39,1.39,0,0,1,1.69-2.31,1.39,1.39,0,0,1,1.69,2.31Zm.37-3.47a.79.79,0,0,1-.72.5,1.4,1.4,0,0,1-1.34,0,.79.79,0,0,1-.72-.5,1,1,0,0,1,1-1.15,3.48,3.48,0,0,1,1.75.49,1,1,0,0,1-.49,1.16ZM8.73,12.5a1.14,1.14,0,1,1,1.14-1.14A1.14,1.14,0,0,1,8.73,12.5Zm6.54,0a1.14,1.14,0,1,1,1.14-1.14A1.14,1.14,0,0,1,15.27,12.5Z"/>
-                </svg>
-              </a>
-            </li>
-          </ul>
-        </div>
+const Footer = ({ onNavigate, onOpenLibrary }: { onNavigate: (view: AppView) => void; onOpenLibrary: () => void; }) => (
+    <footer className="mt-24 border-t border-border-primary-light/50 dark:border-border-primary-dark/50 bg-bg-secondary-light/50 dark:bg-bg-secondary-dark/50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                {/* Column 1: Brand */}
+                <div className="md:col-span-12 lg:col-span-4">
+                     <div onClick={() => onNavigate('main')} className="inline-flex flex-col items-start cursor-pointer group mb-4">
+                        <LogoLoader />
+                        <AnimatedAppName />
+                    </div>
+                    <p className="text-text-secondary-light dark:text-text-secondary-dark text-sm max-w-xs">
+                        Instantly convert any video or image into hyper-detailed, production-ready prompts for generative AI models.
+                    </p>
+                </div>
+                
+                {/* Spacer */}
+                <div className="hidden lg:block lg:col-span-2"></div>
 
-        {/* Separator */}
-        <div className="w-full max-w-4xl border-t border-border-primary-light dark:border-border-primary-dark"></div>
+                {/* Column 2: Links */}
+                <div className="md:col-span-6 lg:col-span-2">
+                    <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark mb-4 uppercase tracking-wider text-sm">Links</h3>
+                    <ul className="space-y-3">
+                        <li><button onClick={() => onNavigate('main')} className="footer-link">Home</button></li>
+                        <li><button onClick={() => onNavigate('profile')} className="footer-link">Profile</button></li>
+                        <li><button onClick={() => onNavigate('history')} className="footer-link">History</button></li>
+                        <li><button onClick={onOpenLibrary} className="footer-link">Prompt Library</button></li>
+                    </ul>
+                </div>
 
-        {/* Legal and Copyright */}
-        <div className="w-full max-w-4xl pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark text-center sm:text-left">
-            © {new Date().getFullYear()} VizPrompts. All rights reserved.
-          </p>
-          <div className="flex space-x-6">
-            <a href="#" className="text-sm text-text-secondary-light dark:text-text-secondary-dark hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Privacy Policy</a>
-            <a href="#" className="text-sm text-text-secondary-light dark:text-text-secondary-dark hover:text-purple-600 dark:hover:text-purple-400 transition-colors">Terms of Service</a>
-          </div>
+                {/* Column 3: Follow Us */}
+                <div className="md:col-span-6 lg:col-span-4">
+                    <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark mb-4 uppercase tracking-wider text-sm">Follow Us</h3>
+                    <div className="flex flex-wrap gap-4">
+                        {socialLinks.map(link => (
+                            <a key={link.name} href={link.href} target="_blank" rel="noopener noreferrer" className="social-icon tooltip-container">
+                                <span className="tooltip-text" style={{width: 'auto', padding: '5px 10px'}}>{link.name}</span>
+                                {link.icon}
+                            </a>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="mt-16 pt-8 border-t border-border-primary-light/50 dark:border-border-primary-dark/50 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark text-center sm:text-left">
+                    © {new Date().getFullYear()} VizPrompts. All Rights Reserved.
+                </p>
+                <div className="flex space-x-6">
+                    <a href="#" className="footer-link text-sm">Privacy Policy</a>
+                    <a href="#" className="footer-link text-sm">Terms of Service</a>
+                </div>
+            </div>
         </div>
-      </div>
     </footer>
 );
 
@@ -694,6 +694,9 @@ const App: React.FC = () => {
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [masterPrompt, setMasterPrompt] = useState<string>(masterPromptPresets[0].prompt);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
+
 
     const handleSelectHistoryItem = (item: PromptHistoryItem) => {
         setSelectedHistoryItem(item);
@@ -720,6 +723,15 @@ const App: React.FC = () => {
         setSelectedHistoryItem(null);
     }, []);
 
+    const handleSelectFromLibrary = (template: PromptTemplate) => {
+        setIsLibraryOpen(false);
+        setSelectedTemplate(template);
+    };
+    
+    const onTemplateConsumed = useCallback(() => {
+        setSelectedTemplate(null);
+    }, []);
+
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as Theme;
         if (savedTheme) {
@@ -740,6 +752,11 @@ const App: React.FC = () => {
     return (
         <>
             <PatternBackground />
+            <PromptLibrary 
+                isOpen={isLibraryOpen}
+                onClose={() => setIsLibraryOpen(false)}
+                onSelectPrompt={handleSelectFromLibrary}
+            />
             <div className="relative z-10 flex flex-col min-h-screen">
                 <Auth 
                     isOpen={isAuthModalOpen} 
@@ -772,7 +789,7 @@ const App: React.FC = () => {
                         <div onClick={() => setCurrentView('main')} className="inline-flex flex-col items-center cursor-pointer group">
                             <AnimatedAppName />
                         </div>
-                        <p className="max-w-3xl mx-auto text-base md:text-lg text-center text-text-primary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
+                        <p className="max-w-4xl mx-auto text-base md:text-lg text-center text-text-primary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
                             Welcome to VizPrompts! Instantly turn any video or image into detailed AI prompts.
                             <br />
                             Just <strong>upload a file</strong> or <strong>browse the library</strong> to start your creative journey.
@@ -789,6 +806,9 @@ const App: React.FC = () => {
                                 masterPrompt={masterPrompt} 
                                 selectedHistoryItem={selectedHistoryItem}
                                 onHistoryItemLoaded={onHistoryItemLoaded}
+                                setIsLibraryOpen={setIsLibraryOpen}
+                                selectedTemplate={selectedTemplate}
+                                onTemplateConsumed={onTemplateConsumed}
                             />
                         </div>
                     )}
@@ -796,7 +816,7 @@ const App: React.FC = () => {
                     {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={handleSelectHistoryItem} />}
                 </main>
                 
-                <Footer onNavigate={setCurrentView} />
+                <Footer onNavigate={setCurrentView} onOpenLibrary={() => setIsLibraryOpen(true)} />
             </div>
         </>
     );
