@@ -201,7 +201,6 @@ interface ResultsViewProps {
     setNegativePrompt: (value: string) => void;
     handlePromptChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
     handleCopy: (text: string, type: 'prompt' | 'json') => void;
-    resetState: () => void;
     handleRefinePrompt: (mode: 'refine' | 'detail') => void;
     setRefineTone: (value: string) => void;
     setRefineStyle: (value: string) => void;
@@ -223,7 +222,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     isCopied, isJsonCopied, isUpdatingJson, isRefining, isDetailing,
     refineTone, refineStyle, refineCamera, refineLighting, refineInstruction,
     negativePrompt, setNegativePrompt,
-    handlePromptChange, handleCopy, resetState, handleRefinePrompt,
+    handlePromptChange, handleCopy, handleRefinePrompt,
     setRefineTone, setRefineStyle, setRefineCamera, setRefineLighting, setRefineInstruction,
     isTestingConsistency, consistencyResult, showConsistencyModal,
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error
@@ -256,9 +255,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             error={error}
             onApplyImprovements={onApplyImprovements}
         />
-        <section className="max-w-6xl mx-auto mt-16 animate-fade-in-slide-up animation-delay-300">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark lg:col-span-2">
+        <div className="animate-fade-in-slide-up animation-delay-300">
+            <div className="flex flex-col gap-8">
+              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
                   <h2 className="text-xl font-bold mb-4 flex items-center"><FilmIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Media Analysis</h2>
                   <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
@@ -281,7 +280,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
               </GlowCard>
               
-              <GlowCard className="lg:col-span-3 bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
+              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-bold flex items-center"><ArticleIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Text Prompt</h2>
@@ -289,10 +288,6 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                       <button onClick={() => handleCopy(generatedPrompt, 'prompt')} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
                         {isCopied ? <i className="fas fa-check text-green-500"></i> : <i className="far fa-copy"></i>}
                         <span className="tooltip-text">Copy prompt</span>
-                      </button>
-                      <button onClick={resetState} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
-                        <i className="fas fa-plus"></i>
-                        <span className="tooltip-text">New Analysis</span>
                       </button>
                     </div>
                   </div>
@@ -304,7 +299,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               </GlowCard>
               
               {/* Refine Card */}
-              <GlowCard className="lg:col-span-5 bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
+              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
                   <h2 className="text-xl font-bold mb-4 flex items-center"><MagicWandIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300" />Refine Prompt</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -372,7 +367,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
               </GlowCard>
     
-              <GlowCard className="lg:col-span-5 bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
+              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
                    <div className="flex justify-between items-center mb-4">
                       <h2 className="text-xl font-bold flex items-center">
@@ -408,7 +403,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                 </div>
               </GlowCard>
             </div>
-        </section>
+        </div>
         </>
     );
 };

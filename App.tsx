@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, VideoAnalysis } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
 import { generateSimplePromptFromFrames, generateDetailedAnalysisFromFrames, refinePrompt, structurePrompt, testPromptConsistency } from './services/geminiService.ts';
-import { BrainCircuitIcon, LibraryIcon } from './components/icons.tsx';
+import { BrainCircuitIcon, LibraryIcon, FilmIcon, ArticleIcon, MagicWandIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
 import UploaderIcon from './components/UploaderIcon.tsx';
@@ -72,499 +72,117 @@ const masterPromptPresets = [
 ];
 
 interface UploaderProps {
-    onAddToHistory: (item: PromptHistoryItem) => void;
-    masterPrompt: string;
-    selectedHistoryItem: PromptHistoryItem | null;
-    onHistoryItemLoaded: () => void;
-    setIsLibraryOpen: (isOpen: boolean) => void;
-    selectedTemplate: PromptTemplate | null;
-    onTemplateConsumed: () => void;
+    analysisState: AnalysisState;
+    file: File | null;
+    videoUrl: string;
+    error: string;
+    progress: number;
+    progressMessage: string;
+    onFileSelect: (file: File) => void;
+    onStartAnalysis: () => void;
+    onResetState: () => void;
 }
 
 const Uploader: React.FC<UploaderProps> = ({ 
-    onAddToHistory, masterPrompt, selectedHistoryItem, onHistoryItemLoaded, 
-    setIsLibraryOpen, selectedTemplate, onTemplateConsumed 
+    analysisState, file, videoUrl, error, progress, progressMessage,
+    onFileSelect, onStartAnalysis, onResetState
 }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [videoUrl, setVideoUrl] = useState<string>('');
-  const [videoMeta, setVideoMeta] = useState<{ duration: string, resolution: string } | null>(null);
-  const [analysisState, setAnalysisState] = useState<AnalysisState>(AnalysisState.IDLE);
-  const [progress, setProgress] = useState(0);
-  const [progressMessage, setProgressMessage] = useState('');
-  const [generatedPrompt, setGeneratedPrompt] = useState('');
-  const [originalPrompt, setOriginalPrompt] = useState('');
-  const [videoAnalysis, setVideoAnalysis] = useState<VideoAnalysis | null>(null);
-  const [error, setError] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
-  const [isJsonCopied, setIsJsonCopied] = useState(false);
-  const [isUpdatingJson, setIsUpdatingJson] = useState(false);
-  const [isRefining, setIsRefining] = useState(false);
-  const [isDetailing, setIsDetailing] = useState(false);
-  const [refineInstruction, setRefineInstruction] = useState('');
-  const [refineTone, setRefineTone] = useState('');
-  const [refineStyle, setRefineStyle] = useState('');
-  const [refineCamera, setRefineCamera] = useState('');
-  const [refineLighting, setRefineLighting] = useState('');
-  const [negativePrompt, setNegativePrompt] = useState('');
-  const [extractedFrames, setExtractedFrames] = useState<string[]>([]);
-  const [isTestingConsistency, setIsTestingConsistency] = useState(false);
-  const [consistencyResult, setConsistencyResult] = useState<ConsistencyResult | null>(null);
-  const [showConsistencyModal, setShowConsistencyModal] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const debounceTimeoutRef = useRef<number | null>(null);
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.currentTarget.classList.add('border-purple-500', 'bg-purple-50', 'dark:bg-purple-900/20');
+    };
 
-  const resetState = useCallback(() => {
-    setFile(null);
-    if (videoUrl) URL.revokeObjectURL(videoUrl);
-    setVideoUrl('');
-    setVideoMeta(null);
-    setAnalysisState(AnalysisState.IDLE);
-    setProgress(0);
-    setProgressMessage('');
-    setGeneratedPrompt('');
-    setOriginalPrompt('');
-    setVideoAnalysis(null);
-    setError('');
-    setIsCopied(false);
-    setIsJsonCopied(false);
-    setIsUpdatingJson(false);
-    setIsRefining(false);
-    setIsDetailing(false);
-    setRefineInstruction('');
-    setRefineTone('');
-    setRefineStyle('');
-    setRefineCamera('');
-    setRefineLighting('');
-    setNegativePrompt('');
-    setExtractedFrames([]);
-    setIsTestingConsistency(false);
-    setConsistencyResult(null);
-    setShowConsistencyModal(false);
-  }, [videoUrl]);
-  
-  const populateStateFromAnalysis = (analysis: VideoAnalysis) => {
-    setGeneratedPrompt(analysis.master_prompt);
-    setOriginalPrompt(analysis.master_prompt);
-    setVideoAnalysis(analysis);
-  };
-  
-  useEffect(() => {
-    if (selectedHistoryItem) {
-        // The timeout is a workaround for the state update race condition when view changes.
-        setTimeout(() => {
-            resetState(); // Clear any existing state first.
-            setAnalysisState(AnalysisState.SUCCESS);
-            populateStateFromAnalysis(selectedHistoryItem.videoAnalysis);
-            setFile(null); 
-            setVideoUrl(selectedHistoryItem.thumbnail);
-            setVideoMeta({ duration: "N/A", resolution: "From History" });
-            onHistoryItemLoaded();
-        }, 0);
-    }
-  }, [selectedHistoryItem, onHistoryItemLoaded, resetState]);
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50', 'dark:bg-purple-900/20');
+    };
 
-  const handleFileSelect = async (selectedFile: File) => {
-    resetState();
-    
-    const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(selectedFile.type)) {
-      setError('Please upload a valid video (MP4, MOV, WEBM) or image (JPG, PNG, GIF) file.');
-      return;
-    }
-
-    if (selectedFile.size > 200 * 1024 * 1024) {
-      setError('File size exceeds 200MB limit.');
-      return;
-    }
-
-    setFile(selectedFile);
-    
-    try {
-        if (selectedFile.type.startsWith('video/')) {
-            setVideoUrl(URL.createObjectURL(selectedFile));
-            const meta = await getVideoMetadata(selectedFile);
-            const minutes = Math.floor(meta.duration / 60);
-            const seconds = Math.floor(meta.duration % 60).toString().padStart(2, '0');
-            setVideoMeta({
-                duration: `${minutes}:${seconds}`,
-                resolution: `${meta.width}x${meta.height}`,
-            });
-        } else if (selectedFile.type.startsWith('image/')) {
-            const dataUrl = await imageToDataUrl(selectedFile);
-            const img = new Image();
-            img.onload = () => setVideoMeta({ duration: 'N/A', resolution: `${img.width}x${img.height}` });
-            img.src = dataUrl;
-            setVideoUrl(dataUrl);
-        }
-        setAnalysisState(AnalysisState.PREVIEW);
-    } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not read file preview.');
-        setAnalysisState(AnalysisState.IDLE);
-        setFile(null);
-    }
-  };
-
-  const handleStartAnalysis = async () => {
-    if (!file) return;
-
-    setAnalysisState(AnalysisState.PROCESSING);
-    setProgressMessage('Preparing media...');
-    setIsUpdatingJson(false);
-
-    try {
-        let frameDataUrls: string[] = [];
-        let firstFrame: string = '';
-
-        if (file.type.startsWith('video/')) {
-            setProgressMessage('Extracting frames...');
-            frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => setProgress(prog * 0.2)); // Extraction is 20% of progress
-            setExtractedFrames(frameDataUrls);
-        } else if (file.type.startsWith('image/')) {
-            const dataUrl = videoUrl;
-            setProgressMessage('Processing image...');
-            frameDataUrls = [dataUrl];
-            setExtractedFrames(frameDataUrls);
-            setProgress(20);
-        }
-        
-        if (frameDataUrls.length === 0) throw new Error("Could not extract frames or process the media.");
-        firstFrame = frameDataUrls[0];
-        
-        setProgress(30);
-        setProgressMessage('Generating initial prompt...');
-        
-        const quickPrompt = await generateSimplePromptFromFrames(frameDataUrls, masterPrompt);
-        setGeneratedPrompt(quickPrompt);
-        setOriginalPrompt(quickPrompt);
-        setVideoAnalysis({
-            holistic_impression: { genre: 'Analyzing...', dominant_feeling: 'Analyzing...', core_subject: 'Analyzing...' },
-            systematic_deconstruction: {
-                subject: { core_object: '...', attributes: { preparation: '...', presentation: '...', appearance: '...', state: '...', unusual_details: '...' } },
-                setting: { environment: { immediate_setting: '...', key_details: [], background: '...' }, props: [] },
-                character: { presence: '...', role: '...', key_actions_summary: [] },
-                cinematography: { shot_types_and_framing: '...', depth_of_field: '...', camera_movement: '...', lighting: '...' },
-                sound_design: { key_sounds: [], sound_characteristics: '...' },
-                sequence_of_events: []
-            },
-            master_prompt: quickPrompt,
-        });
-        setProgress(60);
-        setAnalysisState(AnalysisState.SUCCESS);
-        
-        setIsUpdatingJson(true);
-        
-        const { videoAnalysis } = await generateDetailedAnalysisFromFrames(frameDataUrls, (msg) => {}, masterPrompt);
-        
-        populateStateFromAnalysis(videoAnalysis);
-        
-        onAddToHistory({
-            id: Date.now().toString(),
-            prompt: videoAnalysis.master_prompt,
-            videoAnalysis: videoAnalysis,
-            thumbnail: firstFrame,
-            timestamp: new Date().toISOString(),
-        });
-
-    } catch(err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-        setAnalysisState(AnalysisState.IDLE);
-        setFile(null); // Clear file on error
-    } finally {
-        setIsUpdatingJson(false);
-    }
-  };
-
-  const updateAndSetDerivedPrompts = useCallback(async (currentPrompt: string) => {
-    if (!currentPrompt) return;
-    setIsUpdatingJson(true);
-    setError('');
-    try {
-        const newAnalysisJson = await structurePrompt(currentPrompt, masterPrompt);
-        const newAnalysis: VideoAnalysis = JSON.parse(newAnalysisJson);
-        populateStateFromAnalysis(newAnalysis);
-    } catch (err) {
-        setError(err instanceof Error ? `Failed to update JSON: ${err.message}` : 'An unknown error occurred.');
-    } finally {
-        setIsUpdatingJson(false);
-    }
-  }, [masterPrompt]);
-
-  useEffect(() => {
-    // Automatically update JSONs when the prompt is changed by the user.
-    if (generatedPrompt && originalPrompt && generatedPrompt !== originalPrompt) {
-        if (debounceTimeoutRef.current) {
-            clearTimeout(debounceTimeoutRef.current);
-        }
-        debounceTimeoutRef.current = window.setTimeout(() => {
-            updateAndSetDerivedPrompts(generatedPrompt);
-        }, 1000); // 1-second debounce
-    }
-    return () => {
-        if (debounceTimeoutRef.current) {
-            clearTimeout(debounceTimeoutRef.current);
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50', 'dark:bg-purple-900/20');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            onFileSelect(e.dataTransfer.files[0]);
+            e.dataTransfer.clearData();
         }
     };
-  }, [generatedPrompt, originalPrompt, updateAndSetDerivedPrompts]);
-  
-  const handleCopy = (text: string, type: 'prompt' | 'json') => {
-    navigator.clipboard.writeText(text);
-    if (type === 'prompt') {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } else {
-      setIsJsonCopied(true);
-      setTimeout(() => setIsJsonCopied(false), 2000);
-    }
-  };
-  
-  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setGeneratedPrompt(e.target.value);
-  };
-  
-  const handleRefinePrompt = async (mode: 'refine' | 'detail') => {
-    if (!generatedPrompt) return;
-    
-    if (mode === 'refine') setIsRefining(true);
-    if (mode === 'detail') setIsDetailing(true);
-    setError('');
 
-    let instruction = '';
-    if (mode === 'detail') {
-        instruction = 'Add significantly more detail to the prompt. Make it richer, more descriptive, and include more sensory information and intricate visual elements.';
-    } else {
-        instruction = 'Refine the following prompt. ';
-        if (refineTone) instruction += `Give it a ${refineTone} tone. `;
-        if (refineStyle) instruction += `Make the style ${refineStyle}. `;
-        if (refineCamera) instruction += `Use ${refineCamera} camera work. `;
-        if (refineLighting) instruction += `Incorporate ${refineLighting} lighting. `;
-        if (refineInstruction) instruction += `Specifically: ${refineInstruction}.`;
-
-        if (instruction.trim() === 'Refine the following prompt.') {
-            instruction = 'Slightly rephrase and improve the prompt for clarity and impact.';
-        }
-    }
-    
-    try {
-        const newPrompt = await refinePrompt(generatedPrompt, instruction, negativePrompt, masterPrompt);
-        setGeneratedPrompt(newPrompt);
-    } catch (err) {
-        setError(err instanceof Error ? `Failed to refine prompt: ${err.message}` : 'An unknown error occurred during refinement.');
-    } finally {
-        if (mode === 'refine') setIsRefining(false);
-        if (mode === 'detail') setIsDetailing(false);
-    }
-  };
-
-  const handleTestConsistency = async () => {
-      if (!generatedPrompt || extractedFrames.length === 0) {
-          setError("Cannot test consistency without a prompt and original media frames.");
-          return;
-      }
-      
-      setIsTestingConsistency(true);
-      setConsistencyResult(null);
-      setShowConsistencyModal(true);
-      setError('');
-
-      try {
-          const result = await testPromptConsistency(generatedPrompt, extractedFrames, masterPrompt);
-          setConsistencyResult(result);
-      } catch (err) {
-          setError(err instanceof Error ? `${err.message}` : 'An unknown error occurred during the consistency test.');
-      } finally {
-          setIsTestingConsistency(false);
-      }
-  };
-
-  const handleApplyImprovements = (newPrompt: string) => {
-    setGeneratedPrompt(newPrompt);
-    // The prompt change will trigger the debounced JSON update automatically.
-    // Close the modal after applying.
-    setShowConsistencyModal(false);
-    setConsistencyResult(null); // Clear old result
-    setError('');
-  };
-  
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.currentTarget.classList.add('border-purple-500', 'bg-purple-50', 'dark:bg-purple-900/20');
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50', 'dark:bg-purple-900/20');
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      e.currentTarget.classList.remove('border-purple-500', 'bg-purple-50', 'dark:bg-purple-900/20');
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          handleFileSelect(e.dataTransfer.files[0]);
-          e.dataTransfer.clearData();
-      }
-  };
-
-  const loadTemplate = useCallback(async (template: PromptTemplate) => {
-    resetState();
-    setAnalysisState(AnalysisState.PROCESSING);
-    setProgressMessage('Loading template...');
-    
-    try {
-      setGeneratedPrompt(template.prompt);
-      
-      const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" class="dark:bg-gray-800 bg-gray-200 text-gray-500 dark:text-gray-400"><rect width="1920" height="1080" fill="currentColor" fill-opacity="0.1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="64" fill="currentColor">Prompt from Library</text></svg>`;
-      const placeholderDataUri = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
-      setVideoUrl(placeholderDataUri);
-      setVideoMeta({ duration: "N/A", resolution: "Template" });
-
-      setProgress(50);
-      setProgressMessage('Structuring prompt...');
-
-      const newAnalysisJson = await structurePrompt(template.prompt, masterPrompt);
-      const newAnalysis: VideoAnalysis = JSON.parse(newAnalysisJson);
-
-      populateStateFromAnalysis(newAnalysis);
-      
-      setProgress(100);
-      setAnalysisState(AnalysisState.SUCCESS);
-    } catch (err) {
-      setError(err instanceof Error ? `Failed to load template: ${err.message}` : 'An unknown error occurred.');
-      resetState();
-    }
-  }, [masterPrompt, resetState]);
-
-  useEffect(() => {
-    if (selectedTemplate) {
-        loadTemplate(selectedTemplate);
-        onTemplateConsumed();
-    }
-  }, [selectedTemplate, loadTemplate, onTemplateConsumed]);
-
-  return (
-    <>
-      <div className="flex flex-col items-center">
-          <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
-              <LibraryIcon className="h-5 w-5 mr-2"/>
-              Browse Prompt Library
-          </BlurryButton>
-
-          {analysisState === AnalysisState.IDLE && (
-            <div className="relative flex py-5 items-center w-full max-w-4xl">
-              <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
-              <span className="flex-shrink mx-4 text-xs uppercase font-semibold text-text-secondary-light dark:text-text-secondary-dark">Or</span>
-              <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
+    return (
+        <>
+            <div className="flex flex-col items-center">
+                <div className="relative flex py-5 items-center w-full">
+                    <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
+                    <span className="flex-shrink mx-4 text-xs uppercase font-semibold text-text-secondary-light dark:text-text-secondary-dark">Or</span>
+                    <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
+                </div>
             </div>
-          )}
-      </div>
+            <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
+                {analysisState === AnalysisState.IDLE && (
+                    <div
+                        onClick={() => fileInputRef.current?.click()}
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 cursor-pointer hover:border-gray-500 dark:hover:border-stone-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-300 ease-in-out transform hover:scale-[1.01]"
+                    >
+                        <div className="flex flex-col items-center justify-center space-y-4">
+                            <div className="w-20 h-20 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                                <UploaderIcon />
+                            </div>
+                            <h3 className="text-lg font-medium transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-stone-300">Drag & drop your video or image here</h3>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">or click to browse files</p>
+                            <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
+                        </div>
+                        <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} className="hidden" accept="video/*,image/*" />
+                    </div>
+                )}
 
-      {analysisState !== AnalysisState.SUCCESS && (
-        <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 max-w-4xl mx-auto shadow-lg border border-border-primary-light dark:border-border-primary-dark animate-scale-in animation-delay-200">
-            {analysisState === AnalysisState.IDLE && (
-              <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 cursor-pointer hover:border-gray-500 dark:hover:border-stone-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-300 ease-in-out transform hover:scale-[1.01]"
-              >
-                <div className="flex flex-col items-center justify-center space-y-4">
-                   <div className="w-20 h-20 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                       <UploaderIcon />
-                   </div>
-                  <h3 className="text-lg font-medium transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-stone-300">Drag & drop your video or image here</h3>
-                  <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">or click to browse files</p>
-                  <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
-                </div>
-                <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])} className="hidden" accept="video/*,image/*" />
-              </div>
-            )}
+                {analysisState === AnalysisState.PREVIEW && file && (
+                    <div className="animate-fade-in-slide-up" style={{ animationDuration: '300ms' }}>
+                        <h3 className="text-xl font-bold mb-4 text-center">Ready to Analyze?</h3>
+                        <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
+                            {file?.type.startsWith('video/') ? (
+                                <video src={videoUrl} controls className="w-full h-full object-contain"></video>
+                            ) : (
+                                <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
+                            )}
+                        </div>
+                        <p className="text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark truncate" title={file.name}>{file.name}</p>
+                        <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                            <BlurryButton onClick={onStartAnalysis} className="flex-1">
+                                <i className="fas fa-magic mr-2"></i>
+                                Start Analysis
+                            </BlurryButton>
+                            <button
+                                onClick={onResetState}
+                                className="flex-1 group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
+                            >
+                                <span className="relative w-full h-full px-5 py-2.5 text-sm rounded-lg leading-none flex items-center justify-center gap-2">
+                                    <i className="fas fa-undo mr-2"></i>
+                                    Choose Another File
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                )}
 
-            {analysisState === AnalysisState.PREVIEW && file && (
-                <div className="animate-fade-in-slide-up" style={{animationDuration: '300ms'}}>
-                  <h3 className="text-xl font-bold mb-4 text-center">Ready to Analyze?</h3>
-                  <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
-                     {file?.type.startsWith('video/') ? (
-                        <video src={videoUrl} controls className="w-full h-full object-contain"></video>
-                    ) : (
-                        <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
-                    )}
-                  </div>
-                  <p className="text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark truncate" title={file.name}>{file.name}</p>
-                  <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                      <BlurryButton onClick={handleStartAnalysis} className="flex-1">
-                        <i className="fas fa-magic mr-2"></i>
-                        Start Analysis
-                      </BlurryButton>
-                      <button
-                          onClick={resetState}
-                          className="flex-1 group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
-                      >
-                          <span className="relative w-full h-full px-5 py-2.5 text-sm rounded-lg leading-none flex items-center justify-center gap-2">
-                            <i className="fas fa-undo mr-2"></i>
-                            Choose Another File
-                          </span>
-                      </button>
-                  </div>
-                </div>
-            )}
-            
-            {analysisState === AnalysisState.PROCESSING && (
-               <div className="mt-6">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">{progressMessage || 'Processing media...'}</span>
-                    <span className="text-sm font-medium">{Math.round(progress)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div className="bg-purple-600 h-2.5 rounded-full progress-bar" style={{ width: `${progress}%` }}></div>
-                  </div>
-                </div>
-            )}
-            
-            {error && <p className="text-center text-red-500 mt-4">{error}</p>}
-        </GlowCard>
-      )}
+                {analysisState === AnalysisState.PROCESSING && (
+                    <div className="mt-6">
+                        <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">{progressMessage || 'Processing media...'}</span>
+                            <span className="text-sm font-medium">{Math.round(progress)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            <div className="bg-purple-600 h-2.5 rounded-full progress-bar" style={{ width: `${progress}%` }}></div>
+                        </div>
+                    </div>
+                )}
 
-      {analysisState === AnalysisState.SUCCESS && videoAnalysis && (
-          <ResultsView
-              file={file}
-              videoUrl={videoUrl}
-              videoMeta={videoMeta}
-              generatedPrompt={generatedPrompt}
-              videoAnalysis={videoAnalysis}
-              isCopied={isCopied}
-              isJsonCopied={isJsonCopied}
-              isUpdatingJson={isUpdatingJson}
-              isRefining={isRefining}
-              isDetailing={isDetailing}
-              refineTone={refineTone}
-              refineStyle={refineStyle}
-              refineCamera={refineCamera}
-              refineLighting={refineLighting}
-              refineInstruction={refineInstruction}
-              negativePrompt={negativePrompt}
-              setNegativePrompt={setNegativePrompt}
-              handlePromptChange={handlePromptChange}
-              handleCopy={handleCopy}
-              resetState={resetState}
-              handleRefinePrompt={handleRefinePrompt}
-              setRefineTone={setRefineTone}
-              setRefineStyle={setRefineStyle}
-              setRefineCamera={setRefineCamera}
-              setRefineLighting={setRefineLighting}
-              setRefineInstruction={setRefineInstruction}
-              isTestingConsistency={isTestingConsistency}
-              consistencyResult={consistencyResult}
-              showConsistencyModal={showConsistencyModal}
-              onTestConsistency={handleTestConsistency}
-              onCloseConsistencyModal={() => { setShowConsistencyModal(false); setError(''); }}
-              onApplyImprovements={handleApplyImprovements}
-              hasOriginalFrames={extractedFrames.length > 0}
-              error={error}
-          />
-      )}
-    </>
-  );
+                {error && <p className="text-center text-red-500 mt-4">{error}</p>}
+            </GlowCard>
+        </>
+    );
 };
 
 const MasterPromptSection = ({ masterPrompt, setMasterPrompt, presets }: {
@@ -581,7 +199,7 @@ const MasterPromptSection = ({ masterPrompt, setMasterPrompt, presets }: {
     const currentPreset = presets.find(p => p.prompt === masterPrompt) || null;
 
     return (
-        <section className="max-w-4xl mx-auto animate-fade-in-slide-up animation-delay-500">
+        <section>
             <h2 className="text-3xl font-bold text-center mb-12">
                 <span className="title-glow-subtle bg-gradient-to-r from-gray-700 to-gray-900 dark:from-stone-100 dark:to-stone-300 bg-clip-text text-transparent flex items-center justify-center gap-4">
                     <BrainCircuitIcon className="w-8 h-8" />
@@ -686,8 +304,76 @@ const Footer = ({ onNavigate, onOpenLibrary }: { onNavigate: (view: AppView) => 
     </footer>
 );
 
+const ResultsPlaceholder = () => (
+    <div className="animate-fade-in-slide-up animation-delay-300 sticky top-8">
+        <div className="flex flex-col gap-8 opacity-60 pointer-events-none">
+            <GlowCard className="bg-bg-secondary-light/80 dark:bg-bg-secondary-dark/80 rounded-2xl p-1 shadow-lg border border-border-primary-light/50 dark:border-border-primary-dark/50">
+                <div className="rounded-xl p-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center text-text-secondary-light dark:text-text-secondary-dark"><FilmIcon className="w-6 h-6 mr-2"/>Media Analysis</h2>
+                    <div className="video-preview bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-lg mb-4 flex items-center justify-center">
+                        <p className="text-text-secondary-light dark:text-text-secondary-dark p-4 text-center text-sm">Upload media to see a preview and metadata.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
+                            <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Duration</p>
+                            <p className="font-medium">-:--</p>
+                        </div>
+                        <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
+                            <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Resolution</p>
+                            <p className="font-medium">- x -</p>
+                        </div>
+                    </div>
+                </div>
+            </GlowCard>
+
+            <GlowCard className="bg-bg-secondary-light/80 dark:bg-bg-secondary-dark/80 rounded-2xl p-1 shadow-lg border border-border-primary-light/50 dark:border-border-primary-dark/50">
+                <div className="rounded-xl p-6">
+                    <h2 className="text-xl font-bold flex items-center mb-4 text-text-secondary-light dark:text-text-secondary-dark"><ArticleIcon className="w-6 h-6 mr-2"/>Text Prompt</h2>
+                    <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark flex items-center justify-center">
+                        <p className="text-text-secondary-light dark:text-text-secondary-dark text-center text-sm">Your AI-generated prompt will appear here.</p>
+                    </div>
+                </div>
+            </GlowCard>
+
+            <GlowCard className="bg-bg-secondary-light/80 dark:bg-bg-secondary-dark/80 rounded-2xl p-1 shadow-lg border border-border-primary-light/50 dark:border-border-primary-dark/50">
+                <div className="rounded-xl p-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center text-text-secondary-light dark:text-text-secondary-dark"><MagicWandIcon className="w-6 h-6 mr-2" />Refine Prompt</h2>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div className="w-full p-2.5 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark h-[42px]"></div>
+                        <div className="w-full p-2.5 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark h-[42px]"></div>
+                     </div>
+                    <div className="w-full h-[60px] p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark"></div>
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark text-center mt-4">Prompt modifiers will become available here.</p>
+                </div>
+            </GlowCard>
+        </div>
+    </div>
+);
+
+const AnalyzedFilePreview: React.FC<{file: File, videoUrl: string, onReset: () => void}> = ({ file, videoUrl, onReset }) => (
+    <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-6 shadow-lg border border-border-primary-light dark:border-border-primary-dark animate-fade-in-slide-up">
+        <h3 className="text-xl font-bold mb-4">Analyzed Media</h3>
+        <div className="flex items-center gap-4">
+            <div className="w-24 h-16 bg-black rounded-lg overflow-hidden flex-shrink-0">
+                {file?.type.startsWith('video/') ? (
+                    <video src={videoUrl} className="w-full h-full object-cover"></video>
+                ) : (
+                    <img src={videoUrl} alt="Preview" className="w-full h-full object-cover" />
+                )}
+            </div>
+            <div className="flex-grow overflow-hidden">
+                <p className="font-medium truncate" title={file.name}>{file.name}</p>
+                <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">{file.type}</p>
+            </div>
+        </div>
+        <BlurryButton onClick={onReset} className="w-full mt-6">
+            <i className="fas fa-plus mr-2"></i> Start New Analysis
+        </BlurryButton>
+    </GlowCard>
+);
 
 const App: React.FC = () => {
+    // Core App State
     const [theme, setTheme] = useState<Theme>('dark');
     const { currentUser, userHistory, addToHistory, logout } = useAuth();
     const [currentView, setCurrentView] = useState<AppView>('main');
@@ -696,6 +382,303 @@ const App: React.FC = () => {
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
+
+    // State lifted from Uploader
+    const [file, setFile] = useState<File | null>(null);
+    const [videoUrl, setVideoUrl] = useState<string>('');
+    const [videoMeta, setVideoMeta] = useState<{ duration: string, resolution: string } | null>(null);
+    const [analysisState, setAnalysisState] = useState<AnalysisState>(AnalysisState.IDLE);
+    const [progress, setProgress] = useState(0);
+    const [progressMessage, setProgressMessage] = useState('');
+    const [generatedPrompt, setGeneratedPrompt] = useState('');
+    const [originalPrompt, setOriginalPrompt] = useState('');
+    const [videoAnalysis, setVideoAnalysis] = useState<VideoAnalysis | null>(null);
+    const [error, setError] = useState('');
+    const [isCopied, setIsCopied] = useState(false);
+    const [isJsonCopied, setIsJsonCopied] = useState(false);
+    const [isUpdatingJson, setIsUpdatingJson] = useState(false);
+    const [isRefining, setIsRefining] = useState(false);
+    const [isDetailing, setIsDetailing] = useState(false);
+    const [refineInstruction, setRefineInstruction] = useState('');
+    const [refineTone, setRefineTone] = useState('');
+    const [refineStyle, setRefineStyle] = useState('');
+    const [refineCamera, setRefineCamera] = useState('');
+    const [refineLighting, setRefineLighting] = useState('');
+    const [negativePrompt, setNegativePrompt] = useState('');
+    const [extractedFrames, setExtractedFrames] = useState<string[]>([]);
+    const [isTestingConsistency, setIsTestingConsistency] = useState(false);
+    const [consistencyResult, setConsistencyResult] = useState<ConsistencyResult | null>(null);
+    const [showConsistencyModal, setShowConsistencyModal] = useState(false);
+    const debounceTimeoutRef = useRef<number | null>(null);
+
+    // Logic lifted from Uploader
+    const resetState = useCallback(() => {
+        setFile(null);
+        if (videoUrl) URL.revokeObjectURL(videoUrl);
+        setVideoUrl('');
+        setVideoMeta(null);
+        setAnalysisState(AnalysisState.IDLE);
+        setProgress(0);
+        setProgressMessage('');
+        setGeneratedPrompt('');
+        setOriginalPrompt('');
+        setVideoAnalysis(null);
+        setError('');
+        setIsCopied(false);
+        setIsJsonCopied(false);
+        setIsUpdatingJson(false);
+        setIsRefining(false);
+        setIsDetailing(false);
+        setRefineInstruction('');
+        setRefineTone('');
+        setRefineStyle('');
+        setRefineCamera('');
+        setRefineLighting('');
+        setNegativePrompt('');
+        setExtractedFrames([]);
+        setIsTestingConsistency(false);
+        setConsistencyResult(null);
+        setShowConsistencyModal(false);
+    }, [videoUrl]);
+
+    const populateStateFromAnalysis = (analysis: VideoAnalysis) => {
+        setGeneratedPrompt(analysis.master_prompt);
+        setOriginalPrompt(analysis.master_prompt);
+        setVideoAnalysis(analysis);
+    };
+
+    const handleFileSelect = async (selectedFile: File) => {
+        resetState();
+        const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(selectedFile.type)) {
+            setError('Please upload a valid video (MP4, MOV, WEBM) or image (JPG, PNG, GIF) file.');
+            return;
+        }
+        if (selectedFile.size > 200 * 1024 * 1024) {
+            setError('File size exceeds 200MB limit.');
+            return;
+        }
+        setFile(selectedFile);
+        try {
+            if (selectedFile.type.startsWith('video/')) {
+                setVideoUrl(URL.createObjectURL(selectedFile));
+                const meta = await getVideoMetadata(selectedFile);
+                const minutes = Math.floor(meta.duration / 60);
+                const seconds = Math.floor(meta.duration % 60).toString().padStart(2, '0');
+                setVideoMeta({ duration: `${minutes}:${seconds}`, resolution: `${meta.width}x${meta.height}` });
+            } else if (selectedFile.type.startsWith('image/')) {
+                const dataUrl = await imageToDataUrl(selectedFile);
+                const img = new Image();
+                img.onload = () => setVideoMeta({ duration: 'N/A', resolution: `${img.width}x${img.height}` });
+                img.src = dataUrl;
+                setVideoUrl(dataUrl);
+            }
+            setAnalysisState(AnalysisState.PREVIEW);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Could not read file preview.');
+            setAnalysisState(AnalysisState.IDLE);
+            setFile(null);
+        }
+    };
+
+    const handleStartAnalysis = async () => {
+        if (!file) return;
+        setAnalysisState(AnalysisState.PROCESSING);
+        setProgressMessage('Preparing media...');
+        setIsUpdatingJson(false);
+        try {
+            let frameDataUrls: string[] = [];
+            let firstFrame: string = '';
+            if (file.type.startsWith('video/')) {
+                setProgressMessage('Extracting frames...');
+                frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => setProgress(prog * 0.2));
+                setExtractedFrames(frameDataUrls);
+            } else if (file.type.startsWith('image/')) {
+                const dataUrl = videoUrl;
+                setProgressMessage('Processing image...');
+                frameDataUrls = [dataUrl];
+                setExtractedFrames(frameDataUrls);
+                setProgress(20);
+            }
+            if (frameDataUrls.length === 0) throw new Error("Could not extract frames or process the media.");
+            firstFrame = frameDataUrls[0];
+            setProgress(30);
+            setProgressMessage('Generating initial prompt...');
+            const quickPrompt = await generateSimplePromptFromFrames(frameDataUrls, masterPrompt);
+            setGeneratedPrompt(quickPrompt);
+            setOriginalPrompt(quickPrompt);
+            setVideoAnalysis({
+                holistic_impression: { genre: 'Analyzing...', dominant_feeling: 'Analyzing...', core_subject: 'Analyzing...' },
+                systematic_deconstruction: {
+                    subject: { core_object: '...', attributes: { preparation: '...', presentation: '...', appearance: '...', state: '...', unusual_details: '...' } },
+                    setting: { environment: { immediate_setting: '...', key_details: [], background: '...' }, props: [] },
+                    character: { presence: '...', role: '...', key_actions_summary: [] },
+                    cinematography: { shot_types_and_framing: '...', depth_of_field: '...', camera_movement: '...', lighting: '...' },
+                    sound_design: { key_sounds: [], sound_characteristics: '...' },
+                    sequence_of_events: []
+                },
+                master_prompt: quickPrompt,
+            });
+            setProgress(60);
+            setAnalysisState(AnalysisState.SUCCESS);
+            setIsUpdatingJson(true);
+            const { videoAnalysis: detailedAnalysis } = await generateDetailedAnalysisFromFrames(frameDataUrls, (msg) => { }, masterPrompt);
+            populateStateFromAnalysis(detailedAnalysis);
+            addToHistory({
+                id: Date.now().toString(),
+                prompt: detailedAnalysis.master_prompt,
+                videoAnalysis: detailedAnalysis,
+                thumbnail: firstFrame,
+                timestamp: new Date().toISOString(),
+            });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+            setAnalysisState(AnalysisState.IDLE);
+            setFile(null);
+        } finally {
+            setIsUpdatingJson(false);
+        }
+    };
+
+    const updateAndSetDerivedPrompts = useCallback(async (currentPrompt: string) => {
+        if (!currentPrompt) return;
+        setIsUpdatingJson(true);
+        setError('');
+        try {
+            const newAnalysisJson = await structurePrompt(currentPrompt, masterPrompt);
+            const newAnalysis: VideoAnalysis = JSON.parse(newAnalysisJson);
+            populateStateFromAnalysis(newAnalysis);
+        } catch (err) {
+            setError(err instanceof Error ? `Failed to update JSON: ${err.message}` : 'An unknown error occurred.');
+        } finally {
+            setIsUpdatingJson(false);
+        }
+    }, [masterPrompt]);
+    
+    useEffect(() => {
+        if (generatedPrompt && originalPrompt && generatedPrompt !== originalPrompt) {
+            if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
+            debounceTimeoutRef.current = window.setTimeout(() => {
+                updateAndSetDerivedPrompts(generatedPrompt);
+            }, 1000);
+        }
+        return () => { if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current); };
+    }, [generatedPrompt, originalPrompt, updateAndSetDerivedPrompts]);
+
+    const handleCopy = (text: string, type: 'prompt' | 'json') => {
+        navigator.clipboard.writeText(text);
+        if (type === 'prompt') {
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        } else {
+            setIsJsonCopied(true);
+            setTimeout(() => setIsJsonCopied(false), 2000);
+        }
+    };
+
+    const handleRefinePrompt = async (mode: 'refine' | 'detail') => {
+        if (!generatedPrompt) return;
+        if (mode === 'refine') setIsRefining(true);
+        if (mode === 'detail') setIsDetailing(true);
+        setError('');
+        let instruction = '';
+        if (mode === 'detail') {
+            instruction = 'Add significantly more detail to the prompt. Make it richer, more descriptive, and include more sensory information and intricate visual elements.';
+        } else {
+            instruction = 'Refine the following prompt. ';
+            if (refineTone) instruction += `Give it a ${refineTone} tone. `;
+            if (refineStyle) instruction += `Make the style ${refineStyle}. `;
+            if (refineCamera) instruction += `Use ${refineCamera} camera work. `;
+            if (refineLighting) instruction += `Incorporate ${refineLighting} lighting. `;
+            if (refineInstruction) instruction += `Specifically: ${refineInstruction}.`;
+            if (instruction.trim() === 'Refine the following prompt.') {
+                instruction = 'Slightly rephrase and improve the prompt for clarity and impact.';
+            }
+        }
+        try {
+            const newPrompt = await refinePrompt(generatedPrompt, instruction, negativePrompt, masterPrompt);
+            setGeneratedPrompt(newPrompt);
+        } catch (err) {
+            setError(err instanceof Error ? `Failed to refine prompt: ${err.message}` : 'An unknown error occurred during refinement.');
+        } finally {
+            if (mode === 'refine') setIsRefining(false);
+            if (mode === 'detail') setIsDetailing(false);
+        }
+    };
+
+    const handleTestConsistency = async () => {
+        if (!generatedPrompt || extractedFrames.length === 0) {
+            setError("Cannot test consistency without a prompt and original media frames.");
+            return;
+        }
+        setIsTestingConsistency(true);
+        setConsistencyResult(null);
+        setShowConsistencyModal(true);
+        setError('');
+        try {
+            const result = await testPromptConsistency(generatedPrompt, extractedFrames, masterPrompt);
+            setConsistencyResult(result);
+        } catch (err) {
+            setError(err instanceof Error ? `${err.message}` : 'An unknown error occurred during the consistency test.');
+        } finally {
+            setIsTestingConsistency(false);
+        }
+    };
+
+    const handleApplyImprovements = (newPrompt: string) => {
+        setGeneratedPrompt(newPrompt);
+        setShowConsistencyModal(false);
+        setConsistencyResult(null);
+        setError('');
+    };
+    
+    const loadTemplate = useCallback(async (template: PromptTemplate) => {
+        resetState();
+        setAnalysisState(AnalysisState.PROCESSING);
+        setProgressMessage('Loading template...');
+        try {
+            setGeneratedPrompt(template.prompt);
+            const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" class="dark:bg-gray-800 bg-gray-200 text-gray-500 dark:text-gray-400"><rect width="1920" height="1080" fill="currentColor" fill-opacity="0.1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="64" fill="currentColor">Prompt from Library</text></svg>`;
+            const placeholderDataUri = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
+            setVideoUrl(placeholderDataUri);
+            setVideoMeta({ duration: "N/A", resolution: "Template" });
+            setProgress(50);
+            setProgressMessage('Structuring prompt...');
+            const newAnalysisJson = await structurePrompt(template.prompt, masterPrompt);
+            const newAnalysis: VideoAnalysis = JSON.parse(newAnalysisJson);
+            populateStateFromAnalysis(newAnalysis);
+            setProgress(100);
+            setAnalysisState(AnalysisState.SUCCESS);
+        } catch (err) {
+            setError(err instanceof Error ? `Failed to load template: ${err.message}` : 'An unknown error occurred.');
+            resetState();
+        }
+    }, [masterPrompt, resetState]);
+
+    const onHistoryItemLoaded = useCallback(() => { setSelectedHistoryItem(null); }, []);
+    
+    useEffect(() => {
+        if (selectedHistoryItem) {
+            setTimeout(() => {
+                resetState();
+                setAnalysisState(AnalysisState.SUCCESS);
+                populateStateFromAnalysis(selectedHistoryItem.videoAnalysis);
+                setFile(null);
+                setVideoUrl(selectedHistoryItem.thumbnail);
+                setVideoMeta({ duration: "N/A", resolution: "From History" });
+                onHistoryItemLoaded();
+            }, 0);
+        }
+    }, [selectedHistoryItem, onHistoryItemLoaded, resetState]);
+
+    const onTemplateConsumed = useCallback(() => { setSelectedTemplate(null); }, []);
+    
+    useEffect(() => {
+        if (selectedTemplate) {
+            loadTemplate(selectedTemplate);
+            onTemplateConsumed();
+        }
+    }, [selectedTemplate, loadTemplate, onTemplateConsumed]);
 
 
     const handleSelectHistoryItem = (item: PromptHistoryItem) => {
@@ -719,19 +702,11 @@ const App: React.FC = () => {
         setCurrentView('main');
     }
 
-    const onHistoryItemLoaded = useCallback(() => {
-        setSelectedHistoryItem(null);
-    }, []);
-
     const handleSelectFromLibrary = (template: PromptTemplate) => {
         setIsLibraryOpen(false);
         setSelectedTemplate(template);
     };
     
-    const onTemplateConsumed = useCallback(() => {
-        setSelectedTemplate(null);
-    }, []);
-
     useEffect(() => {
         const savedTheme = localStorage.getItem('theme') as Theme;
         if (savedTheme) {
@@ -786,7 +761,7 @@ const App: React.FC = () => {
 
                 <header className="py-12 md:py-16 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
-                        <div onClick={() => setCurrentView('main')} className="inline-flex flex-col items-center cursor-pointer group">
+                        <div onClick={() => { setCurrentView('main'); resetState(); }} className="inline-flex flex-col items-center cursor-pointer group">
                             <AnimatedAppName />
                         </div>
                         <p className="max-w-4xl mx-auto text-base md:text-lg text-center text-text-primary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
@@ -799,17 +774,73 @@ const App: React.FC = () => {
 
                 <main className="container mx-auto px-4 sm:px-6 lg:px-8 flex-grow">
                     {currentView === 'main' && (
-                        <div className="space-y-16 md:space-y-24">
-                            <MasterPromptSection masterPrompt={masterPrompt} setMasterPrompt={setMasterPrompt} presets={masterPromptPresets} />
-                            <Uploader 
-                                onAddToHistory={addToHistory} 
-                                masterPrompt={masterPrompt} 
-                                selectedHistoryItem={selectedHistoryItem}
-                                onHistoryItemLoaded={onHistoryItemLoaded}
-                                setIsLibraryOpen={setIsLibraryOpen}
-                                selectedTemplate={selectedTemplate}
-                                onTemplateConsumed={onTemplateConsumed}
-                            />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12">
+                            {/* --- Left Column --- */}
+                            <div className="flex flex-col gap-y-12 animate-fade-in-slide-up">
+                                <MasterPromptSection masterPrompt={masterPrompt} setMasterPrompt={setMasterPrompt} presets={masterPromptPresets} />
+                                <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
+                                    <LibraryIcon className="h-5 w-5 mr-2" />
+                                    Browse Prompt Library
+                                </BlurryButton>
+                                {analysisState === AnalysisState.SUCCESS && file ? (
+                                    <AnalyzedFilePreview file={file} videoUrl={videoUrl} onReset={resetState} />
+                                ) : (
+                                     <Uploader
+                                        analysisState={analysisState}
+                                        file={file}
+                                        videoUrl={videoUrl}
+                                        error={error}
+                                        progress={progress}
+                                        progressMessage={progressMessage}
+                                        onFileSelect={handleFileSelect}
+                                        onStartAnalysis={handleStartAnalysis}
+                                        onResetState={resetState}
+                                    />
+                                )}
+                            </div>
+
+                            {/* --- Right Column --- */}
+                            <div className="mt-12 lg:mt-0">
+                                {analysisState === AnalysisState.SUCCESS && videoAnalysis ? (
+                                    <ResultsView
+                                        file={file}
+                                        videoUrl={videoUrl}
+                                        videoMeta={videoMeta}
+                                        generatedPrompt={generatedPrompt}
+                                        videoAnalysis={videoAnalysis}
+                                        isCopied={isCopied}
+                                        isJsonCopied={isJsonCopied}
+                                        isUpdatingJson={isUpdatingJson}
+                                        isRefining={isRefining}
+                                        isDetailing={isDetailing}
+                                        refineTone={refineTone}
+                                        refineStyle={refineStyle}
+                                        refineCamera={refineCamera}
+                                        refineLighting={refineLighting}
+                                        refineInstruction={refineInstruction}
+                                        negativePrompt={negativePrompt}
+                                        setNegativePrompt={setNegativePrompt}
+                                        handlePromptChange={(e) => setGeneratedPrompt(e.target.value)}
+                                        handleCopy={handleCopy}
+                                        handleRefinePrompt={handleRefinePrompt}
+                                        setRefineTone={setRefineTone}
+                                        setRefineStyle={setRefineStyle}
+                                        setRefineCamera={setRefineCamera}
+                                        setRefineLighting={setRefineLighting}
+                                        setRefineInstruction={setRefineInstruction}
+                                        isTestingConsistency={isTestingConsistency}
+                                        consistencyResult={consistencyResult}
+                                        showConsistencyModal={showConsistencyModal}
+                                        onTestConsistency={handleTestConsistency}
+                                        onCloseConsistencyModal={() => { setShowConsistencyModal(false); setError(''); }}
+                                        onApplyImprovements={handleApplyImprovements}
+                                        hasOriginalFrames={extractedFrames.length > 0}
+                                        error={error}
+                                    />
+                                ) : (
+                                    <ResultsPlaceholder />
+                                )}
+                            </div>
                         </div>
                     )}
                     {currentView === 'profile' && <ProfilePage />}
