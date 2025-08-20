@@ -124,10 +124,16 @@
       /* 
         Body background should be transparent to allow the html background to show through,
         behind our PatternBackground component.
+        Set default text colors for light and dark modes.
       */
       body {
           background-color: transparent !important;
           background-image: none !important;
+          color: #111827;
+      }
+
+      .dark body {
+        color: #f9fafb;
       }
 
       /*
