@@ -1,6 +1,5 @@
-
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
-import { SceneAnalysis } from '../types.ts';
+import { VideoAnalysis, ConsistencyResult } from '../types.ts';
 
 const API_KEY = process.env.API_KEY;
 
@@ -12,7 +11,7 @@ const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export interface PromptGenerationResult {
   prompt: string;
-  analyses: SceneAnalysis[];
+  videoAnalysis: VideoAnalysis;
   jsonResponse: string;
 }
 
@@ -29,64 +28,147 @@ const parseDataUrl = (dataUrl: string) => {
     throw new Error('Invalid data URL provided for analysis.');
 };
 
+const getVideoAnalysisSchema = () => ({
+    type: Type.OBJECT,
+    properties: {
+        holistic_impression: {
+            type: Type.OBJECT,
+            description: "Phase 1: The big-picture analysis of the video's genre and purpose.",
+            properties: {
+                genre: { type: Type.STRING, description: "The specific genre (e.g., 'Cinematic Food Video, ASMR, Mukbang')." },
+                dominant_feeling: { type: Type.STRING, description: "The primary emotional or sensory reaction (e.g., 'Intense, Appetizing, Sensory')." },
+                core_subject: { type: Type.STRING, description: "The absolute central subject of the video (e.g., 'A giant, spicy, grilled snake')." }
+            },
+            required: ["genre", "dominant_feeling", "core_subject"]
+        },
+        systematic_deconstruction: {
+            type: Type.OBJECT,
+            description: "Phase 2: A systematic breakdown of the scene's components, like a digital cinematographer.",
+            properties: {
+                subject: {
+                    type: Type.OBJECT,
+                    description: "Analysis of the main subject (The 'What').",
+                    properties: {
+                        core_object: { type: Type.STRING, description: "The absolute core object." },
+                        attributes: {
+                            type: Type.OBJECT,
+                            properties: {
+                                preparation: { type: Type.STRING, description: "How is it prepared?" },
+                                presentation: { type: Type.STRING, description: "How is it presented?" },
+                                appearance: { type: Type.STRING, description: "What does it look like? What is on it?" },
+                                state: { type: Type.STRING, description: "What is its current state?" },
+                                unusual_details: { type: Type.STRING, description: "Are there any unusual details or poses?" }
+                            },
+                            required: ["preparation", "presentation", "appearance", "state", "unusual_details"]
+                        }
+                    },
+                    required: ["core_object", "attributes"]
+                },
+                setting: {
+                    type: Type.OBJECT,
+                    description: "Analysis of the environment (The 'Where').",
+                    properties: {
+                        environment: {
+                            type: Type.OBJECT,
+                            properties: {
+                                immediate_setting: { type: Type.STRING },
+                                key_details: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                background: { type: Type.STRING }
+                            },
+                            required: ["immediate_setting", "key_details", "background"]
+                        },
+                        props: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of supporting objects in the frame." }
+                    },
+                    required: ["environment", "props"]
+                },
+                character: {
+                    type: Type.OBJECT,
+                    description: "Analysis of the actor (The 'Who').",
+                    properties: {
+                        presence: { type: Type.STRING, description: "Describe the person/actor present." },
+                        role: { type: Type.STRING, description: "What is their role in the scene?" },
+                        key_actions_summary: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List their key actions in order." }
+                    },
+                    required: ["presence", "role", "key_actions_summary"]
+                },
+                cinematography: {
+                    type: Type.OBJECT,
+                    description: "Analysis of the filming technique (The 'How').",
+                    properties: {
+                        shot_types_and_framing: { type: Type.STRING },
+                        depth_of_field: { type: Type.STRING },
+                        camera_movement: { type: Type.STRING },
+                        lighting: { type: Type.STRING }
+                    },
+                    required: ["shot_types_and_framing", "depth_of_field", "camera_movement", "lighting"]
+                },
+                sound_design: {
+                    type: Type.OBJECT,
+                    description: "Analysis of the audio.",
+                    properties: {
+                        key_sounds: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        sound_characteristics: { type: Type.STRING, description: "e.g., 'Amplified and crisp'" }
+                    },
+                    required: ["key_sounds", "sound_characteristics"]
+                },
+                sequence_of_events: {
+                    type: Type.ARRAY,
+                    description: "The narrative flow or micro-story.",
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            event_number: { type: Type.INTEGER },
+                            description: { type: Type.STRING }
+                        },
+                        required: ["event_number", "description"]
+                    }
+                }
+            },
+            required: ["subject", "setting", "character", "cinematography", "sound_design", "sequence_of_events"]
+        },
+        master_prompt: {
+            type: Type.STRING,
+            description: "Phase 4: The final, synthesized, direct text-to-video prompt, created by combining all event descriptions."
+        }
+    },
+    required: ["holistic_impression", "systematic_deconstruction", "master_prompt"]
+});
+
 
 /**
- * Converts a descriptive text prompt into a structured JSON object.
+ * Converts a descriptive text prompt into a structured JSON object using the new analytical wireframe.
  * @param promptToStructure The text prompt to convert.
  * @param masterPrompt The foundational system instruction for the AI's personality.
- * @returns A promise that resolves to a stringified JSON object representing the scene analysis.
+ * @returns A promise that resolves to a stringified JSON object representing the video analysis.
  */
 export const structurePrompt = async (promptToStructure: string, masterPrompt: string): Promise<string> => {
     const structuringPrompt = `
-      Based on the following text-to-video prompt, break it down into one or more scenes and convert it into a structured JSON array following a detailed filmmaking framework.
-      If the prompt describes a single continuous scene, create an array with just one scene object.
-      For each scene object in the array, provide: scene_number, description, camera_details, lighting, color_palette, textures_details, atmosphere, and sound_design.
+      Based on the following text-to-video prompt, deconstruct it using the Analytical Wireframe methodology and convert it into a structured JSON object.
+      Your goal is to create a detailed blueprint for generating this video.
 
-      Strive for the professional quality shown in this example for a single scene:
-      {
-        "scene_number": 13,
-        "description": "A tense, close-up of a Kenyan engineer’s hands rapidly typing on a holographic display, adjusting real-time telemetry data. The glow of the screen casts eerie blue light on their face, revealing beads of sweat. A voice crackles over the radio: 'Kama hiyo data si sahihi, tutaisha!' (If that data’s wrong, we’re finished!). The holographic interface flickers with 'JengaForge' branding. The sterile, high-tech environment of the engineering booth, filled with monitors and cables. The cool, artificial glow of screens, the tactile feedback of holographic keys.",
-        "camera_details": "Arri Alexa, tight close-up on hands and face",
-        "lighting": "Cool, artificial blue from holographic display",
-        "color_palette": "Dark room with neon-blue highlights",
-        "textures_details": "Glowing holograms, sweat on skin, metallic keyboard",
-        "atmosphere": "High stakes, urgency, futuristic tension",
-        "sound_design": "Rapid typing, radio static, tense breathing"
-      }
+      **Phase 1: Holistic Impression**
+      - Infer the genre, dominant feeling, and core subject.
+
+      **Phase 2: Systematic Deconstruction**
+      - Analyze and populate all fields for the Subject, Setting, Character, Cinematography, and Sound Design.
+      - Break down the narrative flow into a sequence_of_events array. If it's one continuous action, create a single event.
+
+      **Phase 4: Synthesis & Structuring**
+      - Synthesize all event descriptions into a single, cohesive master_prompt.
+      - Assemble all data into a single JSON object conforming to the schema.
 
       TEXT PROMPT:
       "${promptToStructure}"
     `;
-
-    const sceneSchema = {
-        type: Type.OBJECT,
-        properties: {
-            scene_number: { type: Type.INTEGER, description: "The sequential number of the scene." },
-            description: { type: Type.STRING, description: "A detailed narrative description of this specific scene, covering the action, setting, and characters." },
-            camera_details: { type: Type.STRING, description: "Specifics about the camera work: shot type, angle, movement, and lens effects." },
-            lighting: { type: Type.STRING, description: "The lighting style and sources." },
-            color_palette: { type: Type.STRING, description: "The dominant colors and overall tonality." },
-            textures_details: { type: Type.STRING, description: "Key textures to emphasize." },
-            atmosphere: { type: Type.STRING, description: "The overall mood or vibe of the scene." },
-            sound_design: { type: Type.STRING, description: "Important sounds or dialogue." }
-        },
-        required: ["scene_number", "description", "camera_details", "lighting", "color_palette", "textures_details", "atmosphere", "sound_design"]
-    };
-
-    const responseSchema = {
-        type: Type.ARRAY,
-        description: "A detailed, scene-by-scene breakdown of the video prompt.",
-        items: sceneSchema
-    };
-
+    
     try {
         const structuringResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: structuringPrompt,
             config: {
-                systemInstruction: `${masterPrompt}\n\nYour primary task is to convert a descriptive text prompt into a well-organized JSON array of scene objects. The JSON must adhere to the provided schema. Output only the raw JSON.`,
+                systemInstruction: `${masterPrompt}\n\nYour primary task is to convert a descriptive text prompt into a well-organized JSON object based on the provided Analytical Wireframe. The JSON must adhere to the provided schema. Output only the raw JSON.`,
                 responseMimeType: "application/json",
-                responseSchema: responseSchema,
+                responseSchema: getVideoAnalysisSchema(),
             }
         });
 
@@ -106,7 +188,7 @@ export const structurePrompt = async (promptToStructure: string, masterPrompt: s
             JSON.parse(cleanedJsonPrompt);
         } catch (e) {
             console.error("Failed to parse the structured JSON prompt from AI:", cleanedJsonPrompt, e);
-            cleanedJsonPrompt = JSON.stringify([{ error: "AI returned invalid JSON.", details: cleanedJsonPrompt }], null, 2);
+            cleanedJsonPrompt = JSON.stringify({ error: "AI returned invalid JSON.", details: cleanedJsonPrompt }, null, 2);
         }
         return cleanedJsonPrompt;
 
@@ -121,14 +203,54 @@ export const structurePrompt = async (promptToStructure: string, masterPrompt: s
 
 
 /**
- * Generates a hyper-detailed text-to-video prompt from media frames using a single,
- * efficient, multi-task API call to Gemini.
+ * Generates a simple, descriptive text prompt from media frames quickly.
+ * This version disables AI "thinking" for low latency.
+ * @param frameDataUrls An array of data URLs for the video frames or images.
+ * @param masterPrompt The foundational system instruction for the AI's personality.
+ * @returns A promise that resolves to the generated text prompt string.
+ */
+export const generateSimplePromptFromFrames = async (
+    frameDataUrls: string[],
+    masterPrompt: string
+): Promise<string> => {
+    if (frameDataUrls.length === 0) {
+        throw new Error("No frames provided for analysis.");
+    }
+
+    const imagePartsForAnalysis = frameDataUrls.map(dataUrl => {
+        const { base64, mimeType } = parseDataUrl(dataUrl);
+        return { inlineData: { mimeType, data: base64 } };
+    });
+
+    const prompt = `You are an expert media analyst. Analyze these video frames and generate a single, cohesive, comma-separated paragraph that describes the entire sequence of events. This will be used as a text-to-video prompt. Focus on the main subject, action, setting, and style. Be fast and direct.`;
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: { parts: [{ text: prompt }, ...imagePartsForAnalysis] },
+        config: {
+            systemInstruction: masterPrompt,
+            temperature: 0.7,
+            thinkingConfig: { thinkingBudget: 0 } // Disable thinking for speed
+        }
+    });
+
+    const text = response.text;
+    if (!text) {
+        throw new Error("The AI model did not return a valid prompt.");
+    }
+    return text.trim();
+};
+
+
+/**
+ * Generates a hyper-detailed text-to-video prompt from media frames using the Analytical Wireframe.
+ * This is the high-quality, slower version that uses full thinking.
  * @param frameDataUrls An array of data URLs for the video frames or images.
  * @param onProgress A callback to update the UI with processing messages.
  * @param masterPrompt The foundational system instruction for the AI's personality.
- * @returns A promise that resolves to an object containing the final prompt and the detailed scene-by-scene analysis.
+ * @returns A promise that resolves to an object containing the final prompt and the detailed analysis object.
  */
-export const generatePromptFromFrames = async (
+export const generateDetailedAnalysisFromFrames = async (
     frameDataUrls: string[],
     onProgress: (message: string) => void,
     masterPrompt: string
@@ -146,80 +268,58 @@ export const generatePromptFromFrames = async (
         });
 
         const analysisPrompt = `
-        You are a world-class AI film director and cinematographer. Your task is to analyze a sequence of video frames and generate a single, raw JSON object based on the provided schema.
+        You are a world-class AI film director and media analyst. Your task is to analyze a sequence of video frames and generate a single, raw JSON object based on the provided schema, strictly following the Analytical Wireframe methodology.
 
-        **Video-to-Prompt Framework:**
+        **Phase 1: Holistic Impression & Genre Identification**
+        - **\`genre\`**: Identify the specific genre. (e.g., 'Cinematic Food Video, ASMR, Mukbang').
+        - **\`dominant_feeling\`**: What is the dominant feeling or impression? (e.g., 'Shocking, appetizing, intense, sensory').
+        - **\`core_subject\`**: Define the absolute center of this video. (e.g., 'A giant, spicy, grilled snake').
 
-        Analyze the frames and break them down into distinct scenes. For each scene, create a JSON object for the \`scene_analysis\` array with hyper-detailed descriptions for the following keys. Strive for the level of professional, evocative detail shown in these examples:
-        
-        Example 1:
-        {
-          "scene_number": 10,
-          "description": "A high-speed, low-angle tracking shot of an F1 car roaring down a rain-soaked street in downtown Nairobi, its tires kicking up a dramatic spray of water. The car’s livery—featuring 'vizprompts' and 'JengaForge'—gleams under the neon glow of city lights reflecting off wet asphalt. Pedestrians in colorful umbrellas scramble aside, their expressions a mix of awe and irritation. The sheer kinetic energy of the car contrasts with the chaotic urban backdrop. The slick, reflective road surface, the blurred streaks of headlights, the rippling puddles, the vibrant umbrellas.",
-          "camera_details": "Arri Alexa, low-angle tracking shot with stabilized rig",
-          "lighting": "Neon city lights, diffused by rain, high contrast",
-          "color_palette": "Vibrant umbrellas against dark, wet asphalt, neon reflections",
-          "textures_details": "Slick road surface, water spray, blurred lights, glossy car livery",
-          "atmosphere": "High energy, urban chaos, cinematic speed",
-          "sound_design": "Roaring engine, screeching tires, splashing water, distant shouts"
-        }
+        **Phase 2: Systematic Deconstruction (The "Digital Cinematographer" approach)**
+        Systematically break down the scene as if you were a director planning to shoot it.
+        - **Subject (The "What")**:
+          - **\`core_object\`**: What is the absolute core object? (e.g., "Snake")
+          - **\`attributes\`**: Describe the attributes in detail.
+            - **\`preparation\`**: How is it prepared? (e.g., "Grilled")
+            - **\`presentation\`**: How is it presented? (e.g., "Coiled in a tower")
+            - **\`appearance\`**: What does it look like? What is on it? (e.g., "Glazed, red/brown, spicy, covered in chilies, garlic, sesame seeds")
+            - **\`state\`**: What is its current state? (e.g., "Cooked, with white meat visible when opened")
+            - **\`unusual_details\`**: Are there any "unspoken" details? (e.g., "The head is propped up, mouth open in an aggressive pose")
+        - **Setting (The "Where")**:
+          - **\`environment\`**:
+            - **\`immediate_setting\`**: Describe the immediate location. (e.g., "A charcoal grill")
+            - **\`key_details\`**: What are the key environmental details? (e.g., ["Glowing coals", "smoke"])
+            - **\`background\`**: Describe the background. (e.g., "Dark, indistinct, creating focus")
+          - **\`props\`**: List all supporting objects in the frame. (e.g., ["Small clay bowls", "limes", "a dipping sauce"])
+        - **Character (The "Who")**:
+          - **\`presence\`**: Is there a person present? Describe them. (e.g., "A woman")
+          - **\`role\`**: What is their role? (e.g., "The eater/protagonist")
+          - **\`key_actions_summary\`**: List their key actions in order. (e.g., ["She appears", "she uses a cleaver", "she chops", "she eats"])
+        - **Technique (The "How")**:
+          - **Cinematography**:
+            - **\`shot_types_and_framing\`**: How is it filmed? (e.g., "Starts with an extreme close-up")
+            - **\`depth_of_field\`**: Describe the depth of field. (e.g., "Shallow depth of field")
+            - **\`camera_movement\`**: Is the camera moving? (e.g., "Steady but moves to reveal more")
+            - **\`lighting\`**: Describe the lighting. (e.g., "Dramatic, like a spotlight")
+          - **Sound Design**:
+            - **\`key_sounds\`**: What are the key, specific sounds? (e.g., ["Sizzle from the grill", "A sharp 'thunk' from the cleaver", "Tearing of the meat"])
+            - **\`sound_characteristics\`**: Describe the quality of the sounds. (e.g., "Sounds are amplified and crisp")
+        - **Narrative Flow (Sequence)**:
+          - **\`sequence_of_events\`**: Create a chronological micro-story of what happens. This is a sequence of descriptions. (e.g., [{event_number: 1, description: "Introduction of the food"}, {event_number: 2, description: "Introduction of the eater"}, ...])
 
-        Example 2:
-        {
-          "scene_number": 13,
-          "description": "A tense, close-up of a Kenyan engineer’s hands rapidly typing on a holographic display, adjusting real-time telemetry data. The glow of the screen casts eerie blue light on their face, revealing beads of sweat. A voice crackles over the radio: 'Kama hiyo data si sahihi, tutaisha!' (If that data’s wrong, we’re finished!). The holographic interface flickers with 'JengaForge' branding. The sterile, high-tech environment of the engineering booth, filled with monitors and cables. The cool, artificial glow of screens, the tactile feedback of holographic keys.",
-          "camera_details": "Arri Alexa, tight close-up on hands and face",
-          "lighting": "Cool, artificial blue from holographic display",
-          "color_palette": "Dark room with neon-blue highlights",
-          "textures_details": "Glowing holograms, sweat on skin, metallic keyboard",
-          "atmosphere": "High stakes, urgency, futuristic tension",
-          "sound_design": "Rapid typing, radio static, tense breathing"
-        }
+        **Phase 4: Synthesis & Structuring**
+        - **\`master_prompt\`**: Synthesize all the event descriptions from the \`sequence_of_events\` into one single, cohesive, comma-separated paragraph. This master prompt should chronologically narrate the entire video for a text-to-video AI model.
 
-        After creating the \`scene_analysis\` array, add this key to the root of the JSON object:
-
-        1.  **\`master_prompt\`**: Synthesize all scene \`description\` fields into one single, cohesive, comma-separated paragraph. This master prompt should chronologically narrate the entire video for a text-to-video AI model.
-
-        Your output must be a single JSON object conforming to the schema. Do not include any conversational text or markdown.
+        Your entire output must be a single JSON object conforming to the schema. Do not include any conversational text or markdown.
         `;
         
-        const sceneSchema = {
-            type: Type.OBJECT,
-            properties: {
-                scene_number: { type: Type.INTEGER, description: "The sequential number of the scene." },
-                description: { type: Type.STRING, description: "A detailed narrative description of this specific scene, covering the action, setting, and characters." },
-                camera_details: { type: Type.STRING, description: "Specifics about the camera work: shot type, angle, movement, and lens effects." },
-                lighting: { type: Type.STRING, description: "The lighting style and sources." },
-                color_palette: { type: Type.STRING, description: "The dominant colors and overall tonality." },
-                textures_details: { type: Type.STRING, description: "Key textures to emphasize." },
-                atmosphere: { type: Type.STRING, description: "The overall mood or vibe of the scene." },
-                sound_design: { type: Type.STRING, description: "Important sounds or dialogue." }
-            },
-            required: ["scene_number", "description", "camera_details", "lighting", "color_palette", "textures_details", "atmosphere", "sound_design"]
-        };
-
-        const responseSchema = {
-            type: Type.OBJECT,
-            properties: {
-                master_prompt: {
-                    type: Type.STRING,
-                    description: "The final, synthesized, direct text-to-video prompt, created by combining all scene descriptions."
-                },
-                scene_analysis: {
-                    type: Type.ARRAY,
-                    description: "A detailed, scene-by-scene breakdown of the video.",
-                    items: sceneSchema
-                }
-            },
-            required: ["master_prompt", "scene_analysis"]
-        };
-
+        const responseSchema = getVideoAnalysisSchema();
 
         const analysisResponse: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
             config: {
-                systemInstruction: `${masterPrompt}\n\nYour task is to perform a multi-step analysis and return a single, structured JSON object adhering to the provided schema. Do not output any conversational text or markdown.`,
+                systemInstruction: `${masterPrompt}\n\nYour task is to perform a multi-step analysis based on the Analytical Wireframe and return a single, structured JSON object adhering to the provided schema. Do not output any conversational text or markdown.`,
                 responseMimeType: "application/json",
                 responseSchema: responseSchema,
                 temperature: 0.7,
@@ -233,15 +333,15 @@ export const generatePromptFromFrames = async (
             analysisJsonStr = match[2].trim();
         }
     
-        const result = JSON.parse(analysisJsonStr);
+        const result: VideoAnalysis = JSON.parse(analysisJsonStr);
 
-        if (!result.master_prompt || !result.scene_analysis) {
+        if (!result.master_prompt || !result.systematic_deconstruction || !result.holistic_impression) {
             throw new Error("The AI model returned an incomplete analysis. The result was missing key fields. Please try a different video.");
         }
 
         return {
             prompt: result.master_prompt,
-            analyses: result.scene_analysis,
+            videoAnalysis: result,
             jsonResponse: analysisJsonStr,
         };
 
@@ -385,5 +485,112 @@ The final output MUST be only the new, refined prompt as a single block of text.
             throw new Error(`Failed to remix video style: ${error.message}`);
         }
         throw new Error("An unknown error occurred while communicating with the AI for video style remix.");
+    }
+};
+
+export const testPromptConsistency = async (
+    prompt: string,
+    frameDataUrls: string[],
+    masterPrompt: string
+): Promise<ConsistencyResult> => {
+    if (frameDataUrls.length === 0) {
+        throw new Error("No frames provided for consistency check.");
+    }
+
+    const imageParts = frameDataUrls.map(dataUrl => {
+        const { base64, mimeType } = parseDataUrl(dataUrl);
+        return { inlineData: { mimeType, data: base64 } };
+    });
+
+    const consistencyCheckPrompt = `
+    You are an expert Generative Media Forensics AI. Your task is to analyze the consistency between a text prompt and media frames to help a user refine their prompt for perfect recreation.
+
+    You will be given:
+    1. A "Text-to-Video Prompt".
+    2. A series of "Original Video Frames".
+
+    First, perform a detailed forensic analysis by following these steps:
+    1.  **\`analysis_of_prompt\`**: Meticulously break down the provided prompt. List every specific subject, action, style, and detail it describes.
+    2.  **\`analysis_of_media\`**: Thoroughly examine the video frames. Identify all key visual elements, including subjects, actions, camera work, lighting, and overall aesthetic. Be objective.
+    3.  **\`comparison\`**: Compare the two analyses. Note where they align and, more importantly, where they diverge.
+
+    Based on your forensic analysis, generate a single, raw JSON object containing your final report with the following fields:
+    - **\`reasoning\`**: An object containing your detailed forensic analysis from the steps above (\`analysis_of_prompt\`, \`analysis_of_media\`, \`comparison\`).
+    - **\`consistency_score\`**: An integer from 0 to 100 based on your comparison. Be strict. 90+ is a near-perfect match. A low score indicates significant visual information is missing from the prompt.
+    - **\`explanation\`**: A concise, one-sentence summary explaining the score.
+    - **\`missing_details\`**: A JSON array of strings, listing specific, crucial visual details from the media that are missing or vague in the prompt.
+    - **\`suggested_improvements\`**: A single string containing a revised, master-level prompt that incorporates all the missing details to achieve a 90+ score.
+
+    Here is the Text-to-Video Prompt:
+    "${prompt}"
+    `;
+
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            reasoning: {
+                type: Type.OBJECT,
+                description: "The detailed forensic analysis.",
+                properties: {
+                    analysis_of_prompt: { type: Type.STRING },
+                    analysis_of_media: { type: Type.STRING },
+                    comparison: { type: Type.STRING }
+                },
+                required: ["analysis_of_prompt", "analysis_of_media", "comparison"]
+            },
+            consistency_score: { 
+                type: Type.INTEGER, 
+                description: "A strict consistency score from 0 to 100." 
+            },
+            explanation: { 
+                type: Type.STRING, 
+                description: "A concise, one-sentence summary of the main reason for the score." 
+            },
+            missing_details: {
+                type: Type.ARRAY,
+                description: "A list of specific, crucial visual details missing from the prompt.",
+                items: { type: Type.STRING }
+            },
+            suggested_improvements: {
+                type: Type.STRING,
+                description: "A revised version of the prompt that incorporates the missing details to achieve a 90+ score."
+            }
+        },
+        required: ["reasoning", "consistency_score", "explanation", "missing_details", "suggested_improvements"]
+    };
+
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [{ text: consistencyCheckPrompt }, ...imageParts] },
+            config: {
+                systemInstruction: `${masterPrompt}\n\nYour task is to act as a consistency checker and return a single, structured JSON object adhering to the provided schema. Do not output any conversational text or markdown.`,
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+            }
+        });
+
+        const resultJsonStr = response.text.trim();
+        const result: ConsistencyResult = JSON.parse(resultJsonStr);
+
+        if (
+            !result.reasoning ||
+            typeof result.reasoning.analysis_of_prompt !== 'string' ||
+            typeof result.consistency_score !== 'number' ||
+            typeof result.explanation !== 'string' ||
+            !Array.isArray(result.missing_details) ||
+            typeof result.suggested_improvements !== 'string'
+        ) {
+            throw new Error("The AI model returned an invalid data structure for the consistency check.");
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error("Error during Gemini API consistency check:", error);
+        if (error instanceof Error) {
+            throw new Error(`AI consistency check failed: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while communicating with the AI for consistency check.");
     }
 };
