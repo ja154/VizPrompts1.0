@@ -739,36 +739,37 @@ const App: React.FC = () => {
                     onAuthSuccess={handleAuthSuccess}
                 />
 
-                <div className="absolute top-0 left-0 right-0 z-40 p-6 flex justify-between items-start">
-                    <div className="flex-1 flex justify-start">
-                        {currentUser ? (
-                            <UserMenu 
-                                currentUser={currentUser}
-                                onNavigate={setCurrentView}
-                                onLogout={handleLogout}
-                            />
-                        ) : (
-                            <BlurryButton onClick={() => setIsAuthModalOpen(true)}>
-                                Sign In
-                            </BlurryButton>
-                        )}
-                    </div>
-
-                    <div className="flex-1 flex justify-end">
-                        <ThemeSwitch theme={theme} onToggleTheme={handleThemeToggle} />
-                    </div>
-                </div>
-
-                <header className="py-12 md:py-16 text-center">
-                    <div className="flex flex-col items-center justify-center space-y-2">
-                        <div onClick={() => { setCurrentView('main'); resetState(); }} className="inline-flex flex-col items-center cursor-pointer group">
-                            <AnimatedAppName />
+                <header className="relative">
+                    <nav className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 sm:p-6 lg:p-8">
+                        <div>
+                            {currentUser ? (
+                                <UserMenu 
+                                    currentUser={currentUser}
+                                    onNavigate={setCurrentView}
+                                    onLogout={handleLogout}
+                                />
+                            ) : (
+                                <BlurryButton onClick={() => setIsAuthModalOpen(true)}>
+                                    Sign In
+                                </BlurryButton>
+                            )}
                         </div>
-                        <p className="max-w-4xl mx-auto text-base md:text-lg text-center text-text-primary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
-                            Welcome to VizPrompts! Instantly turn any video or image into detailed AI prompts.
-                            <br />
-                            Just <strong>upload a file</strong> or <strong>browse the library</strong> to start your creative journey.
-                        </p>
+                        <div>
+                             <ThemeSwitch theme={theme} onToggleTheme={handleThemeToggle} />
+                        </div>
+                    </nav>
+
+                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 md:pt-28 md:pb-16 text-center">
+                         <div className="flex flex-col items-center justify-center space-y-6">
+                            <div onClick={() => { setCurrentView('main'); resetState(); }} className="inline-flex flex-col items-center cursor-pointer group">
+                                <AnimatedAppName />
+                            </div>
+                            <p className="max-w-4xl mx-auto text-base md:text-lg text-center text-text-primary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
+                                Welcome to VizPrompts! Instantly turn any video or image into detailed AI prompts.
+                                <br />
+                                Just <strong>upload a file</strong> or <strong>browse the library</strong> to start your creative journey.
+                            </p>
+                        </div>
                     </div>
                 </header>
 
