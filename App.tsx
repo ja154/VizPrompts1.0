@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, VideoAnalysis } from './types.ts';
+import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
-import { generateSimplePromptFromFrames, generateDetailedAnalysisFromFrames, refinePrompt, structurePrompt, testPromptConsistency } from './services/geminiService.ts';
-import { BrainCircuitIcon, LibraryIcon, FilmIcon, ArticleIcon, MagicWandIcon } from './components/icons.tsx';
+import { generateSimplePromptFromFrames, generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency } from './services/geminiService.ts';
+import { BrainCircuitIcon, LibraryIcon, FilmIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
 import UploaderIcon from './components/UploaderIcon.tsx';
@@ -17,59 +17,11 @@ import HistoryPage from './components/HistoryPage.tsx';
 import UserMenu from './components/UserMenu.tsx';
 import PatternBackground from './components/PatternBackground.tsx';
 import PromptLibrary from './components/PromptLibrary.tsx';
-import AnimatedList from './components/AnimatedList.tsx';
 import { PromptTemplate } from './data/promptLibrary.ts';
 
 
 type Theme = 'light' | 'dark';
 export type AppView = 'main' | 'profile' | 'history';
-
-const masterPromptPresets = [
-    {
-        name: 'Default',
-        prompt: ""
-    },
-    {
-        name: 'Cinematic Visionary',
-        prompt: "You are a visionary AGI director with an unparalleled eye for cinematic detail and creative potential. Your purpose is to analyze media and synthesize hyper-detailed, production-ready prompts for generative AI. You deconstruct visual information using the VideoAnalysisToTextPromptFramework, focusing on: Object Detection, Human Movement Analysis, Action Recognition, and overall Scene Context. Your analysis translates these components into a rich tapestry of descriptive text that inspires groundbreaking creative output. Every analysis should be a masterclass in prompt engineering."
-    },
-    {
-        name: 'Documentary Realist',
-        prompt: "You are an observant documentary filmmaker AI. Your goal is to analyze media with a focus on realism, authenticity, and narrative truth. You identify key subjects, actions, and environmental details with journalistic precision, producing prompts that generate raw, compelling, and emotionally resonant footage."
-    },
-    {
-        name: 'VFX & Animation Specialist',
-        prompt: "You are a specialized AI for VFX and animation. You deconstruct visual media into its core components: character models, textures, lighting rigs, particle effects, and animation curves. Your prompts are technical and precise, designed to generate specific assets or animated sequences with a focus on art style, motion, and visual effects."
-    },
-    {
-        name: 'Commercial & Advertising Pro',
-        prompt: "You are a creative director AI for advertising. You analyze media to identify brand-able moments, product placement opportunities, and emotional triggers that drive consumer action. Your prompts are concise, high-impact, and tailored to create polished, persuasive, and on-brand video content for marketing campaigns."
-    },
-    {
-        name: 'Abstract Artist',
-        prompt: "You are an experimental artist AI. You perceive media not literally, but as a collage of colors, shapes, textures, and emotions. You translate visual input into abstract, poetic prompts that explore themes and feelings, designed to generate avant-garde and visually stunning non-narrative art pieces."
-    },
-    {
-        name: 'Video Game Cinematics Director',
-        prompt: "You are a lead cinematics director for a AAA game studio. Your expertise is in translating game assets and environments into emotionally charged narrative sequences. You analyze visuals for their potential within a real-time rendering engine, focusing on dynamic camera movements (dolly zooms, orbital shots), character animation, environmental storytelling, and interactive lighting. Your prompts are designed to be used with game engines like Unreal Engine or Unity, specifying assets, shaders, and post-processing effects."
-    },
-    {
-        name: 'Music Video Auteur',
-        prompt: "You are an iconic music video director AI, known for your bold, symbolic, and rhythm-driven visuals. You deconstruct media into a sequence of stunning, high-energy shots that sync with an imagined beat. You focus on artist performance, surreal visual metaphors, rapid cuts, and a strong, cohesive color grade. Your prompts are designed to generate visually arresting clips that feel like a music video."
-    },
-    {
-        name: 'Architectural Visualization Specialist',
-        prompt: "You are an architectural visualization (ArchViz) AI. Your primary function is to analyze scenes for their architectural and spatial qualities. You produce prompts that describe materials (concrete, glass, wood), lighting (natural, artificial, soft, harsh), and atmospheric conditions with photorealistic precision. Your goal is to generate prompts for creating lifelike architectural renders and fly-throughs."
-    },
-    {
-        name: 'Sci-Fi World-Builder',
-        prompt: "You are a veteran sci-fi world-builder AI. Your mind contains encyclopedic knowledge of speculative design, futuristic aesthetics, and alien biology. You analyze visuals for their world-building potential, identifying unique technologies, architectural styles, and environmental details. Your prompts are rich with imaginative, specific terminology (e.g., 'bioluminescent flora,' 'brutalist megastructure,' 'plasma conduits') to generate coherent and believable sci-fi or fantasy worlds."
-    },
-    {
-        name: 'Fashion & Beauty Photographer',
-        prompt: "You are a high-fashion photographer AI with the discerning eye of a top magazine editor. You analyze visuals for their aesthetic appeal, focusing on model poses, fabric textures, designer styles, and dramatic lighting. Your prompts are geared towards creating elegant, editorial-quality images and video clips, specifying details like 'chiaroscuro lighting,' 'vogueing poses,' 'satin sheen,' and 'haute couture'."
-    }
-];
 
 interface UploaderProps {
     analysisState: AnalysisState;
@@ -110,13 +62,6 @@ const Uploader: React.FC<UploaderProps> = ({
 
     return (
         <>
-            <div className="flex flex-col items-center">
-                <div className="relative flex py-5 items-center w-full">
-                    <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
-                    <span className="flex-shrink mx-4 text-xs uppercase font-semibold text-text-secondary-light dark:text-text-secondary-dark">Or</span>
-                    <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
-                </div>
-            </div>
             <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 {analysisState === AnalysisState.IDLE && (
                     <div
@@ -185,53 +130,21 @@ const Uploader: React.FC<UploaderProps> = ({
     );
 };
 
-const MasterPromptSection = ({ masterPrompt, setMasterPrompt, presets }: {
-    masterPrompt: string;
-    setMasterPrompt: (p: string) => void;
-    presets: { name: string; prompt: string }[];
-}) => {
-    const handlePresetChange = (selectedPreset: { name: string; prompt: string; }) => {
-        if (selectedPreset) {
-            setMasterPrompt(selectedPreset.prompt);
-        }
-    };
-
-    const currentPreset = presets.find(p => p.prompt === masterPrompt) || null;
-
+const AnalysisInstructionSection = () => {
     return (
         <section>
             <h2 className="text-3xl font-bold text-center mb-12">
                 <span className="title-glow-subtle bg-gradient-to-r from-gray-700 to-gray-900 dark:from-stone-100 dark:to-stone-300 bg-clip-text text-transparent flex items-center justify-center gap-4">
                     <BrainCircuitIcon className="w-8 h-8" />
-                    AI Creative Protocol
+                    AI Analysis Protocol
                 </span>
             </h2>
             <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
-                    <h3 className="text-xl font-bold mb-4">Master Prompt</h3>
+                    <h3 className="text-xl font-bold mb-4">How It Works</h3>
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">
-                        Select a preset or write your own master prompt. This acts as the foundational context for all AI interactions, setting its core personality and creative direction.
+                        Our AI uses a sophisticated analysis framework to deconstruct your media. It identifies the user's inferred goal, extracts key elements for the core prompt, and outlines technical or stylistic constraints to generate a detailed, structured, and production-ready prompt.
                     </p>
-
-                    <div className="mb-4">
-                        <label htmlFor="prompt-preset" className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Protocol Preset</label>
-                        <AnimatedList
-                            items={presets}
-                            selectedItem={currentPreset}
-                            onItemSelected={handlePresetChange}
-                            displayKey="name"
-                            placeholder="Custom Protocol"
-                        />
-                    </div>
-
-                    <textarea
-                        value={masterPrompt}
-                        onChange={(e) => setMasterPrompt(e.target.value)}
-                        className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Define the AI's core creative protocol..."
-                        rows={6}
-                        style={{ minHeight: '150px' }}
-                    />
                 </div>
             </GlowCard>
         </section>
@@ -309,7 +222,7 @@ const ResultsPlaceholder = () => (
         <div className="flex flex-col gap-8 opacity-60 pointer-events-none">
             <GlowCard className="bg-bg-secondary-light/80 dark:bg-bg-secondary-dark/80 rounded-2xl p-1 shadow-lg border border-border-primary-light/50 dark:border-border-primary-dark/50">
                 <div className="rounded-xl p-6">
-                    <h2 className="text-xl font-bold mb-4 flex items-center text-text-secondary-light dark:text-text-secondary-dark"><FilmIcon className="w-6 h-6 mr-2"/>Media Analysis</h2>
+                    <h2 className="text-xl font-bold mb-4 flex items-center text-text-secondary-light dark:text-text-secondary-dark"><FilmIcon className="w-6 h-6 mr-2"/>Media Preview</h2>
                     <div className="video-preview bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-lg mb-4 flex items-center justify-center">
                         <p className="text-text-secondary-light dark:text-text-secondary-dark p-4 text-center text-sm">Upload media to see a preview and metadata.</p>
                     </div>
@@ -328,22 +241,12 @@ const ResultsPlaceholder = () => (
 
             <GlowCard className="bg-bg-secondary-light/80 dark:bg-bg-secondary-dark/80 rounded-2xl p-1 shadow-lg border border-border-primary-light/50 dark:border-border-primary-dark/50">
                 <div className="rounded-xl p-6">
-                    <h2 className="text-xl font-bold flex items-center mb-4 text-text-secondary-light dark:text-text-secondary-dark"><ArticleIcon className="w-6 h-6 mr-2"/>Text Prompt</h2>
-                    <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark flex items-center justify-center">
-                        <p className="text-text-secondary-light dark:text-text-secondary-dark text-center text-sm">Your AI-generated prompt will appear here.</p>
-                    </div>
-                </div>
-            </GlowCard>
-
-            <GlowCard className="bg-bg-secondary-light/80 dark:bg-bg-secondary-dark/80 rounded-2xl p-1 shadow-lg border border-border-primary-light/50 dark:border-border-primary-dark/50">
-                <div className="rounded-xl p-6">
-                    <h2 className="text-xl font-bold mb-4 flex items-center text-text-secondary-light dark:text-text-secondary-dark"><MagicWandIcon className="w-6 h-6 mr-2" />Refine Prompt</h2>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <div className="w-full p-2.5 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark h-[42px]"></div>
-                        <div className="w-full p-2.5 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark h-[42px]"></div>
+                    <h2 className="text-xl font-bold flex items-center mb-4 text-text-secondary-light dark:text-text-secondary-dark"><BrainCircuitIcon className="w-6 h-6 mr-2"/>Analysis Results</h2>
+                     <div className="space-y-4">
+                        <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg h-16"></div>
+                        <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg h-24"></div>
+                        <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg h-16"></div>
                      </div>
-                    <div className="w-full h-[60px] p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark"></div>
-                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark text-center mt-4">Prompt modifiers will become available here.</p>
                 </div>
             </GlowCard>
         </div>
@@ -378,7 +281,6 @@ const App: React.FC = () => {
     const { currentUser, userHistory, addToHistory, logout } = useAuth();
     const [currentView, setCurrentView] = useState<AppView>('main');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [masterPrompt, setMasterPrompt] = useState<string>(masterPromptPresets[0].prompt);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
@@ -391,12 +293,9 @@ const App: React.FC = () => {
     const [progress, setProgress] = useState(0);
     const [progressMessage, setProgressMessage] = useState('');
     const [generatedPrompt, setGeneratedPrompt] = useState('');
-    const [originalPrompt, setOriginalPrompt] = useState('');
-    const [videoAnalysis, setVideoAnalysis] = useState<VideoAnalysis | null>(null);
+    const [structuredPrompt, setStructuredPrompt] = useState<StructuredPrompt | null>(null);
     const [error, setError] = useState('');
     const [isCopied, setIsCopied] = useState(false);
-    const [isJsonCopied, setIsJsonCopied] = useState(false);
-    const [isUpdatingJson, setIsUpdatingJson] = useState(false);
     const [isRefining, setIsRefining] = useState(false);
     const [isDetailing, setIsDetailing] = useState(false);
     const [refineInstruction, setRefineInstruction] = useState('');
@@ -409,8 +308,7 @@ const App: React.FC = () => {
     const [isTestingConsistency, setIsTestingConsistency] = useState(false);
     const [consistencyResult, setConsistencyResult] = useState<ConsistencyResult | null>(null);
     const [showConsistencyModal, setShowConsistencyModal] = useState(false);
-    const debounceTimeoutRef = useRef<number | null>(null);
-
+    
     // Logic lifted from Uploader
     const resetState = useCallback(() => {
         setFile(null);
@@ -421,12 +319,9 @@ const App: React.FC = () => {
         setProgress(0);
         setProgressMessage('');
         setGeneratedPrompt('');
-        setOriginalPrompt('');
-        setVideoAnalysis(null);
+        setStructuredPrompt(null);
         setError('');
         setIsCopied(false);
-        setIsJsonCopied(false);
-        setIsUpdatingJson(false);
         setIsRefining(false);
         setIsDetailing(false);
         setRefineInstruction('');
@@ -441,10 +336,9 @@ const App: React.FC = () => {
         setShowConsistencyModal(false);
     }, [videoUrl]);
 
-    const populateStateFromAnalysis = (analysis: VideoAnalysis) => {
-        setGeneratedPrompt(analysis.master_prompt);
-        setOriginalPrompt(analysis.master_prompt);
-        setVideoAnalysis(analysis);
+    const populateStateFromAnalysis = (analysis: StructuredPrompt) => {
+        setGeneratedPrompt(analysis.core_focus);
+        setStructuredPrompt(analysis);
     };
 
     const handleFileSelect = async (selectedFile: File) => {
@@ -485,7 +379,6 @@ const App: React.FC = () => {
         if (!file) return;
         setAnalysisState(AnalysisState.PROCESSING);
         setProgressMessage('Preparing media...');
-        setIsUpdatingJson(false);
         try {
             let frameDataUrls: string[] = [];
             let firstFrame: string = '';
@@ -504,30 +397,23 @@ const App: React.FC = () => {
             firstFrame = frameDataUrls[0];
             setProgress(30);
             setProgressMessage('Generating initial prompt...');
-            const quickPrompt = await generateSimplePromptFromFrames(frameDataUrls, masterPrompt);
+            const quickPrompt = await generateSimplePromptFromFrames(frameDataUrls);
             setGeneratedPrompt(quickPrompt);
-            setOriginalPrompt(quickPrompt);
-            setVideoAnalysis({
-                holistic_impression: { genre: 'Analyzing...', dominant_feeling: 'Analyzing...', core_subject: 'Analyzing...' },
-                systematic_deconstruction: {
-                    subject: { core_object: '...', attributes: { preparation: '...', presentation: '...', appearance: '...', state: '...', unusual_details: '...' } },
-                    setting: { environment: { immediate_setting: '...', key_details: [], background: '...' }, props: [] },
-                    character: { presence: '...', role: '...', key_actions_summary: [] },
-                    cinematography: { shot_types_and_framing: '...', depth_of_field: '...', camera_movement: '...', lighting: '...' },
-                    sound_design: { key_sounds: [], sound_characteristics: '...' },
-                    sequence_of_events: []
-                },
-                master_prompt: quickPrompt,
+            // Show a placeholder structure while the detailed one loads
+            setStructuredPrompt({
+                objective: "Analyzing...",
+                core_focus: quickPrompt,
+                constraints: "Analyzing...",
             });
             setProgress(60);
             setAnalysisState(AnalysisState.SUCCESS);
-            setIsUpdatingJson(true);
-            const { videoAnalysis: detailedAnalysis } = await generateDetailedAnalysisFromFrames(frameDataUrls, (msg) => { }, masterPrompt);
+
+            const detailedAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, (msg) => { });
             populateStateFromAnalysis(detailedAnalysis);
             addToHistory({
                 id: Date.now().toString(),
-                prompt: detailedAnalysis.master_prompt,
-                videoAnalysis: detailedAnalysis,
+                prompt: detailedAnalysis.core_focus,
+                structuredPrompt: detailedAnalysis,
                 thumbnail: firstFrame,
                 timestamp: new Date().toISOString(),
             });
@@ -535,45 +421,13 @@ const App: React.FC = () => {
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
             setAnalysisState(AnalysisState.IDLE);
             setFile(null);
-        } finally {
-            setIsUpdatingJson(false);
         }
     };
 
-    const updateAndSetDerivedPrompts = useCallback(async (currentPrompt: string) => {
-        if (!currentPrompt) return;
-        setIsUpdatingJson(true);
-        setError('');
-        try {
-            const newAnalysisJson = await structurePrompt(currentPrompt, masterPrompt);
-            const newAnalysis: VideoAnalysis = JSON.parse(newAnalysisJson);
-            populateStateFromAnalysis(newAnalysis);
-        } catch (err) {
-            setError(err instanceof Error ? `Failed to update JSON: ${err.message}` : 'An unknown error occurred.');
-        } finally {
-            setIsUpdatingJson(false);
-        }
-    }, [masterPrompt]);
-    
-    useEffect(() => {
-        if (generatedPrompt && originalPrompt && generatedPrompt !== originalPrompt) {
-            if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current);
-            debounceTimeoutRef.current = window.setTimeout(() => {
-                updateAndSetDerivedPrompts(generatedPrompt);
-            }, 1000);
-        }
-        return () => { if (debounceTimeoutRef.current) clearTimeout(debounceTimeoutRef.current); };
-    }, [generatedPrompt, originalPrompt, updateAndSetDerivedPrompts]);
-
-    const handleCopy = (text: string, type: 'prompt' | 'json') => {
+    const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
-        if (type === 'prompt') {
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-        } else {
-            setIsJsonCopied(true);
-            setTimeout(() => setIsJsonCopied(false), 2000);
-        }
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
     };
 
     const handleRefinePrompt = async (mode: 'refine' | 'detail') => {
@@ -596,8 +450,11 @@ const App: React.FC = () => {
             }
         }
         try {
-            const newPrompt = await refinePrompt(generatedPrompt, instruction, negativePrompt, masterPrompt);
+            const newPrompt = await refinePrompt(generatedPrompt, instruction, negativePrompt);
             setGeneratedPrompt(newPrompt);
+            if (structuredPrompt) {
+                setStructuredPrompt({ ...structuredPrompt, core_focus: newPrompt });
+            }
         } catch (err) {
             setError(err instanceof Error ? `Failed to refine prompt: ${err.message}` : 'An unknown error occurred during refinement.');
         } finally {
@@ -616,7 +473,7 @@ const App: React.FC = () => {
         setShowConsistencyModal(true);
         setError('');
         try {
-            const result = await testPromptConsistency(generatedPrompt, extractedFrames, masterPrompt);
+            const result = await testPromptConsistency(generatedPrompt, extractedFrames);
             setConsistencyResult(result);
         } catch (err) {
             setError(err instanceof Error ? `${err.message}` : 'An unknown error occurred during the consistency test.');
@@ -627,6 +484,9 @@ const App: React.FC = () => {
 
     const handleApplyImprovements = (newPrompt: string) => {
         setGeneratedPrompt(newPrompt);
+        if (structuredPrompt) {
+            setStructuredPrompt({ ...structuredPrompt, core_focus: newPrompt });
+        }
         setShowConsistencyModal(false);
         setConsistencyResult(null);
         setError('');
@@ -634,26 +494,15 @@ const App: React.FC = () => {
     
     const loadTemplate = useCallback(async (template: PromptTemplate) => {
         resetState();
-        setAnalysisState(AnalysisState.PROCESSING);
+        setAnalysisState(AnalysisState.SUCCESS);
         setProgressMessage('Loading template...');
-        try {
-            setGeneratedPrompt(template.prompt);
-            const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" class="dark:bg-gray-800 bg-gray-200 text-gray-500 dark:text-gray-400"><rect width="1920" height="1080" fill="currentColor" fill-opacity="0.1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="64" fill="currentColor">Prompt from Library</text></svg>`;
-            const placeholderDataUri = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
-            setVideoUrl(placeholderDataUri);
-            setVideoMeta({ duration: "N/A", resolution: "Template" });
-            setProgress(50);
-            setProgressMessage('Structuring prompt...');
-            const newAnalysisJson = await structurePrompt(template.prompt, masterPrompt);
-            const newAnalysis: VideoAnalysis = JSON.parse(newAnalysisJson);
-            populateStateFromAnalysis(newAnalysis);
-            setProgress(100);
-            setAnalysisState(AnalysisState.SUCCESS);
-        } catch (err) {
-            setError(err instanceof Error ? `Failed to load template: ${err.message}` : 'An unknown error occurred.');
-            resetState();
-        }
-    }, [masterPrompt, resetState]);
+        const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" class="dark:bg-gray-800 bg-gray-200 text-gray-500 dark:text-gray-400"><rect width="1920" height="1080" fill="currentColor" fill-opacity="0.1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="64" fill="currentColor">Prompt from Library</text></svg>`;
+        const placeholderDataUri = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
+        setVideoUrl(placeholderDataUri);
+        setVideoMeta({ duration: "N/A", resolution: "Template" });
+        populateStateFromAnalysis(template.structuredPrompt);
+        setExtractedFrames([]); // No original frames for templates
+    }, [resetState]);
 
     const onHistoryItemLoaded = useCallback(() => { setSelectedHistoryItem(null); }, []);
     
@@ -662,10 +511,11 @@ const App: React.FC = () => {
             setTimeout(() => {
                 resetState();
                 setAnalysisState(AnalysisState.SUCCESS);
-                populateStateFromAnalysis(selectedHistoryItem.videoAnalysis);
+                populateStateFromAnalysis(selectedHistoryItem.structuredPrompt);
                 setFile(null);
                 setVideoUrl(selectedHistoryItem.thumbnail);
                 setVideoMeta({ duration: "N/A", resolution: "From History" });
+                setExtractedFrames([]); // Can't re-test consistency on history items
                 onHistoryItemLoaded();
             }, 0);
         }
@@ -778,11 +628,19 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12">
                             {/* --- Left Column --- */}
                             <div className="flex flex-col gap-y-12 animate-fade-in-slide-up">
-                                <MasterPromptSection masterPrompt={masterPrompt} setMasterPrompt={setMasterPrompt} presets={masterPromptPresets} />
-                                <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
-                                    <LibraryIcon className="h-5 w-5 mr-2" />
-                                    Browse Prompt Library
-                                </BlurryButton>
+                                <AnalysisInstructionSection />
+                                <div className="flex flex-col items-center">
+                                    <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
+                                        <LibraryIcon className="h-5 w-5 mr-2" />
+                                        Browse Prompt Library
+                                    </BlurryButton>
+                                    <div className="relative flex py-5 items-center w-full">
+                                        <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
+                                        <span className="flex-shrink mx-4 text-xs uppercase font-semibold text-text-secondary-light dark:text-text-secondary-dark">Or Upload Your Own</span>
+                                        <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
+                                    </div>
+                                </div>
+
                                 {analysisState === AnalysisState.SUCCESS && file ? (
                                     <AnalyzedFilePreview file={file} videoUrl={videoUrl} onReset={resetState} />
                                 ) : (
@@ -802,16 +660,14 @@ const App: React.FC = () => {
 
                             {/* --- Right Column --- */}
                             <div className="mt-12 lg:mt-0">
-                                {analysisState === AnalysisState.SUCCESS && videoAnalysis ? (
+                                {analysisState === AnalysisState.SUCCESS && structuredPrompt ? (
                                     <ResultsView
                                         file={file}
                                         videoUrl={videoUrl}
                                         videoMeta={videoMeta}
                                         generatedPrompt={generatedPrompt}
-                                        videoAnalysis={videoAnalysis}
+                                        structuredPrompt={structuredPrompt}
                                         isCopied={isCopied}
-                                        isJsonCopied={isJsonCopied}
-                                        isUpdatingJson={isUpdatingJson}
                                         isRefining={isRefining}
                                         isDetailing={isDetailing}
                                         refineTone={refineTone}
@@ -821,7 +677,10 @@ const App: React.FC = () => {
                                         refineInstruction={refineInstruction}
                                         negativePrompt={negativePrompt}
                                         setNegativePrompt={setNegativePrompt}
-                                        handlePromptChange={(e) => setGeneratedPrompt(e.target.value)}
+                                        handlePromptChange={(e) => {
+                                            setGeneratedPrompt(e.target.value);
+                                            setStructuredPrompt(prev => prev ? { ...prev, core_focus: e.target.value } : null);
+                                        }}
                                         handleCopy={handleCopy}
                                         handleRefinePrompt={handleRefinePrompt}
                                         setRefineTone={setRefineTone}

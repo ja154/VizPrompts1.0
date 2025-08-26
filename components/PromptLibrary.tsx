@@ -28,14 +28,20 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
         setRemixError('');
 
         try {
-            // This is a placeholder for getting the master prompt. In a real app, this would come from context or props.
-            const masterPromptForRemix = "You are a creative assistant for generating text-to-video prompts.";
-            const newPrompts = await remixPrompt(promptToRemix.prompt, masterPromptForRemix);
+            // FIX: The remixPrompt function expects only one argument.
+            const newPrompts = await remixPrompt(promptToRemix.prompt);
 
+            // FIX: The PromptTemplate type requires a `structuredPrompt` property.
+            // We create one by copying the original and updating the core_focus and objective.
             const newTemplates: PromptTemplate[] = newPrompts.map((p, index) => ({
                 id: `${promptToRemix.id}-remix-${Date.now()}-${index}`,
                 title: `${promptToRemix.title} (Remix ${index + 1})`,
                 prompt: p,
+                structuredPrompt: {
+                    ...promptToRemix.structuredPrompt,
+                    core_focus: p,
+                    objective: `A creative remix of: "${promptToRemix.structuredPrompt.objective}"`,
+                },
             }));
 
             setLibraryData(currentData => {

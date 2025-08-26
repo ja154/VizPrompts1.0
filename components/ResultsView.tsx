@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { MagicWandIcon, ArticleIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon } from './icons';
-import { ConsistencyResult, VideoAnalysis } from '../types.ts';
+import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon } from './icons';
+import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
 import GlowCard from './GlowCard';
 import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
-
-type JsonView = 'structured' | 'detailed' | 'superStructured';
 
 interface ScoreGaugeProps {
     score: number;
@@ -145,27 +143,27 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                     </div>
                                 )}
 
-                                {result.suggested_improvements && (
+                                {result.revised_prompt && (
                                     <div className="text-left mt-4">
-                                        <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Suggested Improvement:</h4>
+                                        <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Revised Prompt:</h4>
                                         <div className="relative bg-bg-uploader-light dark:bg-bg-uploader-dark p-4 rounded-lg border border-border-primary-light dark:border-border-primary-dark">
                                             <button 
-                                                onClick={() => navigator.clipboard.writeText(result.suggested_improvements)} 
+                                                onClick={() => navigator.clipboard.writeText(result.revised_prompt)} 
                                                 className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/80 transition-colors tooltip"
                                             >
                                                 <i className="far fa-copy"></i>
                                                 <span className="tooltip-text" style={{width: '100px'}}>Copy Text</span>
                                             </button>
                                             <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap font-mono pr-8">
-                                                {result.suggested_improvements}
+                                                {result.revised_prompt}
                                             </p>
                                         </div>
                                     </div>
                                 )}
-                                {result.suggested_improvements && (
+                                {result.revised_prompt && (
                                     <div className="mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-4 text-center">
                                         <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">Implement these improvements?</p>
-                                        <BlurryButton onClick={() => onApplyImprovements(result.suggested_improvements)}>
+                                        <BlurryButton onClick={() => onApplyImprovements(result.revised_prompt)}>
                                             <i className="fas fa-check mr-2"></i>
                                             Apply & Close
                                         </BlurryButton>
@@ -186,10 +184,8 @@ interface ResultsViewProps {
     videoUrl: string;
     videoMeta: { duration: string; resolution: string } | null;
     generatedPrompt: string;
-    videoAnalysis: VideoAnalysis | null;
+    structuredPrompt: StructuredPrompt | null;
     isCopied: boolean;
-    isJsonCopied: boolean;
-    isUpdatingJson: boolean;
     isRefining: boolean;
     isDetailing: boolean;
     refineTone: string;
@@ -200,7 +196,7 @@ interface ResultsViewProps {
     negativePrompt: string;
     setNegativePrompt: (value: string) => void;
     handlePromptChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-    handleCopy: (text: string, type: 'prompt' | 'json') => void;
+    handleCopy: (text: string) => void;
     handleRefinePrompt: (mode: 'refine' | 'detail') => void;
     setRefineTone: (value: string) => void;
     setRefineStyle: (value: string) => void;
@@ -218,8 +214,8 @@ interface ResultsViewProps {
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({
-    file, videoUrl, videoMeta, generatedPrompt, videoAnalysis,
-    isCopied, isJsonCopied, isUpdatingJson, isRefining, isDetailing,
+    file, videoUrl, videoMeta, generatedPrompt, structuredPrompt,
+    isCopied, isRefining, isDetailing,
     refineTone, refineStyle, refineCamera, refineLighting, refineInstruction,
     negativePrompt, setNegativePrompt,
     handlePromptChange, handleCopy, handleRefinePrompt,
@@ -227,23 +223,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     isTestingConsistency, consistencyResult, showConsistencyModal,
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error
 }) => {
-    const [currentJsonView, setCurrentJsonView] = useState<JsonView>('detailed');
-
     const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
-
-    const getJsonForView = () => {
-        if (!videoAnalysis) return 'Analysis data not available.';
-        switch (currentJsonView) {
-            case 'structured':
-                return JSON.stringify(videoAnalysis.holistic_impression, null, 2);
-            case 'detailed':
-                return JSON.stringify(videoAnalysis.systematic_deconstruction, null, 2);
-            case 'superStructured':
-                return JSON.stringify(videoAnalysis, null, 2);
-            default:
-                return '';
-        }
-    };
 
     return (
         <>
@@ -259,7 +239,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             <div className="flex flex-col gap-8">
               <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
-                  <h2 className="text-xl font-bold mb-4 flex items-center"><FilmIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Media Analysis</h2>
+                  <h2 className="text-xl font-bold mb-4 flex items-center"><FilmIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Media Preview</h2>
                   <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
                     {isVideo ? (
                         <video src={videoUrl} controls className="w-full h-full object-contain" key={videoUrl}></video>
@@ -283,18 +263,37 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold flex items-center"><ArticleIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Text Prompt</h2>
-                    <div className="flex items-center space-x-2">
-                      <button onClick={() => handleCopy(generatedPrompt, 'prompt')} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
-                        {isCopied ? <i className="fas fa-check text-green-500"></i> : <i className="far fa-copy"></i>}
-                        <span className="tooltip-text">Copy prompt</span>
-                      </button>
-                    </div>
+                    <h2 className="text-xl font-bold flex items-center"><BrainCircuitIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Analysis Results</h2>
                   </div>
-                  <textarea 
-                    value={generatedPrompt}
-                    onChange={handlePromptChange}
-                    className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
+                  <div className="space-y-4">
+                    <div>
+                        <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Objective</h3>
+                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt?.objective}</p>
+                    </div>
+                     <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Core Focus</h3>
+                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
+                                {isCopied ? <i className="fas fa-check text-green-500"></i> : <i className="far fa-copy"></i>}
+                                <span className="tooltip-text">Copy prompt</span>
+                            </button>
+                        </div>
+                        <textarea 
+                            value={generatedPrompt}
+                            onChange={handlePromptChange}
+                            className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
+                    </div>
+                     <div>
+                        <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Constraints</h3>
+                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1 whitespace-pre-wrap">{structuredPrompt?.constraints}</p>
+                    </div>
+                    {structuredPrompt?.enhancements && (
+                         <div>
+                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Enhancements</h3>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt.enhancements}</p>
+                        </div>
+                    )}
+                  </div>
                 </div>
               </GlowCard>
               
@@ -353,53 +352,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                        <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing}>
                         {isDetailing ? (<><i className="fas fa-spinner fa-spin"></i><span>Detailing...</span></>) : "Add More Detail"}
                       </BlurryButton>
-                      <div className="tooltip">
+                      <div className="tooltip-container">
                         <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
                           {isTestingConsistency ? (<><i className="fas fa-spinner fa-spin"></i><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
                         </BlurryButton>
                         {!hasOriginalFrames && (
                           <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>
-                            Only available for new media uploads, not for history items or library prompts.
+                            Only available for new media uploads, not library prompts.
                           </span>
                         )}
                       </div>
                   </div>
-                </div>
-              </GlowCard>
-    
-              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                <div className="rounded-xl p-6">
-                   <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-xl font-bold flex items-center">
-                        <BrainCircuitIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>
-                        JSON Prompt
-                        {isUpdatingJson && <i className="fas fa-spinner fa-spin ml-3 text-gray-700 dark:text-stone-300"></i>}
-                      </h2>
-                       <div className="flex space-x-2">
-                           <button onClick={() => handleCopy(getJsonForView(), 'json')} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
-                               {isJsonCopied ? <i className="fas fa-check text-green-500"></i> : <i className="far fa-copy"></i>}
-                               <span className="tooltip-text">Copy JSON</span>
-                           </button>
-                       </div>
-                   </div>
-    
-                    <div className="mb-4 flex flex-wrap gap-2">
-                        <button onClick={() => setCurrentJsonView('structured')} className={`px-3 py-1 rounded-lg font-medium transition-all duration-200 ${currentJsonView === 'structured' ? 'bg-purple-600 text-white' : 'bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700'}`}>Structured</button>
-                        <button 
-                          onClick={() => setCurrentJsonView('detailed')} 
-                          className={`px-3 py-1 rounded-lg font-medium transition-all duration-200 ${currentJsonView === 'detailed' ? 'bg-purple-600 text-white' : 'bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                        >Detailed</button>
-                        <button 
-                          onClick={() => setCurrentJsonView('superStructured')} 
-                          className={`px-3 py-1 rounded-lg font-medium transition-all duration-200 ${currentJsonView === 'superStructured' ? 'bg-purple-600 text-white' : 'bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                        >Super Structured</button>
-                    </div>
-                    
-                    <pre className="w-full p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark overflow-auto" style={{minHeight: '200px', maxHeight: '400px'}}>
-                      <code>
-                        {getJsonForView()}
-                      </code>
-                    </pre>
                 </div>
               </GlowCard>
             </div>
