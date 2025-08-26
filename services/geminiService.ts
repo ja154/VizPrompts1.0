@@ -234,6 +234,76 @@ export const generateStructuredPromptFromFrames = async (
     }
 };
 
+/**
+ * Generates a structured prompt as a raw JSON string from media frames.
+ * @param frameDataUrls An array of data URLs for the video frames or images.
+ * @param onProgress A callback to update the UI with processing messages.
+ * @returns A promise that resolves to a JSON string.
+ */
+export const generateJsonPromptFromFrames = async (
+    frameDataUrls: string[],
+    onProgress: (message: string) => void
+): Promise<string> => {
+    if (frameDataUrls.length === 0) {
+        throw new Error("No frames provided for analysis.");
+    }
+
+    onProgress('Analyzing media with Gemini for JSON output...');
+
+    const imagePartsForAnalysis = frameDataUrls.map(dataUrl => {
+        const { base64, mimeType } = parseDataUrl(dataUrl);
+        return { inlineData: { mimeType, data: base64 } };
+    });
+
+    const analysisPrompt = `Analyze the following media frames and generate a structured JSON output based on your core instructions.`;
+    
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            objective: {
+                type: Type.STRING,
+                description: "The user's inferred goal, e.g., 'Create a social media ad for a luxury watch'."
+            },
+            core_focus: {
+                type: Type.STRING,
+                description: "A detailed text prompt combining all key elements: subjects, objects, actions, style, and text."
+            },
+            constraints: {
+                type: Type.STRING,
+                description: "A summary of all technical specs, format requirements, tone, and elements to exclude."
+            },
+            enhancements: {
+                type: Type.STRING,
+                description: "Optional suggestions for improving the prompt or scene."
+            }
+        },
+        required: ["objective", "core_focus", "constraints"]
+    };
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
+        config: {
+            systemInstruction: "You are a hyper-detailed Media-to-Prompt Analyzer. Your task is to meticulously analyze the provided media frames and generate a single, raw JSON object according to the provided schema. Be exhaustive in your descriptions. Capture every detail about subjects, actions, setting, style, lighting, colors, and camera work. Your goal is to create a production-ready, highly descriptive prompt. Do not include any other text or markdown formatting outside of the JSON object.",
+            responseMimeType: "application/json",
+            responseSchema: responseSchema,
+        }
+    });
+
+    const jsonText = response.text.trim();
+    
+    // Basic validation to ensure we got something that looks like JSON
+    try {
+        JSON.parse(jsonText);
+    } catch {
+        throw new Error("The AI model did not return a valid JSON object.");
+    }
+    
+    // Beautify the JSON string for display
+    return JSON.stringify(JSON.parse(jsonText), null, 2);
+};
+
+
 export const remixPrompt = async (promptToRemix: string): Promise<string[]> => {
     const remixingPrompt = `
       You are a creative assistant. Your task is to "remix" a given text-to-video prompt.
@@ -320,6 +390,79 @@ ${negativePrompt}
     }
 };
 
+export const refineJsonPrompt = async (
+    currentJsonString: string, 
+    userInstruction: string, 
+    negativePrompt: string
+): Promise<string> => {
+    // Validate if the input is valid JSON
+    try {
+        JSON.parse(currentJsonString);
+    } catch {
+        throw new Error("The provided text is not a valid JSON object and cannot be refined.");
+    }
+
+    let content = `
+Your task is to rewrite and enhance the following JSON prompt based on my instruction. 
+Produce a new, hyper-detailed JSON object that is a significant improvement. 
+Apply the changes across all relevant fields to ensure a cohesive result.
+
+CURRENT JSON:
+${currentJsonString}
+
+INSTRUCTION:
+"${userInstruction}"
+`;
+
+    if (negativePrompt) {
+        content += `
+IMPORTANT: The values in the refined JSON MUST NOT include any of the following elements, concepts, or styles:
+${negativePrompt}
+`;
+    }
+
+    // Define the schema to ensure the output is also a valid JSON object with the correct structure.
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            objective: { type: Type.STRING },
+            core_focus: { type: Type.STRING },
+            constraints: { type: Type.STRING },
+            enhancements: { type: Type.STRING }
+        },
+        required: ["objective", "core_focus", "constraints"]
+    };
+
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: content,
+            config: {
+                systemInstruction: `You are an expert prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a JSON prompt based on a user's instruction. Analyze the instruction carefully and apply it comprehensively across all relevant fields of the JSON object (objective, core_focus, constraints, enhancements) to ensure a cohesive, hyper-detailed, and significantly improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+                temperature: 0.7,
+            }
+        });
+
+        const newJsonString = response.text;
+        if (!newJsonString) {
+            throw new Error("The AI model did not return a valid refined JSON object.");
+        }
+        
+        // Validate and beautify the output
+        const parsedJson = JSON.parse(newJsonString);
+        return JSON.stringify(parsedJson, null, 2);
+
+    } catch (error) {
+        console.error("Error calling Gemini API for JSON refinement:", error);
+        if (error instanceof Error) {
+            throw new Error(`Failed to refine JSON from AI: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while communicating with the AI for JSON refinement.");
+    }
+};
+
 export const remixVideoStyle = async (
     frameDataUrls: string[],
     targetStyle: string
@@ -381,7 +524,7 @@ export const testPromptConsistency = async (
 
     **Input:**
     1.  **Text Prompt:** A user-provided description.
-    2.  **Media Frames:** A sequence of images from a video or a single image.
+    2.  **Media Frames:** A sequence of images from a single image.
 
     **Instructions:**
 
@@ -405,14 +548,14 @@ export const testPromptConsistency = async (
         - **<70:** The prompt is a poor representation of the media.
     - **\`explanation\` (string):** A concise, one-sentence summary explaining the score.
     - **\`missing_details\` (array of strings):** A list of the most critical visual details from the media that are missing from the prompt. This list must be precise and actionable.
-    - **\`revised_prompt\` (string):** The improved prompt. **This MUST be constructed by taking the ORIGINAL prompt and carefully integrating the \`missing_details\`. Do not rewrite the original prompt from scratch.** The goal is to enhance, not replace. The revised prompt should be a more complete and accurate description of the media.
+    - **\`revised_output\` (string):** The improved prompt. **This MUST be constructed by taking the ORIGINAL prompt and carefully integrating the \`missing_details\`. Do not rewrite the original prompt from scratch.** The goal is to enhance, not replace. The revised prompt should be a more complete and accurate description of the media.
 
     **Example Task:**
 
     *   **Prompt:** "A person walking on the beach."
     *   **Media:** An image showing a woman with blonde hair in a red sundress walking barefoot on a wet sandy beach during sunset, with seagulls in the background.
 
-    **Example \`revised_prompt\`:**
+    **Example \`revised_output\`:**
     "A woman with blonde hair, wearing a red sundress, walking barefoot on a wet sandy beach during a vibrant sunset. Seagulls are visible in the background."
 
     **Now, analyze the following prompt and media frames:**
@@ -447,12 +590,12 @@ export const testPromptConsistency = async (
                 description: "A list of specific, crucial visual details missing from the prompt.",
                 items: { type: Type.STRING }
             },
-            revised_prompt: {
+            revised_output: {
                 type: Type.STRING,
                 description: "The original prompt enhanced with the missing details. It should not be a complete rewrite."
             }
         },
-        required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_prompt"]
+        required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_output"]
     };
 
     try {
@@ -475,7 +618,7 @@ export const testPromptConsistency = async (
             typeof result.consistency_score !== 'number' ||
             typeof result.explanation !== 'string' ||
             !Array.isArray(result.missing_details) ||
-            typeof result.revised_prompt !== 'string'
+            typeof result.revised_output !== 'string'
         ) {
             throw new Error("The AI model returned an invalid data structure for the consistency check.");
         }
@@ -488,5 +631,114 @@ export const testPromptConsistency = async (
             throw new Error(`AI consistency check failed: ${error.message}`);
         }
         throw new Error("An unknown error occurred while communicating with the AI for consistency check.");
+    }
+};
+
+export const testJsonConsistency = async (
+    jsonString: string,
+    frameDataUrls: string[]
+): Promise<ConsistencyResult> => {
+    if (frameDataUrls.length === 0) {
+        throw new Error("No frames provided for consistency check.");
+    }
+
+    const imageParts = frameDataUrls.map(dataUrl => {
+        const { base64, mimeType } = parseDataUrl(dataUrl);
+        return { inlineData: { mimeType, data: base64 } };
+    });
+
+    const consistencyCheckPrompt = `
+    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a JSON prompt object and a series of media frames. Your goal is to improve the JSON prompt so its values perfectly represent the provided media.
+
+    **Input:**
+    1.  **JSON Prompt:** A user-provided JSON object with fields like 'objective', 'core_focus', and 'constraints'.
+    2.  **Media Frames:** A sequence of images.
+
+    **Instructions:**
+
+    **Step 1: Forensic Analysis (Internal Monologue)**
+    *   **Analyze the JSON:** Deconstruct the values in the provided JSON object.
+    *   **Analyze the Media:** Exhaustively list every observable detail in the media frames.
+    *   **Compare:** Identify details present in the media that are missing, vague, or mis-represented in the JSON values.
+
+    **Step 2: Generate JSON Report**
+    Based on your analysis, generate a single, raw JSON object with the following structure. Do NOT add any conversational text or markdown.
+
+    **JSON Schema:**
+    - **\`reasoning\` (object):** Your detailed analysis.
+        - \`analysis_of_prompt\` (string): Your breakdown of the JSON values.
+        - \`analysis_of_media\` (string): Your exhaustive list of visual details.
+        - \`comparison\` (string): Your point-by-point comparison.
+    - **\`consistency_score\` (integer):** A strict score from 0 to 100.
+    - **\`explanation\` (string):** A concise summary explaining the score.
+    - **\`missing_details\` (array of strings):** A list of the most critical visual details from the media that are missing from the JSON.
+    - **\`revised_output\` (string):** The improved JSON prompt as a string. **This MUST be constructed by taking the ORIGINAL JSON and carefully integrating the \`missing_details\` into the appropriate fields ('objective', 'core_focus', 'constraints').** The goal is to enhance, not just replace the 'core_focus'. The output must be a valid, beautified JSON string.
+
+    **Now, analyze the following JSON prompt and media frames:**
+
+    JSON Prompt:
+    \`\`\`json
+    ${jsonString}
+    \`\`\`
+    `;
+
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            reasoning: {
+                type: Type.OBJECT,
+                properties: {
+                    analysis_of_prompt: { type: Type.STRING },
+                    analysis_of_media: { type: Type.STRING },
+                    comparison: { type: Type.STRING }
+                },
+                required: ["analysis_of_prompt", "analysis_of_media", "comparison"]
+            },
+            consistency_score: { type: Type.INTEGER },
+            explanation: { type: Type.STRING },
+            missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
+            revised_output: {
+                type: Type.STRING,
+                description: "The revised and beautified JSON prompt as a string.",
+            }
+        },
+        required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_output"]
+    };
+
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [{ text: consistencyCheckPrompt }, ...imageParts] },
+            config: {
+                systemInstruction: `You are a consistency checker. Your task is to return a single, structured JSON report object adhering to the provided schema. The 'revised_output' field must contain a valid, complete JSON string.`,
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+            }
+        });
+
+        const resultJsonStr = response.text.trim();
+        const result: ConsistencyResult = JSON.parse(resultJsonStr);
+
+        // Validate the structure and the nested JSON
+        if (!result.reasoning || typeof result.consistency_score !== 'number' || typeof result.revised_output !== 'string') {
+            throw new Error("The AI model returned an invalid data structure for the consistency check.");
+        }
+        try {
+            // check if revised_output is valid json
+            const parsedRevised = JSON.parse(result.revised_output);
+            // Re-stringify to ensure it's beautified
+            result.revised_output = JSON.stringify(parsedRevised, null, 2);
+        } catch {
+            throw new Error("The 'revised_output' from the AI was not a valid JSON string.");
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error("Error during Gemini API JSON consistency check:", error);
+        if (error instanceof Error) {
+            throw new Error(`AI JSON consistency check failed: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred during AI communication for JSON consistency check.");
     }
 };

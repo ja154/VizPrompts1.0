@@ -22,13 +22,13 @@ export const promptLibraryData: PromptCategory[] = [
         prompts: [
             { 
                 id: "cs01", 
-                title: "Neon-Noir Alleyway", 
-                prompt: "Subject: A lone figure in a classic trench coat standing motionless in the shadows. Setting: A rain-slicked alley in a futuristic cyberpunk city at night. Details: Vivid neon signs cast long reflections in puddles on the cracked pavement, steam billows from grimy vents. Camera: Eye-level, wide shot capturing the full alley. Lighting: High-contrast, moody, atmospheric lighting dominated by pink and blue neon glow. Style: Cinematic, photorealistic, Blade Runner aesthetic. Mood: Mysterious, lonely, contemplative. 4K detail.",
+                title: "Aquatic Cyberpunk Metropolis", 
+                prompt: "A wide, cinematic shot of a sprawling futuristic city, possibly underwater or partially submerged in dark, reflective water. The foreground features a sleek, dark, low-flying hovercraft or flying car with prominent, bright rectangular headlights, moving from left to right across the frame, leaving a faint vapor trail. The midground and background showcase two dominant, translucent spherical force fields or domes. The left dome encapsulates a towering cityscape glowing intensely with cyan and electric blue neon lights, while the right dome encloses another cityscape illuminated with vibrant purple and magenta hues. Between and around these futuristic structures, ancient, eroded dark stone columns and partially submerged ruins are visible. The water surface is covered with clusters of glowing, bioluminescent aquatic plants in shades of blue and green. In later frames, the scene expands to reveal a more expansive view of the city: numerous slender, incredibly tall skyscrapers with vertical strips of glowing blue and purple lights pierce the dark sky. A massive, smooth, moon-like spherical structure dominates the central background, with a glowing blue humanoid figure visible within a portal at its base. Multiple smaller, similar futuristic flying vehicles are seen in the distance, leaving faint trails. The overall aesthetic is a blend of advanced technology and ancient ruins, bathed in the glow of neon and bioluminescence, creating a mystical, high-tech environment.",
                 structuredPrompt: {
-                    objective: "Create a cinematic, atmospheric image of a mysterious character in a cyberpunk setting.",
-                    core_focus: "Subject: A lone figure in a classic trench coat standing motionless in the shadows. Setting: A rain-slicked alley in a futuristic cyberpunk city at night. Details: Vivid neon signs cast long reflections in puddles on the cracked pavement, steam billows from grimy vents. Style: Cinematic, photorealistic, Blade Runner aesthetic.",
-                    constraints: "Camera: Eye-level, wide shot. Lighting: High-contrast, moody, pink and blue neon glow. Mood: Mysterious, lonely, contemplative. 4K detail.",
-                    enhancements: "Consider adding flying vehicles in the distant sky to enhance the futuristic feel."
+                    objective: "To create a highly detailed, cinematic visual representation of a futuristic, aquatic cyberpunk city at night, featuring advanced aerial vehicles and bioluminescent architecture, with an emphasis on vibrant neon lighting and a mysterious, ethereal atmosphere.",
+                    core_focus: "A wide, cinematic shot of a sprawling futuristic city, possibly underwater or partially submerged in dark, reflective water. The foreground features a sleek, dark, low-flying hovercraft or flying car with prominent, bright rectangular headlights, moving from left to right across the frame, leaving a faint vapor trail. The midground and background showcase two dominant, translucent spherical force fields or domes. The left dome encapsulates a towering cityscape glowing intensely with cyan and electric blue neon lights, while the right dome encloses another cityscape illuminated with vibrant purple and magenta hues. Between and around these futuristic structures, ancient, eroded dark stone columns and partially submerged ruins are visible. The water surface is covered with clusters of glowing, bioluminescent aquatic plants in shades of blue and green. In later frames, the scene expands to reveal a more expansive view of the city: numerous slender, incredibly tall skyscrapers with vertical strips of glowing blue and purple lights pierce the dark sky. A massive, smooth, moon-like spherical structure dominates the central background, with a glowing blue humanoid figure visible within a portal at its base. Multiple smaller, similar futuristic flying vehicles are seen in the distance, leaving faint trails. The overall aesthetic is a blend of advanced technology and ancient ruins, bathed in the glow of neon and bioluminescence, creating a mystical, high-tech environment.",
+                    constraints: "The image must maintain a dark, nocturnal setting with high contrast between glowing elements and deep shadows. The color palette should be dominated by deep blues, purples, cyans, and magenta, with minimal natural light. All vehicles should be sleek, dark, and futuristic, devoid of visible traditional propulsion. No visible human figures other than the stylized glowing humanoid in the central structure. The perspective should be wide-angle and cinematic, avoiding close-ups that break the scale of the city. Maintain an ethereal and slightly mysterious tone. The water should have subtle ripples and reflections.",
+                    enhancements: "Consider adding subtle atmospheric effects like mist or glowing particles in the air to enhance the ethereal quality. Experiment with different light refraction effects through the water and the spherical domes. Introduce more varied designs for the bioluminescent flora to add complexity to the aquatic landscape. Explore dynamic camera movements that sweep across the vastness of the city, highlighting its scale and intricate details."
                 }
             },
             { 
@@ -80,87 +80,7 @@ export const promptLibraryData: PromptCategory[] = [
                 structuredPrompt: {
                     objective: "Generate a detailed character portrait of a steampunk inventor.",
                     core_focus: "Subject: A brilliant female steampunk inventor with oil-smudged cheeks and wild hair. Attire: Intricate brass goggles, tool-filled leather apron over a Victorian dress. Setting: Her cluttered workshop with gears, blueprints, and clockwork gadgets.",
-                    constraints: "Camera: Medium shot portrait. Lighting: Warm light from a single Edison bulb. Style: Steampunk concept art. Mood: Inventive, intelligent, focused.",
-                }
-            },
-        ]
-    },
-    {
-        name: "Anime & Manga",
-        icon: AnimeIcon,
-        prompts: [
-            {
-                id: "am01",
-                title: "Shonen Hero Power-Up",
-                prompt: "Subject: A classic anime hero. Action: Screaming as they power up, a fiery golden aura erupting around them, cracking the ground and causing rocks to levitate. Camera: Dynamic low-angle shot. Style: 90s Shonen anime style, cel shading, with intense speed lines and energy effects, inspired by Dragon Ball Z. Mood: Intense, explosive, powerful.",
-                structuredPrompt: {
-                    objective: "Create a classic Shonen anime power-up scene.",
-                    core_focus: "Subject: An anime hero screaming as they power up, with a fiery golden aura erupting around them, cracking the ground and causing rocks to levitate.",
-                    constraints: "Camera: Dynamic low-angle shot. Style: 90s Shonen anime, cel shading, intense speed lines, inspired by Dragon Ball Z. Mood: Intense, explosive, powerful.",
-                }
-            },
-        ]
-    },
-    {
-        name: "Artistic Styles",
-        icon: PaintBrushIcon,
-        prompts: [
-            {
-                id: "as01",
-                title: "HDR Country Field",
-                prompt: "Create an HDR photograph of a woman with pale freckled skin standing in a country field, wearing a sundress and a straw hat, smiling warmly. The lighting should be golden hour daylight to enhance the lifelike quality, with the warm glow of the setting sun highlighting the scene and creating a vibrant, detailed image.",
-                structuredPrompt: {
-                    objective: "Create a vibrant, lifelike HDR photograph of a woman in a field.",
-                    core_focus: "Subject: A woman with pale freckled skin, wearing a sundress and a straw hat, smiling warmly. Setting: A country field.",
-                    constraints: "Style: HDR Photography. Lighting: Golden hour daylight. Mood: Warm, joyful, serene.",
-                }
-            },
-        ]
-    },
-    {
-        name: "Environments",
-        icon: GlobeAltIcon,
-        prompts: [
-            {
-                id: "en01",
-                title: "Floating Sky Islands",
-                prompt: "Setting: Expansive landscape of majestic floating islands in the sky, at sunrise. Details: The islands are connected by ancient, moss-covered vine bridges, and beautiful waterfalls cascade from the edges into the clouds below. Camera: Epic, panoramic wide shot. Color palette: Vibrant colors, warm pinks and oranges from the sunrise against the green islands and white clouds. Style: Fantasy landscape painting, inspired by Studio Ghibli. Mood: Awe-inspiring, peaceful, adventurous.",
-                structuredPrompt: {
-                    objective: "Generate a beautiful fantasy landscape inspired by Studio Ghibli.",
-                    core_focus: "Setting: Expansive landscape of majestic floating islands in the sky, at sunrise. Details: The islands are connected by ancient, moss-covered vine bridges, and beautiful waterfalls cascade from the edges into the clouds below.",
-                    constraints: "Camera: Epic, panoramic wide shot. Colors: Warm pinks and oranges from sunrise, green islands, white clouds. Style: Fantasy landscape painting. Mood: Awe-inspiring, peaceful, adventurous.",
-                }
-            },
-        ]
-    },
-    {
-        name: "Logo & Brand Identity",
-        icon: LogoIcon,
-        prompts: [
-            {
-                id: "lb01",
-                title: "Minimalist Geometric Logo",
-                prompt: "Image Type: Vector art logo design. Subject: An abstract 'V' shape formed by clean, intersecting circles and thin lines. Style: Minimalist, geometric, modern. Color Palette: Blue and grey on a clean white background. Mood: Professional, clean, for a tech startup.",
-                structuredPrompt: {
-                    objective: "Design a minimalist, professional logo for a tech startup.",
-                    core_focus: "Subject: An abstract 'V' shape formed by clean, intersecting circles and thin lines.",
-                    constraints: "Image Type: Vector art. Style: Minimalist, geometric, modern. Colors: Blue and grey on a white background. Mood: Professional, clean.",
-                }
-            },
-        ]
-    },
-    {
-        name: "Abstract Art",
-        icon: PaintBrushIcon,
-        prompts: [
-            {
-                id: "aa01",
-                title: "Liquid Marble",
-                prompt: "Image Type: Abstract macro photography. Subject: Swirling, iridescent liquids blending together. Style: Resembles liquid marble or oil on water, with shimmering metallic textures. Color Palette: Rich black, gold, and teal. Detail: High detail capturing the intricate fluid dynamics. Mood: Elegant, luxurious, mesmerizing.",
-                structuredPrompt: {
-                    objective: "Create a luxurious and mesmerizing abstract image of swirling liquids.",
-                    core_focus: "Subject: Swirling, iridescent liquids blending together, resembling liquid marble or oil on water.",
-                    constraints: "Image Type: Abstract macro photography. Style: Shimmering metallic textures. Colors: Rich black, gold, and teal. Detail: High detail on fluid dynamics. Mood: Elegant, luxurious.",
+                    constraints: "Camera: Detailed character portrait, medium shot. Lighting: Warm, inviting light from a single Edison bulb hanging overhead. Style: Steampunk concept art, detailed illustration. Mood: Inventive, intelligent, focused."
                 }
             },
         ]

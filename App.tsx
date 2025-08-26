@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
-import { generateSimplePromptFromFrames, generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency } from './services/geminiService.ts';
+import { generateSimplePromptFromFrames, generateStructuredPromptFromFrames, generateJsonPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency } from './services/geminiService.ts';
 import { BrainCircuitIcon, LibraryIcon, FilmIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
@@ -22,6 +22,7 @@ import { PromptTemplate } from './data/promptLibrary.ts';
 
 type Theme = 'light' | 'dark';
 export type AppView = 'main' | 'profile' | 'history';
+export type OutputFormat = 'text' | 'json';
 
 interface UploaderProps {
     analysisState: AnalysisState;
@@ -130,21 +131,41 @@ const Uploader: React.FC<UploaderProps> = ({
     );
 };
 
-const AnalysisInstructionSection = () => {
+interface AnalysisInstructionSectionProps {
+    outputFormat: OutputFormat;
+    setOutputFormat: (format: OutputFormat) => void;
+}
+
+const AnalysisInstructionSection: React.FC<AnalysisInstructionSectionProps> = ({ outputFormat, setOutputFormat }) => {
     return (
         <section>
-            <h2 className="text-3xl font-bold text-center mb-12">
-                <span className="title-glow-subtle bg-gradient-to-r from-gray-700 to-gray-900 dark:from-stone-100 dark:to-stone-300 bg-clip-text text-transparent flex items-center justify-center gap-4">
-                    <BrainCircuitIcon className="w-8 h-8" />
-                    AI Analysis Protocol
-                </span>
-            </h2>
             <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
-                    <h3 className="text-xl font-bold mb-4">How It Works</h3>
-                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">
-                        Our AI uses a sophisticated analysis framework to deconstruct your media. It identifies the user's inferred goal, extracts key elements for the core prompt, and outlines technical or stylistic constraints to generate a detailed, structured, and production-ready prompt.
+                    <h3 className="text-xl font-bold mb-4 flex items-center">
+                        <BrainCircuitIcon className="w-6 h-6 mr-3" />
+                        AI Analysis Protocol
+                    </h3>
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-6">
+                        Our AI deconstructs your media to infer goals, extract key elements, and outline constraints, generating a detailed, production-ready prompt.
                     </p>
+
+                    <div className="border-t border-border-primary-light dark:border-border-primary-dark pt-4">
+                        <label className="block text-sm font-medium text-text-primary-light dark:text-text-primary-dark mb-2">Output Format</label>
+                         <div className="inline-flex rounded-lg shadow-sm bg-bg-uploader-light dark:bg-bg-uploader-dark p-1">
+                            <button
+                                onClick={() => setOutputFormat('text')}
+                                className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${outputFormat === 'text' ? 'bg-purple-600 text-white' : 'text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-200 dark:hover:bg-gray-700/50'}`}
+                            >
+                                Structured Text
+                            </button>
+                            <button
+                                onClick={() => setOutputFormat('json')}
+                                className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${outputFormat === 'json' ? 'bg-purple-600 text-white' : 'text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-200 dark:hover:bg-gray-700/50'}`}
+                            >
+                                JSON
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </GlowCard>
         </section>
@@ -284,6 +305,7 @@ const App: React.FC = () => {
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
+    const [outputFormat, setOutputFormat] = useState<OutputFormat>('text');
 
     // State lifted from Uploader
     const [file, setFile] = useState<File | null>(null);
@@ -407,13 +429,24 @@ const App: React.FC = () => {
             });
             setProgress(60);
             setAnalysisState(AnalysisState.SUCCESS);
+            
+            let finalAnalysis: StructuredPrompt;
+            if (outputFormat === 'json') {
+                const jsonString = await generateJsonPromptFromFrames(frameDataUrls, () => {});
+                finalAnalysis = {
+                    objective: "JSON Format Output",
+                    core_focus: jsonString,
+                    constraints: "All details are contained within the JSON in the Core Focus section."
+                };
+            } else {
+                finalAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, () => { });
+            }
 
-            const detailedAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, (msg) => { });
-            populateStateFromAnalysis(detailedAnalysis);
+            populateStateFromAnalysis(finalAnalysis);
             addToHistory({
                 id: Date.now().toString(),
-                prompt: detailedAnalysis.core_focus,
-                structuredPrompt: detailedAnalysis,
+                prompt: finalAnalysis.core_focus,
+                structuredPrompt: finalAnalysis,
                 thumbnail: firstFrame,
                 timestamp: new Date().toISOString(),
             });
@@ -437,7 +470,7 @@ const App: React.FC = () => {
         setError('');
         let instruction = '';
         if (mode === 'detail') {
-            instruction = 'Add significantly more detail to the prompt. Make it richer, more descriptive, and include more sensory information and intricate visual elements.';
+            instruction = 'Add significantly more detail to the prompt. Make it richer, more descriptive, and include more sensory information and intricate visual elements. If the input is JSON, apply these details across all relevant fields like core_focus, constraints, and objective.';
         } else {
             instruction = 'Refine the following prompt. ';
             if (refineTone) instruction += `Give it a ${refineTone} tone. `;
@@ -450,10 +483,14 @@ const App: React.FC = () => {
             }
         }
         try {
-            const newPrompt = await refinePrompt(generatedPrompt, instruction, negativePrompt);
+            const newPrompt = outputFormat === 'json'
+                ? await refineJsonPrompt(generatedPrompt, instruction, negativePrompt)
+                : await refinePrompt(generatedPrompt, instruction, negativePrompt);
+            
             setGeneratedPrompt(newPrompt);
             if (structuredPrompt) {
-                setStructuredPrompt({ ...structuredPrompt, core_focus: newPrompt });
+                const newCoreFocus = outputFormat === 'json' ? newPrompt : newPrompt;
+                setStructuredPrompt(prev => prev ? { ...prev, core_focus: newCoreFocus } : null);
             }
         } catch (err) {
             setError(err instanceof Error ? `Failed to refine prompt: ${err.message}` : 'An unknown error occurred during refinement.');
@@ -468,12 +505,25 @@ const App: React.FC = () => {
             setError("Cannot test consistency without a prompt and original media frames.");
             return;
         }
+
         setIsTestingConsistency(true);
         setConsistencyResult(null);
         setShowConsistencyModal(true);
         setError('');
         try {
-            const result = await testPromptConsistency(generatedPrompt, extractedFrames);
+            let result: ConsistencyResult;
+            if (outputFormat === 'json') {
+                try {
+                    JSON.parse(generatedPrompt); // Validate it's JSON before sending
+                    result = await testJsonConsistency(generatedPrompt, extractedFrames);
+                } catch (e) {
+                     setError("The current text is not valid JSON and cannot be tested.");
+                     setIsTestingConsistency(false);
+                     return;
+                }
+            } else {
+                result = await testPromptConsistency(generatedPrompt, extractedFrames);
+            }
             setConsistencyResult(result);
         } catch (err) {
             setError(err instanceof Error ? `${err.message}` : 'An unknown error occurred during the consistency test.');
@@ -482,11 +532,17 @@ const App: React.FC = () => {
         }
     };
 
-    const handleApplyImprovements = (newPrompt: string) => {
-        setGeneratedPrompt(newPrompt);
+    const handleApplyImprovements = (newOutput: string) => {
+        // The newOutput from the consistency check is the new canonical prompt,
+        // whether it's a plain string or a JSON string.
+        setGeneratedPrompt(newOutput);
+
+        // We also update our structured prompt state to keep it in sync.
+        // The core_focus property is always the container for the main output.
         if (structuredPrompt) {
-            setStructuredPrompt({ ...structuredPrompt, core_focus: newPrompt });
+            setStructuredPrompt({ ...structuredPrompt, core_focus: newOutput });
         }
+
         setShowConsistencyModal(false);
         setConsistencyResult(null);
         setError('');
@@ -628,7 +684,6 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12">
                             {/* --- Left Column --- */}
                             <div className="flex flex-col gap-y-12 animate-fade-in-slide-up">
-                                <AnalysisInstructionSection />
                                 <div className="flex flex-col items-center">
                                     <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
                                         <LibraryIcon className="h-5 w-5 mr-2" />
@@ -644,17 +699,20 @@ const App: React.FC = () => {
                                 {analysisState === AnalysisState.SUCCESS && file ? (
                                     <AnalyzedFilePreview file={file} videoUrl={videoUrl} onReset={resetState} />
                                 ) : (
-                                     <Uploader
-                                        analysisState={analysisState}
-                                        file={file}
-                                        videoUrl={videoUrl}
-                                        error={error}
-                                        progress={progress}
-                                        progressMessage={progressMessage}
-                                        onFileSelect={handleFileSelect}
-                                        onStartAnalysis={handleStartAnalysis}
-                                        onResetState={resetState}
-                                    />
+                                     <>
+                                        <Uploader
+                                            analysisState={analysisState}
+                                            file={file}
+                                            videoUrl={videoUrl}
+                                            error={error}
+                                            progress={progress}
+                                            progressMessage={progressMessage}
+                                            onFileSelect={handleFileSelect}
+                                            onStartAnalysis={handleStartAnalysis}
+                                            onResetState={resetState}
+                                        />
+                                        <AnalysisInstructionSection outputFormat={outputFormat} setOutputFormat={setOutputFormat} />
+                                     </>
                                 )}
                             </div>
 

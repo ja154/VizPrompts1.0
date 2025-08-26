@@ -45,5 +45,5 @@ export interface ConsistencyResult {
     consistency_score: number;
     explanation: string;
     missing_details: string[];
-    revised_prompt: string;
+    revised_output: string;
 }

@@ -63,7 +63,7 @@ interface ConsistencyModalProps {
     isLoading: boolean;
     result: ConsistencyResult | null;
     error: string | null;
-    onApplyImprovements: (prompt: string) => void;
+    onApplyImprovements: (output: string) => void;
 }
 
 const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, isLoading, result, error, onApplyImprovements }) => {
@@ -143,27 +143,33 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                     </div>
                                 )}
 
-                                {result.revised_prompt && (
+                                {result.revised_output && (
                                     <div className="text-left mt-4">
-                                        <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Revised Prompt:</h4>
+                                        <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Revised Output:</h4>
                                         <div className="relative bg-bg-uploader-light dark:bg-bg-uploader-dark p-4 rounded-lg border border-border-primary-light dark:border-border-primary-dark">
                                             <button 
-                                                onClick={() => navigator.clipboard.writeText(result.revised_prompt)} 
+                                                onClick={() => navigator.clipboard.writeText(result.revised_output)} 
                                                 className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/80 transition-colors tooltip"
                                             >
                                                 <i className="far fa-copy"></i>
                                                 <span className="tooltip-text" style={{width: '100px'}}>Copy Text</span>
                                             </button>
-                                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap font-mono pr-8">
-                                                {result.revised_prompt}
-                                            </p>
+                                            {result.revised_output.trim().startsWith('{') ? (
+                                                <pre className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap font-mono pr-8">
+                                                    <code>{result.revised_output}</code>
+                                                </pre>
+                                            ) : (
+                                                <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap font-mono pr-8">
+                                                    {result.revised_output}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
                                 )}
-                                {result.revised_prompt && (
+                                {result.revised_output && (
                                     <div className="mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-4 text-center">
                                         <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">Implement these improvements?</p>
-                                        <BlurryButton onClick={() => onApplyImprovements(result.revised_prompt)}>
+                                        <BlurryButton onClick={() => onApplyImprovements(result.revised_output)}>
                                             <i className="fas fa-check mr-2"></i>
                                             Apply & Close
                                         </BlurryButton>
@@ -208,7 +214,7 @@ interface ResultsViewProps {
     showConsistencyModal: boolean;
     onTestConsistency: () => void;
     onCloseConsistencyModal: () => void;
-    onApplyImprovements: (prompt: string) => void;
+    onApplyImprovements: (output: string) => void;
     hasOriginalFrames: boolean;
     error: string;
 }
@@ -224,6 +230,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error
 }) => {
     const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
+    const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
 
     return (
         <>
@@ -266,10 +273,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     <h2 className="text-xl font-bold flex items-center"><BrainCircuitIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Analysis Results</h2>
                   </div>
                   <div className="space-y-4">
-                    <div>
-                        <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Objective</h3>
-                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt?.objective}</p>
-                    </div>
+                    {!isJsonOutput && (
+                        <div>
+                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Objective</h3>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt?.objective}</p>
+                        </div>
+                    )}
                      <div>
                         <div className="flex justify-between items-center mb-1">
                             <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Core Focus</h3>
@@ -278,16 +287,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                                 <span className="tooltip-text">Copy prompt</span>
                             </button>
                         </div>
-                        <textarea 
-                            value={generatedPrompt}
-                            onChange={handlePromptChange}
-                            className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
+                        {isJsonOutput ? (
+                             <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark overflow-auto">
+                                <pre className="text-sm"><code>{generatedPrompt}</code></pre>
+                             </div>
+                        ) : (
+                            <textarea 
+                                value={generatedPrompt}
+                                onChange={handlePromptChange}
+                                className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
+                        )}
                     </div>
-                     <div>
-                        <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Constraints</h3>
-                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1 whitespace-pre-wrap">{structuredPrompt?.constraints}</p>
-                    </div>
-                    {structuredPrompt?.enhancements && (
+                     {!isJsonOutput && (
+                        <div>
+                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Constraints</h3>
+                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1 whitespace-pre-wrap">{structuredPrompt?.constraints}</p>
+                        </div>
+                     )}
+                    {!isJsonOutput && structuredPrompt?.enhancements && (
                          <div>
                             <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Enhancements</h3>
                             <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt.enhancements}</p>
@@ -299,7 +316,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               
               {/* Refine Card */}
               <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                <div className="rounded-xl p-6">
+                <div className="rounded-xl p-6 relative">
                   <h2 className="text-xl font-bold mb-4 flex items-center"><MagicWandIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300" />Refine Prompt</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
@@ -358,7 +375,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         </BlurryButton>
                         {!hasOriginalFrames && (
                           <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>
-                            Only available for new media uploads, not library prompts.
+                            Only available for new media uploads.
                           </span>
                         )}
                       </div>
