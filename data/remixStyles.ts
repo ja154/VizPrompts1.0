@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AnimeIcon, PaintBrushIcon, FilmIcon, LogoIcon, MagicWandIcon } from '../components/icons.tsx';
 

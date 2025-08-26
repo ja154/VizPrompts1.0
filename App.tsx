@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
-import { generateSimplePromptFromFrames, generateStructuredPromptFromFrames, generateJsonPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency } from './services/geminiService.ts';
-import { BrainCircuitIcon, LibraryIcon, FilmIcon } from './components/icons.tsx';
+import { generateSimplePromptFromFrames, generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson } from './services/geminiService.ts';
+import { BrainCircuitIcon, FilmIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
 import UploaderIcon from './components/UploaderIcon.tsx';
@@ -16,13 +16,10 @@ import ProfilePage from './components/ProfilePage.tsx';
 import HistoryPage from './components/HistoryPage.tsx';
 import UserMenu from './components/UserMenu.tsx';
 import PatternBackground from './components/PatternBackground.tsx';
-import PromptLibrary from './components/PromptLibrary.tsx';
-import { PromptTemplate } from './data/promptLibrary.ts';
 
 
 type Theme = 'light' | 'dark';
 export type AppView = 'main' | 'profile' | 'history';
-export type OutputFormat = 'text' | 'json';
 
 interface UploaderProps {
     analysisState: AnalysisState;
@@ -131,12 +128,7 @@ const Uploader: React.FC<UploaderProps> = ({
     );
 };
 
-interface AnalysisInstructionSectionProps {
-    outputFormat: OutputFormat;
-    setOutputFormat: (format: OutputFormat) => void;
-}
-
-const AnalysisInstructionSection: React.FC<AnalysisInstructionSectionProps> = ({ outputFormat, setOutputFormat }) => {
+const AnalysisInstructionSection = () => {
     return (
         <section>
             <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
@@ -145,27 +137,9 @@ const AnalysisInstructionSection: React.FC<AnalysisInstructionSectionProps> = ({
                         <BrainCircuitIcon className="w-6 h-6 mr-3" />
                         AI Analysis Protocol
                     </h3>
-                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-6">
-                        Our AI deconstructs your media to infer goals, extract key elements, and outline constraints, generating a detailed, production-ready prompt.
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                        Our AI deconstructs your media to infer goals, extract key elements, and outline constraints, generating a detailed, production-ready prompt. The result will be in a structured text format, which can then be converted to JSON if needed.
                     </p>
-
-                    <div className="border-t border-border-primary-light dark:border-border-primary-dark pt-4">
-                        <label className="block text-sm font-medium text-text-primary-light dark:text-text-primary-dark mb-2">Output Format</label>
-                         <div className="inline-flex rounded-lg shadow-sm bg-bg-uploader-light dark:bg-bg-uploader-dark p-1">
-                            <button
-                                onClick={() => setOutputFormat('text')}
-                                className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${outputFormat === 'text' ? 'bg-purple-600 text-white' : 'text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-200 dark:hover:bg-gray-700/50'}`}
-                            >
-                                Structured Text
-                            </button>
-                            <button
-                                onClick={() => setOutputFormat('json')}
-                                className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors duration-200 ${outputFormat === 'json' ? 'bg-purple-600 text-white' : 'text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-200 dark:hover:bg-gray-700/50'}`}
-                            >
-                                JSON
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </GlowCard>
         </section>
@@ -181,7 +155,7 @@ const socialLinks = [
     { name: 'Reddit', href: 'https://www.reddit.com/u/AIcreatorske/s/Bb8Y6bErp1', icon: <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12,2A10,10,0,1,0,22,12,10,10,0,0,0,12,2Zm1.69,14.23a1.4,1.4,0,0,1-3.38,0,1.39,1.39,0,0,1,1.69-2.31,1.39,1.39,0,0,1,1.69,2.31Zm.37-3.47a.79.79,0,0,1-.72.5,1.4,1.4,0,0,1-1.34,0,.79.79,0,0,1-.72-.5,1,1,0,0,1,1-1.15,3.48,3.48,0,0,1,1.75.49,1,1,0,0,1-.49,1.16ZM8.73,12.5a1.14,1.14,0,1,1,1.14-1.14A1.14,1.14,0,0,1,8.73,12.5Zm6.54,0a1.14,1.14,0,1,1,1.14-1.14A1.14,1.14,0,0,1,15.27,12.5Z"/></svg> },
 ];
 
-const Footer = ({ onNavigate, onOpenLibrary }: { onNavigate: (view: AppView) => void; onOpenLibrary: () => void; }) => (
+const Footer = ({ onNavigate }: { onNavigate: (view: AppView) => void; }) => (
     <footer className="mt-24 border-t border-border-primary-light/50 dark:border-border-primary-dark/50 bg-bg-secondary-light/50 dark:bg-bg-secondary-dark/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -206,7 +180,6 @@ const Footer = ({ onNavigate, onOpenLibrary }: { onNavigate: (view: AppView) => 
                         <li><button onClick={() => onNavigate('main')} className="footer-link">Home</button></li>
                         <li><button onClick={() => onNavigate('profile')} className="footer-link">Profile</button></li>
                         <li><button onClick={() => onNavigate('history')} className="footer-link">History</button></li>
-                        <li><button onClick={onOpenLibrary} className="footer-link">Prompt Library</button></li>
                     </ul>
                 </div>
 
@@ -303,9 +276,6 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<AppView>('main');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
-    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<PromptTemplate | null>(null);
-    const [outputFormat, setOutputFormat] = useState<OutputFormat>('text');
 
     // State lifted from Uploader
     const [file, setFile] = useState<File | null>(null);
@@ -330,6 +300,10 @@ const App: React.FC = () => {
     const [isTestingConsistency, setIsTestingConsistency] = useState(false);
     const [consistencyResult, setConsistencyResult] = useState<ConsistencyResult | null>(null);
     const [showConsistencyModal, setShowConsistencyModal] = useState(false);
+    const [isRemixing, setIsRemixing] = useState(false);
+    const [remixStyle, setRemixStyle] = useState('');
+    const [isConvertingToJson, setIsConvertingToJson] = useState(false);
+    const [isApplyingImprovements, setIsApplyingImprovements] = useState(false);
     
     // Logic lifted from Uploader
     const resetState = useCallback(() => {
@@ -356,6 +330,10 @@ const App: React.FC = () => {
         setIsTestingConsistency(false);
         setConsistencyResult(null);
         setShowConsistencyModal(false);
+        setIsRemixing(false);
+        setRemixStyle('');
+        setIsConvertingToJson(false);
+        setIsApplyingImprovements(false);
     }, [videoUrl]);
 
     const populateStateFromAnalysis = (analysis: StructuredPrompt) => {
@@ -430,18 +408,8 @@ const App: React.FC = () => {
             setProgress(60);
             setAnalysisState(AnalysisState.SUCCESS);
             
-            let finalAnalysis: StructuredPrompt;
-            if (outputFormat === 'json') {
-                const jsonString = await generateJsonPromptFromFrames(frameDataUrls, () => {});
-                finalAnalysis = {
-                    objective: "JSON Format Output",
-                    core_focus: jsonString,
-                    constraints: "All details are contained within the JSON in the Core Focus section."
-                };
-            } else {
-                finalAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, () => { });
-            }
-
+            const finalAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, () => { });
+            
             populateStateFromAnalysis(finalAnalysis);
             addToHistory({
                 id: Date.now().toString(),
@@ -483,13 +451,14 @@ const App: React.FC = () => {
             }
         }
         try {
-            const newPrompt = outputFormat === 'json'
+            const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
+            const newPrompt = isJsonOutput
                 ? await refineJsonPrompt(generatedPrompt, instruction, negativePrompt)
                 : await refinePrompt(generatedPrompt, instruction, negativePrompt);
             
             setGeneratedPrompt(newPrompt);
             if (structuredPrompt) {
-                const newCoreFocus = outputFormat === 'json' ? newPrompt : newPrompt;
+                const newCoreFocus = isJsonOutput ? newPrompt : newPrompt;
                 setStructuredPrompt(prev => prev ? { ...prev, core_focus: newCoreFocus } : null);
             }
         } catch (err) {
@@ -512,7 +481,9 @@ const App: React.FC = () => {
         setError('');
         try {
             let result: ConsistencyResult;
-            if (outputFormat === 'json') {
+            const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
+
+            if (isJsonOutput) {
                 try {
                     JSON.parse(generatedPrompt); // Validate it's JSON before sending
                     result = await testJsonConsistency(generatedPrompt, extractedFrames);
@@ -533,95 +504,97 @@ const App: React.FC = () => {
     };
 
     const handleApplyImprovements = (newOutput: string) => {
-        // The newOutput from the consistency check is the new canonical prompt,
-        // whether it's a plain string or a JSON string.
-        setGeneratedPrompt(newOutput);
-
-        // We also update our structured prompt state to keep it in sync.
-        // The core_focus property is always the container for the main output.
-        if (structuredPrompt) {
-            setStructuredPrompt({ ...structuredPrompt, core_focus: newOutput });
-        }
-
+        setIsApplyingImprovements(true);
         setShowConsistencyModal(false);
         setConsistencyResult(null);
         setError('');
+    
+        setTimeout(() => {
+            // Always update the main prompt display value.
+            setGeneratedPrompt(newOutput);
+    
+            if (structuredPrompt) {
+                const isCurrentlyJson = structuredPrompt.objective === 'JSON Format Output';
+                
+                if (isCurrentlyJson) {
+                    // For JSON mode, the `newOutput` is a stringified full structured prompt.
+                    // We parse it to update other fields like constraints, but keep
+                    // our special objective to stay in JSON view.
+                    try {
+                        const parsed = JSON.parse(newOutput);
+                        setStructuredPrompt({
+                            objective: "JSON Format Output",
+                            core_focus: newOutput, // The core_focus for JSON view is the full string.
+                            constraints: parsed.constraints || structuredPrompt.constraints,
+                            enhancements: parsed.enhancements || structuredPrompt.enhancements
+                        });
+                    } catch (e) {
+                        // Fallback if parsing fails, just update the main content.
+                        setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
+                    }
+                } else {
+                    // For text mode, the `newOutput` is just the revised core_focus.
+                    setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
+                }
+            }
+            
+            setIsApplyingImprovements(false);
+        }, 500);
     };
-    
-    const loadTemplate = useCallback(async (template: PromptTemplate) => {
-        resetState();
-        setAnalysisState(AnalysisState.SUCCESS);
-        setProgressMessage('Loading template...');
-        const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" class="dark:bg-gray-800 bg-gray-200 text-gray-500 dark:text-gray-400"><rect width="1920" height="1080" fill="currentColor" fill-opacity="0.1"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="64" fill="currentColor">Prompt from Library</text></svg>`;
-        const placeholderDataUri = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
-        setVideoUrl(placeholderDataUri);
-        setVideoMeta({ duration: "N/A", resolution: "Template" });
-        populateStateFromAnalysis(template.structuredPrompt);
-        setExtractedFrames([]); // No original frames for templates
-    }, [resetState]);
 
-    const onHistoryItemLoaded = useCallback(() => { setSelectedHistoryItem(null); }, []);
-    
-    useEffect(() => {
-        if (selectedHistoryItem) {
-            setTimeout(() => {
-                resetState();
-                setAnalysisState(AnalysisState.SUCCESS);
-                populateStateFromAnalysis(selectedHistoryItem.structuredPrompt);
-                setFile(null);
-                setVideoUrl(selectedHistoryItem.thumbnail);
-                setVideoMeta({ duration: "N/A", resolution: "From History" });
-                setExtractedFrames([]); // Can't re-test consistency on history items
-                onHistoryItemLoaded();
-            }, 0);
+    const handleRemixStyle = async () => {
+        if (!remixStyle || extractedFrames.length === 0) {
+            setError("Please select a style and ensure media is uploaded to remix.");
+            return;
         }
-    }, [selectedHistoryItem, onHistoryItemLoaded, resetState]);
-
-    const onTemplateConsumed = useCallback(() => { setSelectedTemplate(null); }, []);
-    
-    useEffect(() => {
-        if (selectedTemplate) {
-            loadTemplate(selectedTemplate);
-            onTemplateConsumed();
+        setIsRemixing(true);
+        setError('');
+        try {
+            const newPrompt = await remixVideoStyle(extractedFrames, remixStyle);
+            setGeneratedPrompt(newPrompt);
+            setStructuredPrompt({
+                objective: `A video in the style of ${remixStyle}, based on the original media.`,
+                core_focus: newPrompt,
+                constraints: `The aesthetic must be strictly '${remixStyle}'. All motion and subjects should be adapted to this style.`,
+                enhancements: "The original motion has been re-interpreted in a new artistic style."
+            });
+        } catch (err) {
+            setError(err instanceof Error ? `Failed to remix style: ${err.message}` : 'An unknown error occurred during remixing.');
+        } finally {
+            setIsRemixing(false);
         }
-    }, [selectedTemplate, loadTemplate, onTemplateConsumed]);
-
-
-    const handleSelectHistoryItem = (item: PromptHistoryItem) => {
-        setSelectedHistoryItem(item);
-        setCurrentView('main');
     };
 
-    const handleAuthSuccess = () => {
-        setIsAuthModalOpen(false);
-        setCurrentView('profile');
-    };
-
-    const handleThemeToggle = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-    };
+    const handleConvertToJason = async () => {
+        if (!structuredPrompt) return;
     
-    const handleLogout = () => {
-        logout();
-        setCurrentView('main');
-    }
-
-    const handleSelectFromLibrary = (template: PromptTemplate) => {
-        setIsLibraryOpen(false);
-        setSelectedTemplate(template);
-    };
-    
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') as Theme;
-        if (savedTheme) {
-            setTheme(savedTheme);
-        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            setTheme('dark');
+        // Don't convert if it's already JSON.
+        try {
+            JSON.parse(generatedPrompt);
+            // It's already JSON, do nothing.
+            return;
+        } catch (e) {
+            // It's not JSON, proceed.
         }
-    }, []);
-
+    
+        setIsConvertingToJson(true);
+        setError('');
+        try {
+            const jsonString = await convertPromptToJson(structuredPrompt);
+            setGeneratedPrompt(jsonString);
+            // Update structured prompt to reflect JSON output mode
+            setStructuredPrompt({
+                objective: "JSON Format Output",
+                core_focus: jsonString,
+                constraints: "All details are contained within the JSON in the Core Focus section."
+            });
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to convert to JSON.');
+        } finally {
+            setIsConvertingToJson(false);
+        }
+    };
+    
     useEffect(() => {
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
@@ -629,97 +602,99 @@ const App: React.FC = () => {
             document.documentElement.classList.remove('dark');
         }
     }, [theme]);
-    
+
+    const handleToggleTheme = () => {
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
+    };
+
+    const handleNavigate = (view: AppView) => {
+        setCurrentView(view);
+    };
+
+    const handleSelectHistoryItem = (item: PromptHistoryItem) => {
+        resetState();
+        setAnalysisState(AnalysisState.SUCCESS);
+        setStructuredPrompt(item.structuredPrompt);
+        setGeneratedPrompt(item.prompt);
+        setVideoUrl(item.thumbnail);
+        setVideoMeta({ duration: 'From History', resolution: 'N/A' });
+        setFile(new File([], `${item.prompt.substring(0, 20)}.history`, { type: 'text/plain' }));
+        setCurrentView('main');
+    };
+
     return (
         <>
             <PatternBackground />
-            <PromptLibrary 
-                isOpen={isLibraryOpen}
-                onClose={() => setIsLibraryOpen(false)}
-                onSelectPrompt={handleSelectFromLibrary}
-            />
-            <div className="relative z-10 flex flex-col min-h-screen">
+
+            {isAuthModalOpen && (
                 <Auth 
                     isOpen={isAuthModalOpen} 
                     onClose={() => setIsAuthModalOpen(false)}
-                    onAuthSuccess={handleAuthSuccess}
+                    onAuthSuccess={() => setIsAuthModalOpen(false)}
                 />
+            )}
 
-                <header className="relative">
-                    <nav className="absolute top-0 left-0 right-0 z-20 flex justify-between items-center p-4 sm:p-6 lg:p-8">
-                        <div>
-                            {currentUser ? (
-                                <UserMenu 
-                                    currentUser={currentUser}
-                                    onNavigate={setCurrentView}
-                                    onLogout={handleLogout}
-                                />
-                            ) : (
-                                <BlurryButton onClick={() => setIsAuthModalOpen(true)}>
-                                    Sign In
-                                </BlurryButton>
-                            )}
-                        </div>
-                        <div>
-                             <ThemeSwitch theme={theme} onToggleTheme={handleThemeToggle} />
-                        </div>
-                    </nav>
+            <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <nav className="flex justify-between items-center w-full">
+                    {/* Left-aligned controls */}
+                    <div className="flex-1 flex justify-start">
+                        {!currentUser && (
+                            <BlurryButton onClick={() => setIsAuthModalOpen(true)}>
+                                Sign In
+                            </BlurryButton>
+                        )}
+                    </div>
 
-                    <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12 md:pt-28 md:pb-16 text-center">
-                         <div className="flex flex-col items-center justify-center space-y-6">
-                            <div onClick={() => { setCurrentView('main'); resetState(); }} className="inline-flex flex-col items-center cursor-pointer group">
-                                <AnimatedAppName />
-                            </div>
-                            <p className="max-w-4xl mx-auto text-base md:text-lg text-center text-text-primary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
-                                Welcome to VizPrompts! Instantly turn any video or image into detailed AI prompts.
-                                <br />
-                                Just <strong>upload a file</strong> or <strong>browse the library</strong> to start your creative journey.
-                            </p>
+                    {/* Centered Logo */}
+                    <div className="flex-shrink-0">
+                         <div onClick={() => handleNavigate('main')} className="flex items-center gap-2 cursor-pointer group">
+                            <LogoLoader />
                         </div>
                     </div>
-                </header>
 
-                <main className="container mx-auto px-4 sm:px-6 lg:px-8 flex-grow">
-                    {currentView === 'main' && (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12">
-                            {/* --- Left Column --- */}
-                            <div className="flex flex-col gap-y-12 animate-fade-in-slide-up">
-                                <div className="flex flex-col items-center">
-                                    <BlurryButton onClick={() => setIsLibraryOpen(true)} className="mb-4">
-                                        <LibraryIcon className="h-5 w-5 mr-2" />
-                                        Browse Prompt Library
-                                    </BlurryButton>
-                                    <div className="relative flex py-5 items-center w-full">
-                                        <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
-                                        <span className="flex-shrink mx-4 text-xs uppercase font-semibold text-text-secondary-light dark:text-text-secondary-dark">Or Upload Your Own</span>
-                                        <div className="flex-grow border-t border-border-primary-light dark:border-border-primary-dark"></div>
-                                    </div>
-                                </div>
+                    {/* Right-aligned User Controls */}
+                    <div className="flex-1 flex justify-end items-center gap-4">
+                       <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
+                       {currentUser && (
+                            <UserMenu currentUser={currentUser} onNavigate={handleNavigate} onLogout={logout} />
+                       )}
+                    </div>
+                </nav>
+            </header>
 
-                                {analysisState === AnalysisState.SUCCESS && file ? (
-                                    <AnalyzedFilePreview file={file} videoUrl={videoUrl} onReset={resetState} />
+            <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+                {currentView === 'main' && (
+                     <>
+                        <div className="text-center mb-16">
+                             <AnimatedAppName />
+                            <p className="mt-4 max-w-3xl mx-auto text-lg text-text-secondary-light dark:text-text-secondary-dark animate-fade-in-slide-up animation-delay-200">
+                                Instantly convert any video or image into hyper-detailed, production-ready prompts for generative AI models.
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-16">
+                            <div className="space-y-8 animate-fade-in-slide-up animation-delay-100">
+                                {analysisState === AnalysisState.SUCCESS ? (
+                                    <AnalyzedFilePreview file={file!} videoUrl={videoUrl} onReset={resetState} />
                                 ) : (
-                                     <>
-                                        <Uploader
-                                            analysisState={analysisState}
-                                            file={file}
-                                            videoUrl={videoUrl}
-                                            error={error}
-                                            progress={progress}
-                                            progressMessage={progressMessage}
-                                            onFileSelect={handleFileSelect}
-                                            onStartAnalysis={handleStartAnalysis}
-                                            onResetState={resetState}
-                                        />
-                                        <AnalysisInstructionSection outputFormat={outputFormat} setOutputFormat={setOutputFormat} />
-                                     </>
+                                    <Uploader 
+                                        analysisState={analysisState}
+                                        file={file}
+                                        videoUrl={videoUrl}
+                                        error={error}
+                                        progress={progress}
+                                        progressMessage={progressMessage}
+                                        onFileSelect={handleFileSelect}
+                                        onStartAnalysis={handleStartAnalysis}
+                                        onResetState={resetState}
+                                    />
                                 )}
+                                <AnalysisInstructionSection />
                             </div>
 
-                            {/* --- Right Column --- */}
-                            <div className="mt-12 lg:mt-0">
+                            <div>
                                 {analysisState === AnalysisState.SUCCESS && structuredPrompt ? (
-                                    <ResultsView
+                                    <ResultsView 
                                         file={file}
                                         videoUrl={videoUrl}
                                         videoMeta={videoMeta}
@@ -735,10 +710,7 @@ const App: React.FC = () => {
                                         refineInstruction={refineInstruction}
                                         negativePrompt={negativePrompt}
                                         setNegativePrompt={setNegativePrompt}
-                                        handlePromptChange={(e) => {
-                                            setGeneratedPrompt(e.target.value);
-                                            setStructuredPrompt(prev => prev ? { ...prev, core_focus: e.target.value } : null);
-                                        }}
+                                        handlePromptChange={(e) => setGeneratedPrompt(e.target.value)}
                                         handleCopy={handleCopy}
                                         handleRefinePrompt={handleRefinePrompt}
                                         setRefineTone={setRefineTone}
@@ -750,23 +722,31 @@ const App: React.FC = () => {
                                         consistencyResult={consistencyResult}
                                         showConsistencyModal={showConsistencyModal}
                                         onTestConsistency={handleTestConsistency}
-                                        onCloseConsistencyModal={() => { setShowConsistencyModal(false); setError(''); }}
+                                        onCloseConsistencyModal={() => setShowConsistencyModal(false)}
                                         onApplyImprovements={handleApplyImprovements}
                                         hasOriginalFrames={extractedFrames.length > 0}
                                         error={error}
+                                        isRemixing={isRemixing}
+                                        remixStyle={remixStyle}
+                                        setRemixStyle={setRemixStyle}
+                                        handleRemixStyle={handleRemixStyle}
+                                        isConvertingToJson={isConvertingToJson}
+                                        onConvertToJason={handleConvertToJason}
+                                        isApplyingImprovements={isApplyingImprovements}
                                     />
                                 ) : (
                                     <ResultsPlaceholder />
                                 )}
                             </div>
                         </div>
-                    )}
-                    {currentView === 'profile' && <ProfilePage />}
-                    {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={handleSelectHistoryItem} />}
-                </main>
-                
-                <Footer onNavigate={setCurrentView} onOpenLibrary={() => setIsLibraryOpen(true)} />
-            </div>
+                    </>
+                )}
+
+                {currentView === 'profile' && <ProfilePage />}
+                {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={handleSelectHistoryItem} />}
+            </main>
+
+            <Footer onNavigate={handleNavigate} />
         </>
     );
 };

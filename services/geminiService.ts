@@ -742,3 +742,74 @@ export const testJsonConsistency = async (
         throw new Error("An unknown error occurred during AI communication for JSON consistency check.");
     }
 };
+
+/**
+ * Converts a structured text prompt object to a JSON string.
+ * @param prompt The StructuredPrompt object to convert.
+ * @returns A promise that resolves to a formatted JSON string.
+ */
+export const convertPromptToJson = async (
+    prompt: StructuredPrompt
+): Promise<string> => {
+    const contentToConvert = `
+    Objective: ${prompt.objective}
+    Core Focus: ${prompt.core_focus}
+    Constraints: ${prompt.constraints}
+    ${prompt.enhancements ? `Enhancements: ${prompt.enhancements}` : ''}
+    `;
+
+    const conversionPrompt = `Convert the following structured text prompt into a single, raw JSON object. The JSON object must have keys "objective", "core_focus", "constraints", and "enhancements" (if present). Do not include any other text or markdown formatting outside of the JSON object.
+
+    TEXT TO CONVERT:
+    ${contentToConvert}
+    `;
+
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            objective: {
+                type: Type.STRING,
+                description: "The user's inferred goal."
+            },
+            core_focus: {
+                type: Type.STRING,
+                description: "A detailed text prompt combining all key elements."
+            },
+            constraints: {
+                type: Type.STRING,
+                description: "A summary of all technical specs and requirements."
+            },
+            enhancements: {
+                type: Type.STRING,
+                description: "Optional suggestions for improving the prompt."
+            }
+        },
+        required: ["objective", "core_focus", "constraints"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: conversionPrompt,
+            config: {
+                systemInstruction: "You are a data formatting expert. Your only task is to convert structured text into a clean, valid JSON object based on the provided schema.",
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+                temperature: 0.2, // Low temperature for deterministic conversion
+            }
+        });
+
+        const jsonText = response.text.trim();
+        
+        // Validate and beautify
+        const parsedJson = JSON.parse(jsonText);
+        return JSON.stringify(parsedJson, null, 2);
+
+    } catch (error) {
+        console.error("Error during Gemini API JSON conversion:", error);
+        if (error instanceof Error) {
+            throw new Error(`AI JSON conversion failed: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while converting the prompt to JSON.");
+    }
+};

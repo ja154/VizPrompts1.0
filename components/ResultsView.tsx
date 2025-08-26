@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon } from './icons';
+import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon } from './icons';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
 import GlowCard from './GlowCard';
 import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
+import { remixStyles } from '../data/remixStyles.ts';
 
 interface ScoreGaugeProps {
     score: number;
@@ -217,6 +218,13 @@ interface ResultsViewProps {
     onApplyImprovements: (output: string) => void;
     hasOriginalFrames: boolean;
     error: string;
+    isRemixing: boolean;
+    remixStyle: string;
+    setRemixStyle: (value: string) => void;
+    handleRemixStyle: () => void;
+    isConvertingToJson: boolean;
+    onConvertToJason: () => void;
+    isApplyingImprovements: boolean;
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({
@@ -227,7 +235,9 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     handlePromptChange, handleCopy, handleRefinePrompt,
     setRefineTone, setRefineStyle, setRefineCamera, setRefineLighting, setRefineInstruction,
     isTestingConsistency, consistencyResult, showConsistencyModal,
-    onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error
+    onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error,
+    isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
+    isConvertingToJson, onConvertToJason, isApplyingImprovements
 }) => {
     const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
     const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
@@ -287,16 +297,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                                 <span className="tooltip-text">Copy prompt</span>
                             </button>
                         </div>
-                        {isJsonOutput ? (
-                             <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark overflow-auto">
-                                <pre className="text-sm"><code>{generatedPrompt}</code></pre>
-                             </div>
-                        ) : (
-                            <textarea 
-                                value={generatedPrompt}
-                                onChange={handlePromptChange}
-                                className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
-                        )}
+                        <div className="relative">
+                            {isApplyingImprovements && (
+                                <div className="absolute inset-0 bg-bg-uploader-light/80 dark:bg-bg-uploader-dark/80 rounded-lg flex flex-col items-center justify-center z-10 animate-fade-in-slide-up" style={{ animationDuration: '200ms' }}>
+                                    <div className="w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="mt-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">Applying changes...</p>
+                                </div>
+                            )}
+                            {isJsonOutput ? (
+                                 <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark overflow-auto">
+                                    <pre className="text-sm"><code>{generatedPrompt}</code></pre>
+                                 </div>
+                            ) : (
+                                <textarea 
+                                    value={generatedPrompt}
+                                    onChange={handlePromptChange}
+                                    className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
+                            )}
+                        </div>
                     </div>
                      {!isJsonOutput && (
                         <div>
@@ -362,13 +380,23 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200 hover:border-purple-400 dark:hover:border-purple-500"></textarea>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                  <div className="flex flex-wrap gap-3 mt-4">
                       <BlurryButton onClick={() => handleRefinePrompt('refine')} disabled={isRefining || isDetailing}>
                         {isRefining ? (<><i className="fas fa-spinner fa-spin"></i><span>Refining...</span></>) : "Refine"}
                       </BlurryButton>
                        <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing}>
                         {isDetailing ? (<><i className="fas fa-spinner fa-spin"></i><span>Detailing...</span></>) : "Add More Detail"}
                       </BlurryButton>
+                      <div className="tooltip-container">
+                        <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput}>
+                          {isConvertingToJson ? (<><i className="fas fa-spinner fa-spin"></i><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
+                        </BlurryButton>
+                        {isJsonOutput && (
+                            <span className="tooltip-text" style={{width: 150, bottom: '110%'}}>
+                                Already in JSON format.
+                            </span>
+                        )}
+                      </div>
                       <div className="tooltip-container">
                         <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
                           {isTestingConsistency ? (<><i className="fas fa-spinner fa-spin"></i><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
@@ -380,6 +408,37 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         )}
                       </div>
                   </div>
+                </div>
+              </GlowCard>
+
+                {/* Video Style Remix Card */}
+              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
+                <div className="rounded-xl p-6 relative">
+                    <h2 className="text-xl font-bold mb-4 flex items-center">
+                        <PaintBrushIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300" />
+                        Video Style Remix
+                    </h2>
+                    <div className="grid grid-cols-1 gap-4 mb-4">
+                        <div>
+                            <label className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Target Style</label>
+                            <AnimatedList
+                                items={remixStyles.map(s => s.name)}
+                                selectedItem={remixStyle || null}
+                                onItemSelected={setRemixStyle}
+                                placeholder="Select a style"
+                            />
+                        </div>
+                    </div>
+                    <div className="tooltip-container">
+                        <BlurryButton onClick={handleRemixStyle} disabled={isRemixing || !hasOriginalFrames || !remixStyle}>
+                            {isRemixing ? (<><i className="fas fa-spinner fa-spin"></i><span>Remixing...</span></>) : "Remix Style"}
+                        </BlurryButton>
+                        {!hasOriginalFrames && (
+                            <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>
+                                Only available for new media uploads.
+                            </span>
+                        )}
+                    </div>
                 </div>
               </GlowCard>
             </div>
