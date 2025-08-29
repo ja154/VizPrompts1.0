@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon } from './icons';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
@@ -6,6 +7,7 @@ import GlowCard from './GlowCard';
 import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
 import { remixStyles } from '../data/remixStyles.ts';
+import SyntaxHighlightedTextarea from './SyntaxHighlightedTextarea.tsx';
 
 interface ScoreGaugeProps {
     score: number;
@@ -306,13 +308,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                             )}
                             {isJsonOutput ? (
                                  <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark overflow-auto">
-                                    <pre className="text-sm"><code>{generatedPrompt}</code></pre>
+                                    <pre className="text-sm font-mono whitespace-pre-wrap"><code>{generatedPrompt}</code></pre>
                                  </div>
                             ) : (
-                                <textarea 
+                                <SyntaxHighlightedTextarea
                                     value={generatedPrompt}
                                     onChange={handlePromptChange}
-                                    className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Your AI-generated text prompt will appear here..."></textarea>
+                                    placeholder="Your AI-generated text prompt will appear here..."
+                                />
                             )}
                         </div>
                     </div>
