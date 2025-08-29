@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
-import { generateSimplePromptFromFrames, generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson } from './services/geminiService.ts';
+import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson } from './services/geminiService.ts';
 import { BrainCircuitIcon, FilmIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
@@ -33,7 +33,7 @@ interface UploaderProps {
     onResetState: () => void;
 }
 
-const Uploader: React.FC<UploaderProps> = ({ 
+const Uploader: React.FC<UploaderProps> = ({
     analysisState, file, videoUrl, error, progress, progressMessage,
     onFileSelect, onStartAnalysis, onResetState
 }) => {
@@ -59,72 +59,85 @@ const Uploader: React.FC<UploaderProps> = ({
     };
 
     return (
-        <>
-            <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                {analysisState === AnalysisState.IDLE && (
-                    <div
-                        onClick={() => fileInputRef.current?.click()}
-                        onDrop={handleDrop}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 cursor-pointer hover:border-gray-500 dark:hover:border-stone-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-300 ease-in-out transform hover:scale-[1.01]"
-                    >
-                        <div className="flex flex-col items-center justify-center space-y-4">
-                            <div className="w-20 h-20 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                                <UploaderIcon />
-                            </div>
-                            <h3 className="text-lg font-medium transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-stone-300">Drag & drop your video or image here</h3>
-                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">or click to browse files</p>
-                            <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
+        <GlowCard className="bg-bg-uploader-light dark:bg-bg-uploader-dark rounded-2xl p-8 shadow-lg border border-border-primary-light dark:border-border-primary-dark min-h-[350px] flex flex-col justify-center">
+            {analysisState === AnalysisState.IDLE && (
+                <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 cursor-pointer hover:border-gray-500 dark:hover:border-stone-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-300 ease-in-out transform hover:scale-[1.01]"
+                >
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                        <div className="w-20 h-20 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                            <UploaderIcon />
                         </div>
-                        <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} className="hidden" accept="video/*,image/*" />
+                        <h3 className="text-lg font-medium transition-colors duration-300 group-hover:text-gray-700 dark:group-hover:text-stone-300">Drag & drop your video or image here</h3>
+                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">or click to browse files</p>
+                        <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
                     </div>
-                )}
+                    <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} className="hidden" accept="video/*,image/*" />
+                </div>
+            )}
 
-                {analysisState === AnalysisState.PREVIEW && file && (
-                    <div className="animate-fade-in-slide-up" style={{ animationDuration: '300ms' }}>
-                        <h3 className="text-xl font-bold mb-4 text-center">Ready to Analyze?</h3>
-                        <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
-                            {file?.type.startsWith('video/') ? (
-                                <video src={videoUrl} controls className="w-full h-full object-contain"></video>
-                            ) : (
-                                <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
-                            )}
-                        </div>
-                        <p className="text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark truncate" title={file.name}>{file.name}</p>
-                        <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                            <BlurryButton onClick={onStartAnalysis} className="flex-1">
-                                <i className="fas fa-magic mr-2"></i>
-                                Start Analysis
-                            </BlurryButton>
-                            <button
-                                onClick={onResetState}
-                                className="flex-1 group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
-                            >
-                                <span className="relative w-full h-full px-5 py-2.5 text-sm rounded-lg leading-none flex items-center justify-center gap-2">
-                                    <i className="fas fa-undo mr-2"></i>
-                                    Choose Another File
-                                </span>
-                            </button>
-                        </div>
+            {analysisState === AnalysisState.PREVIEW && file && (
+                <div className="animate-fade-in-slide-up" style={{ animationDuration: '300ms' }}>
+                    <h3 className="text-xl font-bold mb-4 text-center">Ready to Analyze?</h3>
+                    <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
+                        {file?.type.startsWith('video/') ? (
+                            <video src={videoUrl} controls className="w-full h-full object-contain"></video>
+                        ) : (
+                            <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
+                        )}
                     </div>
-                )}
-
-                {analysisState === AnalysisState.PROCESSING && (
-                    <div className="mt-6">
-                        <div className="flex justify-between mb-2">
-                            <span className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">{progressMessage || 'Processing media...'}</span>
-                            <span className="text-sm font-medium">{Math.round(progress)}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                            <div className="bg-purple-600 h-2.5 rounded-full progress-bar" style={{ width: `${progress}%` }}></div>
-                        </div>
+                    <p className="text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark truncate" title={file.name}>{file.name}</p>
+                    <div className="flex flex-col sm:flex-row gap-4 mt-6">
+                        <BlurryButton onClick={onStartAnalysis} className="flex-1">
+                            <i className="fas fa-magic mr-2"></i>
+                            Start Analysis
+                        </BlurryButton>
+                        <button
+                            onClick={onResetState}
+                            className="flex-1 group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
+                        >
+                            <span className="relative w-full h-full px-5 py-2.5 text-sm rounded-lg leading-none flex items-center justify-center gap-2">
+                                <i className="fas fa-undo mr-2"></i>
+                                Choose Another File
+                            </span>
+                        </button>
                     </div>
-                )}
+                </div>
+            )}
 
-                {error && <p className="text-center text-red-500 mt-4">{error}</p>}
-            </GlowCard>
-        </>
+            {analysisState === AnalysisState.PROCESSING && (
+                <div className="animate-fade-in-slide-up w-full">
+                    <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark">{progressMessage || 'Processing media...'}</span>
+                        <span className="text-sm font-medium">{Math.round(progress)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div className="bg-purple-600 h-2.5 rounded-full progress-bar" style={{ width: `${progress}%` }}></div>
+                    </div>
+                </div>
+            )}
+
+            {analysisState === AnalysisState.ERROR && (
+                <div className="text-center animate-fade-in-slide-up">
+                    <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                    <h3 className="text-xl font-bold text-red-500 mb-2">Analysis Failed</h3>
+                    <p className="text-center text-red-500/90 text-sm bg-red-500/10 p-3 rounded-lg mb-6">{error}</p>
+                    <BlurryButton onClick={onResetState}>
+                        <i className="fas fa-undo mr-2"></i>
+                        Try Another File
+                    </BlurryButton>
+                </div>
+            )}
+
+            {/* Fallback for errors during non-processing states */}
+            {(analysisState === AnalysisState.IDLE || analysisState === AnalysisState.PREVIEW) && error && (
+                <p className="text-center text-red-500 mt-4">{error}</p>
+            )}
+        </GlowCard>
     );
 };
 
@@ -377,51 +390,72 @@ const App: React.FC = () => {
 
     const handleStartAnalysis = async () => {
         if (!file) return;
+
+        let progressInterval: ReturnType<typeof setInterval> | undefined;
         setAnalysisState(AnalysisState.PROCESSING);
+        setProgress(0);
         setProgressMessage('Preparing media...');
+        setError('');
+
         try {
             let frameDataUrls: string[] = [];
-            let firstFrame: string = '';
+            
+            // Step 1: Extract frames (0% -> 50%)
             if (file.type.startsWith('video/')) {
-                setProgressMessage('Extracting frames...');
-                frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => setProgress(prog * 0.2));
-                setExtractedFrames(frameDataUrls);
+                setProgressMessage('Extracting video frames...');
+                frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => {
+                    setProgress(prog * 0.5); // Scale 0-100 to 0-50
+                });
             } else if (file.type.startsWith('image/')) {
-                const dataUrl = videoUrl;
                 setProgressMessage('Processing image...');
-                frameDataUrls = [dataUrl];
-                setExtractedFrames(frameDataUrls);
-                setProgress(20);
+                frameDataUrls = [videoUrl];
+                await new Promise(res => setTimeout(res, 500)); // Simulate work
+                setProgress(50);
             }
-            if (frameDataUrls.length === 0) throw new Error("Could not extract frames or process the media.");
-            firstFrame = frameDataUrls[0];
-            setProgress(30);
-            setProgressMessage('Generating initial prompt...');
-            const quickPrompt = await generateSimplePromptFromFrames(frameDataUrls);
-            setGeneratedPrompt(quickPrompt);
-            // Show a placeholder structure while the detailed one loads
-            setStructuredPrompt({
-                objective: "Analyzing...",
-                core_focus: quickPrompt,
-                constraints: "Analyzing...",
+            
+            if (frameDataUrls.length === 0) {
+                throw new Error("Could not extract frames or process the media.");
+            }
+            setExtractedFrames(frameDataUrls);
+            
+            // Step 2: AI Analysis (50% -> 100%)
+            setProgressMessage('Analyzing with Gemini AI...');
+            
+            progressInterval = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 95) {
+                        if (progressInterval) clearInterval(progressInterval);
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, 150);
+
+            const finalAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, (msg) => {
+                 setProgressMessage(msg);
             });
-            setProgress(60);
-            setAnalysisState(AnalysisState.SUCCESS);
+
+            if (progressInterval) clearInterval(progressInterval);
+            setProgress(100);
             
-            const finalAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, () => { });
-            
+            // Step 3: Finalize and display results
             populateStateFromAnalysis(finalAnalysis);
             addToHistory({
                 id: Date.now().toString(),
                 prompt: finalAnalysis.core_focus,
                 structuredPrompt: finalAnalysis,
-                thumbnail: firstFrame,
+                thumbnail: frameDataUrls[0],
                 timestamp: new Date().toISOString(),
             });
+
+            setTimeout(() => {
+                setAnalysisState(AnalysisState.SUCCESS);
+            }, 300);
+
         } catch (err) {
+            if (progressInterval) clearInterval(progressInterval);
             setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            setAnalysisState(AnalysisState.IDLE);
-            setFile(null);
+            setAnalysisState(AnalysisState.ERROR);
         }
     };
 
