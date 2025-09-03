@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon } from './icons';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
@@ -149,23 +148,20 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                 {result.revised_output && (
                                     <div className="text-left mt-4">
                                         <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Revised Output:</h4>
-                                        <div className="relative bg-bg-uploader-light dark:bg-bg-uploader-dark p-4 rounded-lg border border-border-primary-light dark:border-border-primary-dark">
+                                        <div className="relative">
                                             <button 
                                                 onClick={() => navigator.clipboard.writeText(result.revised_output)} 
-                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/80 transition-colors tooltip"
+                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/80 transition-colors tooltip z-10"
                                             >
                                                 <i className="far fa-copy"></i>
                                                 <span className="tooltip-text" style={{width: '100px'}}>Copy Text</span>
                                             </button>
-                                            {result.revised_output.trim().startsWith('{') ? (
-                                                <pre className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap font-mono pr-8">
-                                                    <code>{result.revised_output}</code>
-                                                </pre>
-                                            ) : (
-                                                <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark whitespace-pre-wrap font-mono pr-8">
-                                                    {result.revised_output}
-                                                </p>
-                                            )}
+                                            <SyntaxHighlightedTextarea
+                                                mode={result.revised_output.trim().startsWith('{') ? 'json' : 'text'}
+                                                value={result.revised_output}
+                                                onChange={() => {}} // No-op for read-only
+                                                readOnly={true}
+                                            />
                                         </div>
                                     </div>
                                 )}
@@ -226,7 +222,6 @@ interface ResultsViewProps {
     handleRemixStyle: () => void;
     isConvertingToJson: boolean;
     onConvertToJason: () => void;
-    isApplyingImprovements: boolean;
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({
@@ -239,7 +234,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     isTestingConsistency, consistencyResult, showConsistencyModal,
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error,
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
-    isConvertingToJson, onConvertToJason, isApplyingImprovements
+    isConvertingToJson, onConvertToJason
 }) => {
     const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
     const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
@@ -300,18 +295,16 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                             </button>
                         </div>
                         <div className="relative">
-                            {isApplyingImprovements && (
-                                <div className="absolute inset-0 bg-bg-uploader-light/80 dark:bg-bg-uploader-dark/80 rounded-lg flex flex-col items-center justify-center z-10 animate-fade-in-slide-up" style={{ animationDuration: '200ms' }}>
-                                    <div className="w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                                    <p className="mt-2 text-sm text-text-secondary-light dark:text-text-secondary-dark">Applying changes...</p>
-                                </div>
-                            )}
                             {isJsonOutput ? (
-                                 <div className="w-full prompt-textarea p-4 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark overflow-auto">
-                                    <pre className="text-sm font-mono whitespace-pre-wrap"><code>{generatedPrompt}</code></pre>
-                                 </div>
+                                <SyntaxHighlightedTextarea
+                                    mode="json"
+                                    value={generatedPrompt}
+                                    onChange={handlePromptChange}
+                                    placeholder="Your AI-generated JSON prompt will appear here..."
+                                />
                             ) : (
                                 <SyntaxHighlightedTextarea
+                                    mode="text"
                                     value={generatedPrompt}
                                     onChange={handlePromptChange}
                                     placeholder="Your AI-generated text prompt will appear here..."

@@ -23,12 +23,48 @@ export const promptLibraryData: PromptCategory[] = [
             { 
                 id: "cs01", 
                 title: "Aquatic Cyberpunk Metropolis", 
-                prompt: "A wide, cinematic shot of a sprawling futuristic city, possibly underwater or partially submerged in dark, reflective water. The foreground features a sleek, dark, low-flying hovercraft or flying car with prominent, bright rectangular headlights, moving from left to right across the frame, leaving a faint vapor trail. The midground and background showcase two dominant, translucent spherical force fields or domes. The left dome encapsulates a towering cityscape glowing intensely with cyan and electric blue neon lights, while the right dome encloses another cityscape illuminated with vibrant purple and magenta hues. Between and around these futuristic structures, ancient, eroded dark stone columns and partially submerged ruins are visible. The water surface is covered with clusters of glowing, bioluminescent aquatic plants in shades of blue and green. In later frames, the scene expands to reveal a more expansive view of the city: numerous slender, incredibly tall skyscrapers with vertical strips of glowing blue and purple lights pierce the dark sky. A massive, smooth, moon-like spherical structure dominates the central background, with a glowing blue humanoid figure visible within a portal at its base. Multiple smaller, similar futuristic flying vehicles are seen in the distance, leaving faint trails. The overall aesthetic is a blend of advanced technology and ancient ruins, bathed in the glow of neon and bioluminescence, creating a mystical, high-tech environment.",
+                prompt: `SCENE: A wide, cinematic shot of a sprawling futuristic city, partially submerged in dark, reflective water at night.
+
+SUBJECTS:
+- A sleek, dark, low-flying hovercraft with bright rectangular headlights, moving from left to right, leaving a faint vapor trail.
+- A glowing blue humanoid figure visible within a portal at the base of a massive, moon-like spherical structure.
+- Multiple smaller futuristic flying vehicles in the distance.
+
+SETTING:
+- Location: A futuristic metropolis partially submerged in water, with ancient, eroded dark stone ruins scattered throughout.
+- Details: Two large, translucent spherical domes dominate the scene. The left dome contains a cityscape glowing with intense cyan and electric blue neon. The right dome contains a city illuminated in vibrant purple and magenta. The water surface is covered with clusters of glowing, bioluminescent aquatic plants. In the background, incredibly tall, slender skyscrapers with vertical light strips are visible.
+
+COMPOSITION:
+- Camera Shot: Wide, cinematic shot.
+- Camera Movement: Implied slow pan to follow the hovercraft.
+
+AESTHETICS:
+- Style: Cyberpunk, futuristic, with a blend of advanced technology and ancient ruins.
+- Lighting: High-contrast neon and bioluminescence. The primary colors are deep blues, purples, cyans, and magenta.
+- Mood: Mystical, ethereal, high-tech.`,
                 structuredPrompt: {
                     objective: "To create a highly detailed, cinematic visual representation of a futuristic, aquatic cyberpunk city at night, featuring advanced aerial vehicles and bioluminescent architecture, with an emphasis on vibrant neon lighting and a mysterious, ethereal atmosphere.",
-                    core_focus: "A wide, cinematic shot of a sprawling futuristic city, possibly underwater or partially submerged in dark, reflective water. The foreground features a sleek, dark, low-flying hovercraft or flying car with prominent, bright rectangular headlights, moving from left to right across the frame, leaving a faint vapor trail. The midground and background showcase two dominant, translucent spherical force fields or domes. The left dome encapsulates a towering cityscape glowing intensely with cyan and electric blue neon lights, while the right dome encloses another cityscape illuminated with vibrant purple and magenta hues. Between and around these futuristic structures, ancient, eroded dark stone columns and partially submerged ruins are visible. The water surface is covered with clusters of glowing, bioluminescent aquatic plants in shades of blue and green. In later frames, the scene expands to reveal a more expansive view of the city: numerous slender, incredibly tall skyscrapers with vertical strips of glowing blue and purple lights pierce the dark sky. A massive, smooth, moon-like spherical structure dominates the central background, with a glowing blue humanoid figure visible within a portal at its base. Multiple smaller, similar futuristic flying vehicles are seen in the distance, leaving faint trails. The overall aesthetic is a blend of advanced technology and ancient ruins, bathed in the glow of neon and bioluminescence, creating a mystical, high-tech environment.",
-                    constraints: "The image must maintain a dark, nocturnal setting with high contrast between glowing elements and deep shadows. The color palette should be dominated by deep blues, purples, cyans, and magenta, with minimal natural light. All vehicles should be sleek, dark, and futuristic, devoid of visible traditional propulsion. No visible human figures other than the stylized glowing humanoid in the central structure. The perspective should be wide-angle and cinematic, avoiding close-ups that break the scale of the city. Maintain an ethereal and slightly mysterious tone. The water should have subtle ripples and reflections.",
-                    enhancements: "Consider adding subtle atmospheric effects like mist or glowing particles in the air to enhance the ethereal quality. Experiment with different light refraction effects through the water and the spherical domes. Introduce more varied designs for the bioluminescent flora to add complexity to the aquatic landscape. Explore dynamic camera movements that sweep across the vastness of the city, highlighting its scale and intricate details."
+                    core_focus: `SCENE: A wide, cinematic shot of a sprawling futuristic city, partially submerged in dark, reflective water at night.
+
+SUBJECTS:
+- A sleek, dark, low-flying hovercraft with bright rectangular headlights, moving from left to right, leaving a faint vapor trail.
+- A glowing blue humanoid figure visible within a portal at the base of a massive, moon-like spherical structure.
+- Multiple smaller futuristic flying vehicles in the distance.
+
+SETTING:
+- Location: A futuristic metropolis partially submerged in water, with ancient, eroded dark stone ruins scattered throughout.
+- Details: Two large, translucent spherical domes dominate the scene. The left dome contains a cityscape glowing with intense cyan and electric blue neon. The right dome contains a city illuminated in vibrant purple and magenta. The water surface is covered with clusters of glowing, bioluminescent aquatic plants. In the background, incredibly tall, slender skyscrapers with vertical light strips are visible.
+
+COMPOSITION:
+- Camera Shot: Wide, cinematic shot.
+- Camera Movement: Implied slow pan to follow the hovercraft.
+
+AESTHETICS:
+- Style: Cyberpunk, futuristic, with a blend of advanced technology and ancient ruins.
+- Lighting: High-contrast neon and bioluminescence. The primary colors are deep blues, purples, cyans, and magenta.
+- Mood: Mystical, ethereal, high-tech.`,
+                    constraints: `The setting must be a dark, high-contrast night scene. The color palette is strictly deep blues, purples, cyans, and magenta. All vehicles are sleek, dark, and futuristic. The only figure is the stylized blue humanoid. The camera perspective must be a wide-angle, cinematic shot. Maintain an ethereal and mysterious tone.`,
+                    enhancements: `Consider adding atmospheric effects like mist or glowing particles. Experiment with light refraction through the water and domes. Introduce more varied designs for the bioluminescent flora. Explore dynamic camera movements to highlight the city's scale.`
                 }
             },
             { 

@@ -107,6 +107,67 @@ Generate a travel blog header image.
 This framework ensures consistency, precision, and adaptability across diverse media types and user goals. Adjust domain-specific rules as needed!
 `;
 
+// NEW: A more detailed and structured schema for higher quality JSON prompts.
+const DETAILED_JSON_PROMPT_SCHEMA = {
+    type: Type.OBJECT,
+    properties: {
+        scene_description: {
+            type: Type.STRING,
+            description: "A high-level, one-sentence summary of the entire scene or sequence."
+        },
+        subjects: {
+            type: Type.ARRAY,
+            description: "An array of all subjects in the scene.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING, description: "A short identifier for the subject, e.g., 'a woman with blonde hair', 'a futuristic hovercraft'." },
+                    description: { type: Type.STRING, description: "Detailed description of the subject's appearance, clothing, expression, and key features." },
+                    action: { type: Type.STRING, description: "What the subject is actively doing in the scene." }
+                },
+                required: ["name", "description", "action"]
+            }
+        },
+        setting: {
+            type: Type.OBJECT,
+            description: "Details about the environment.",
+            properties: {
+                location: { type: Type.STRING, description: "The primary location, e.g., 'a beach', 'a cyberpunk metropolis'." },
+                time_of_day: { type: Type.STRING, description: "e.g., 'sunset', 'midnight', 'dusk'." },
+                environment_details: { type: Type.STRING, description: "Specific details about the environment, e.g., 'wet sand reflecting the sky', 'glowing neon signs', 'dense fog'." }
+            },
+            required: ["location", "time_of_day", "environment_details"]
+        },
+        composition: {
+            type: Type.OBJECT,
+            description: "Cinematography and framing details.",
+            properties: {
+                camera_shot: { type: Type.STRING, description: "The type of camera shot, e.g., 'wide shot', 'low angle', 'close-up'." },
+                camera_movement: { type: Type.STRING, description: "How the camera is moving, e.g., 'static', 'slow pan left', 'dynamic dolly zoom'." },
+                framing: { type: Type.STRING, description: "Compositional rules or elements, e.g., 'rule of thirds', 'centered subject', 'leading lines'." }
+            },
+            required: ["camera_shot", "camera_movement"]
+        },
+        aesthetics: {
+            type: Type.OBJECT,
+            description: "The visual style and mood.",
+            properties: {
+                style: { type: Type.STRING, description: "The overall artistic style, e.g., 'photorealistic', 'cinematic', 'anime', 'watercolor'." },
+                lighting: { type: Type.STRING, description: "Detailed description of the lighting, e.g., 'warm golden hour light casting long shadows', 'harsh neon glow'." },
+                color_palette: { type: Type.STRING, description: "The dominant colors and overall color scheme, e.g., 'vibrant oranges, pinks, and deep blues'." },
+                mood: { type: Type.STRING, description: "The emotional tone of the scene, e.g., 'serene and peaceful', 'tense and urgent'." }
+            },
+            required: ["style", "lighting", "color_palette", "mood"]
+        },
+        negative_prompt_suggestions: {
+            type: Type.ARRAY,
+            description: "A list of keywords to exclude to improve generation quality.",
+            items: { type: Type.STRING }
+        }
+    },
+    required: ["scene_description", "subjects", "setting", "composition", "aesthetics"]
+};
+
 // Helper to parse a Data URL into its components for the API
 const parseDataUrl = (dataUrl: string) => {
     const parts = dataUrl.split(',');
@@ -257,36 +318,13 @@ export const generateJsonPromptFromFrames = async (
 
     const analysisPrompt = `Analyze the following media frames and generate a structured JSON output based on your core instructions.`;
     
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            objective: {
-                type: Type.STRING,
-                description: "The user's inferred goal, e.g., 'Create a social media ad for a luxury watch'."
-            },
-            core_focus: {
-                type: Type.STRING,
-                description: "A detailed text prompt combining all key elements: subjects, objects, actions, style, and text."
-            },
-            constraints: {
-                type: Type.STRING,
-                description: "A summary of all technical specs, format requirements, tone, and elements to exclude."
-            },
-            enhancements: {
-                type: Type.STRING,
-                description: "Optional suggestions for improving the prompt or scene."
-            }
-        },
-        required: ["objective", "core_focus", "constraints"]
-    };
-
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
         config: {
             systemInstruction: "You are a hyper-detailed Media-to-Prompt Analyzer. Your task is to meticulously analyze the provided media frames and generate a single, raw JSON object according to the provided schema. Be exhaustive in your descriptions. Capture every detail about subjects, actions, setting, style, lighting, colors, and camera work. Your goal is to create a production-ready, highly descriptive prompt. Do not include any other text or markdown formatting outside of the JSON object.",
             responseMimeType: "application/json",
-            responseSchema: responseSchema,
+            responseSchema: DETAILED_JSON_PROMPT_SCHEMA,
         }
     });
 
@@ -421,26 +459,14 @@ ${negativePrompt}
 `;
     }
 
-    // Define the schema to ensure the output is also a valid JSON object with the correct structure.
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            objective: { type: Type.STRING },
-            core_focus: { type: Type.STRING },
-            constraints: { type: Type.STRING },
-            enhancements: { type: Type.STRING }
-        },
-        required: ["objective", "core_focus", "constraints"]
-    };
-
     try {
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: content,
             config: {
-                systemInstruction: `You are an expert prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a JSON prompt based on a user's instruction. Analyze the instruction carefully and apply it comprehensively across all relevant fields of the JSON object (objective, core_focus, constraints, enhancements) to ensure a cohesive, hyper-detailed, and significantly improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
+                systemInstruction: `You are an expert prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a JSON prompt based on a user's instruction. Analyze the instruction carefully and apply it comprehensively across all relevant fields of the JSON object to ensure a cohesive, hyper-detailed, and significantly improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
                 responseMimeType: "application/json",
-                responseSchema: responseSchema,
+                responseSchema: DETAILED_JSON_PROMPT_SCHEMA,
                 temperature: 0.7,
             }
         });
@@ -651,7 +677,7 @@ export const testJsonConsistency = async (
     You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a JSON prompt object and a series of media frames. Your goal is to improve the JSON prompt so its values perfectly represent the provided media.
 
     **Input:**
-    1.  **JSON Prompt:** A user-provided JSON object with fields like 'objective', 'core_focus', and 'constraints'.
+    1.  **JSON Prompt:** A user-provided JSON object with a detailed structure.
     2.  **Media Frames:** A sequence of images.
 
     **Instructions:**
@@ -672,7 +698,7 @@ export const testJsonConsistency = async (
     - **\`consistency_score\` (integer):** A strict score from 0 to 100.
     - **\`explanation\` (string):** A concise summary explaining the score.
     - **\`missing_details\` (array of strings):** A list of the most critical visual details from the media that are missing from the JSON.
-    - **\`revised_output\` (string):** The improved JSON prompt as a string. **This MUST be constructed by taking the ORIGINAL JSON and carefully integrating the \`missing_details\` into the appropriate fields ('objective', 'core_focus', 'constraints').** The goal is to enhance, not just replace the 'core_focus'. The output must be a valid, beautified JSON string.
+    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields.** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the detailed prompt schema.
 
     **Now, analyze the following JSON prompt and media frames:**
 
@@ -697,10 +723,7 @@ export const testJsonConsistency = async (
             consistency_score: { type: Type.INTEGER },
             explanation: { type: Type.STRING },
             missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
-            revised_output: {
-                type: Type.STRING,
-                description: "The revised and beautified JSON prompt as a string.",
-            }
+            revised_output: DETAILED_JSON_PROMPT_SCHEMA
         },
         required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_output"]
     };
@@ -710,29 +733,28 @@ export const testJsonConsistency = async (
             model: 'gemini-2.5-flash',
             contents: { parts: [{ text: consistencyCheckPrompt }, ...imageParts] },
             config: {
-                systemInstruction: `You are a consistency checker. Your task is to return a single, structured JSON report object adhering to the provided schema. The 'revised_output' field must contain a valid, complete JSON string.`,
+                systemInstruction: `You are a consistency checker. Your task is to return a single, structured JSON report object adhering to the provided schema. The 'revised_output' field must be a valid, structured JSON object.`,
                 responseMimeType: "application/json",
                 responseSchema: responseSchema,
             }
         });
 
         const resultJsonStr = response.text.trim();
-        const result: ConsistencyResult = JSON.parse(resultJsonStr);
+        // Use a temporary type because revised_output is an object from the API
+        const result: Omit<ConsistencyResult, 'revised_output'> & { revised_output: object } = JSON.parse(resultJsonStr);
 
-        // Validate the structure and the nested JSON
-        if (!result.reasoning || typeof result.consistency_score !== 'number' || typeof result.revised_output !== 'string') {
+        // Validate the structure
+        if (!result.reasoning || typeof result.consistency_score !== 'number' || typeof result.revised_output !== 'object') {
             throw new Error("The AI model returned an invalid data structure for the consistency check.");
         }
-        try {
-            // check if revised_output is valid json
-            const parsedRevised = JSON.parse(result.revised_output);
-            // Re-stringify to ensure it's beautified
-            result.revised_output = JSON.stringify(parsedRevised, null, 2);
-        } catch {
-            throw new Error("The 'revised_output' from the AI was not a valid JSON string.");
-        }
+        
+        // Convert the revised_output object back to a beautified string to match the ConsistencyResult type
+        const finalResult: ConsistencyResult = {
+            ...result,
+            revised_output: JSON.stringify(result.revised_output, null, 2),
+        };
 
-        return result;
+        return finalResult;
 
     } catch (error) {
         console.error("Error during Gemini API JSON consistency check:", error);
@@ -758,43 +780,20 @@ export const convertPromptToJson = async (
     ${prompt.enhancements ? `Enhancements: ${prompt.enhancements}` : ''}
     `;
 
-    const conversionPrompt = `Convert the following structured text prompt into a single, raw JSON object. The JSON object must have keys "objective", "core_focus", "constraints", and "enhancements" (if present). Do not include any other text or markdown formatting outside of the JSON object.
+    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and highly-detailed JSON object. Analyze the text and populate all fields of the provided JSON schema as accurately as possible. Be descriptive and break down the concepts from the text into the appropriate JSON fields.
 
     TEXT TO CONVERT:
     ${contentToConvert}
     `;
-
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            objective: {
-                type: Type.STRING,
-                description: "The user's inferred goal."
-            },
-            core_focus: {
-                type: Type.STRING,
-                description: "A detailed text prompt combining all key elements."
-            },
-            constraints: {
-                type: Type.STRING,
-                description: "A summary of all technical specs and requirements."
-            },
-            enhancements: {
-                type: Type.STRING,
-                description: "Optional suggestions for improving the prompt."
-            }
-        },
-        required: ["objective", "core_focus", "constraints"]
-    };
 
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: conversionPrompt,
             config: {
-                systemInstruction: "You are a data formatting expert. Your only task is to convert structured text into a clean, valid JSON object based on the provided schema.",
+                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a clean, valid, and detailed JSON object based on the provided schema. Infer and populate all fields logically from the source text.",
                 responseMimeType: "application/json",
-                responseSchema: responseSchema,
+                responseSchema: DETAILED_JSON_PROMPT_SCHEMA,
                 temperature: 0.2, // Low temperature for deterministic conversion
             }
         });

@@ -316,7 +316,6 @@ const App: React.FC = () => {
     const [isRemixing, setIsRemixing] = useState(false);
     const [remixStyle, setRemixStyle] = useState('');
     const [isConvertingToJson, setIsConvertingToJson] = useState(false);
-    const [isApplyingImprovements, setIsApplyingImprovements] = useState(false);
     
     // Logic lifted from Uploader
     const resetState = useCallback(() => {
@@ -346,7 +345,6 @@ const App: React.FC = () => {
         setIsRemixing(false);
         setRemixStyle('');
         setIsConvertingToJson(false);
-        setIsApplyingImprovements(false);
     }, [videoUrl]);
 
     const populateStateFromAnalysis = (analysis: StructuredPrompt) => {
@@ -538,42 +536,21 @@ const App: React.FC = () => {
     };
 
     const handleApplyImprovements = (newOutput: string) => {
-        setIsApplyingImprovements(true);
+        // Close modal and clear related state immediately.
         setShowConsistencyModal(false);
         setConsistencyResult(null);
         setError('');
     
-        setTimeout(() => {
-            // Always update the main prompt display value.
-            setGeneratedPrompt(newOutput);
+        // Apply state updates directly for a real-time feel.
+        setGeneratedPrompt(newOutput);
     
-            if (structuredPrompt) {
-                const isCurrentlyJson = structuredPrompt.objective === 'JSON Format Output';
-                
-                if (isCurrentlyJson) {
-                    // For JSON mode, the `newOutput` is a stringified full structured prompt.
-                    // We parse it to update other fields like constraints, but keep
-                    // our special objective to stay in JSON view.
-                    try {
-                        const parsed = JSON.parse(newOutput);
-                        setStructuredPrompt({
-                            objective: "JSON Format Output",
-                            core_focus: newOutput, // The core_focus for JSON view is the full string.
-                            constraints: parsed.constraints || structuredPrompt.constraints,
-                            enhancements: parsed.enhancements || structuredPrompt.enhancements
-                        });
-                    } catch (e) {
-                        // Fallback if parsing fails, just update the main content.
-                        setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
-                    }
-                } else {
-                    // For text mode, the `newOutput` is just the revised core_focus.
-                    setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
-                }
-            }
-            
-            setIsApplyingImprovements(false);
-        }, 500);
+        if (structuredPrompt) {
+            // For both JSON and text mode, the main updatable text is the "core_focus".
+            // In JSON mode, core_focus holds the entire JSON string.
+            // In text mode, it holds the main prompt paragraph.
+            // This unified logic is simpler and more robust.
+            setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
+        }
     };
 
     const handleRemixStyle = async () => {
@@ -766,7 +743,6 @@ const App: React.FC = () => {
                                         handleRemixStyle={handleRemixStyle}
                                         isConvertingToJson={isConvertingToJson}
                                         onConvertToJason={handleConvertToJason}
-                                        isApplyingImprovements={isApplyingImprovements}
                                     />
                                 ) : (
                                     <ResultsPlaceholder />
