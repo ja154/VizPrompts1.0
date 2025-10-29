@@ -70,7 +70,7 @@ AESTHETICS:
             { 
                 id: "cs02", 
                 title: "Enchanted Forest Clearing", 
-                prompt: "Subject: A mystical, deer-like creature with glowing antlers drinking from a sparkling pond. Setting: A secret clearing in an ancient, enchanted forest at midnight. Details: Beams of ethereal moonlight pierce the dense canopy, illuminating glowing mushrooms and magical flora. Camera: Low-angle shot looking up towards the creature. Lighting: Magical, volumetric lighting from the moon and bioluminescent plants. Style: Fantasy, magical realism, hyper-detailed. Mood: Serene, wondrous, magical.",
+                prompt: "Subject: A mystical, deer-like creature with glowing antlers drinking from a sparkling pond. Setting: A secret clearing in an ancient, enchanted forest at midnight. Details: Beams of ethereal moonlight pierce the dense canopy, illuminating glowing mushrooms and magical flora.",
                 structuredPrompt: {
                     objective: "Generate a magical fantasy scene of a mystical creature in an enchanted forest.",
                     core_focus: "Subject: A mystical, deer-like creature with glowing antlers drinking from a sparkling pond. Setting: A secret clearing in an ancient, enchanted forest at midnight. Details: Beams of ethereal moonlight pierce the dense canopy, illuminating glowing mushrooms and magical flora.",
@@ -80,7 +80,7 @@ AESTHETICS:
             { 
                 id: "cs03", 
                 title: "Grand Library of Alexandria", 
-                prompt: "Subject: Scholars in white togas studying and debating. Setting: The grand, ancient Library of Alexandria at its peak. Details: Towering shelves filled with countless scrolls reach towards a domed ceiling, intricate mosaics on the floor. Camera: Epic scale, wide-angle shot showing the vastness of the library. Lighting: Warm, cinematic lighting from oil lamps, with soft sunbeams filtering through high arched windows. Style: Historical realism, detailed, cinematic. Mood: Intellectual, grand, peaceful.",
+                prompt: "Subject: Scholars in white togas studying and debating. Setting: The grand, ancient Library of Alexandria at its peak. Details: Towering shelves filled with countless scrolls reach towards a domed ceiling, intricate mosaics on the floor.",
                 structuredPrompt: {
                     objective: "Recreate the intellectual atmosphere of the ancient Library of Alexandria.",
                     core_focus: "Subject: Scholars in white togas studying and debating. Setting: The grand, ancient Library of Alexandria at its peak. Details: Towering shelves filled with countless scrolls reach towards a domed ceiling, intricate mosaics on the floor.",
@@ -96,7 +96,7 @@ AESTHETICS:
             {
                 id: "ac01",
                 title: "Rooftop Parkour Chase",
-                prompt: "Subject: A thrilling chase between two figures. Action: High-speed parkour, leaping between buildings, sliding under obstacles. Setting: Across the rooftops of a dense, modern urban environment. Camera: Dynamic first-person view (FPV) from the perspective of the one being chased. Details: Dynamic motion blur, lens flares, sense of vertigo and speed. Style: Action-packed, realistic video game aesthetic. Mood: Dangerous, exhilarating, urgent.",
+                prompt: "Action: High-speed parkour chase between two figures, leaping between buildings and sliding under obstacles. Setting: Across the rooftops of a dense, modern city.",
                 structuredPrompt: {
                     objective: "Create a dynamic, first-person video sequence of a parkour chase.",
                     core_focus: "Action: High-speed parkour chase between two figures, leaping between buildings and sliding under obstacles. Setting: Across the rooftops of a dense, modern city.",
@@ -112,7 +112,7 @@ AESTHETICS:
             {
                 id: "cd01",
                 title: "Steampunk Inventor",
-                prompt: "Subject: A brilliant female steampunk inventor with oil-smudged cheeks and wild hair. Attire: Intricate brass goggles pushed up on her forehead, a tool-filled leather apron over a practical Victorian dress. Setting: Her cluttered workshop, filled with gears, blueprints, and half-finished clockwork gadgets. Camera: Detailed character portrait, medium shot. Lighting: Warm, inviting light from a single Edison bulb hanging overhead. Style: Steampunk concept art, detailed illustration. Mood: Inventive, intelligent, focused.",
+                prompt: "Subject: A brilliant female steampunk inventor with oil-smudged cheeks and wild hair. Attire: Intricate brass goggles pushed up on her forehead, a tool-filled leather apron over a practical Victorian dress. Setting: Her cluttered workshop, filled with gears, blueprints, and half-finished clockwork gadgets.",
                 structuredPrompt: {
                     objective: "Generate a detailed character portrait of a steampunk inventor.",
                     core_focus: "Subject: A brilliant female steampunk inventor with oil-smudged cheeks and wild hair. Attire: Intricate brass goggles, tool-filled leather apron over a Victorian dress. Setting: Her cluttered workshop with gears, blueprints, and clockwork gadgets.",

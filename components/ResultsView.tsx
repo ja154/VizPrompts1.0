@@ -84,7 +84,8 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                 onClick={(e) => e.stopPropagation()}
             >
                 <button onClick={onClose} className="absolute top-3 right-3 text-text-secondary-light dark:text-text-secondary-dark hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center z-10">
-                    <i className="fas fa-times"></i>
+                    {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                    <span className="fas fa-times"></span>
                 </button>
                 <div className="p-8 overflow-y-auto">
                     <h2 className="text-xl font-bold text-center mb-6">Prompt Consistency Test</h2>
@@ -153,7 +154,8 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                                 onClick={() => navigator.clipboard.writeText(result.revised_output)} 
                                                 className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/80 transition-colors tooltip z-10"
                                             >
-                                                <i className="far fa-copy"></i>
+                                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                                <span className="far fa-copy"></span>
                                                 <span className="tooltip-text" style={{width: '100px'}}>Copy Text</span>
                                             </button>
                                             <SyntaxHighlightedTextarea
@@ -169,7 +171,8 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                     <div className="mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-4 text-center">
                                         <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">Implement these improvements?</p>
                                         <BlurryButton onClick={() => onApplyImprovements(result.revised_output)}>
-                                            <i className="fas fa-check mr-2"></i>
+                                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                            <span className="fas fa-check mr-2"></span>
                                             Apply & Close
                                         </BlurryButton>
                                     </div>
@@ -290,7 +293,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         <div className="flex justify-between items-center mb-1">
                             <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Core Focus</h3>
                             <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
-                                {isCopied ? <i className="fas fa-check text-green-500"></i> : <i className="far fa-copy"></i>}
+                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                {isCopied ? <span className="fas fa-check text-green-500"></span> : <span className="far fa-copy"></span>}
                                 <span className="tooltip-text">Copy prompt</span>
                             </button>
                         </div>
@@ -378,14 +382,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({
 
                   <div className="flex flex-wrap gap-3 mt-4">
                       <BlurryButton onClick={() => handleRefinePrompt('refine')} disabled={isRefining || isDetailing}>
-                        {isRefining ? (<><i className="fas fa-spinner fa-spin"></i><span>Refining...</span></>) : "Refine"}
+                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                        {isRefining ? (<><span className="fas fa-spinner fa-spin"></span><span>Refining...</span></>) : "Refine"}
                       </BlurryButton>
                        <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing}>
-                        {isDetailing ? (<><i className="fas fa-spinner fa-spin"></i><span>Detailing...</span></>) : "Add More Detail"}
+                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                        {isDetailing ? (<><span className="fas fa-spinner fa-spin"></span><span>Detailing...</span></>) : "Add More Detail"}
                       </BlurryButton>
                       <div className="tooltip-container">
                         <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput}>
-                          {isConvertingToJson ? (<><i className="fas fa-spinner fa-spin"></i><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
+                          {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                          {isConvertingToJson ? (<><span className="fas fa-spinner fa-spin"></span><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
                         </BlurryButton>
                         {isJsonOutput && (
                             <span className="tooltip-text" style={{width: 150, bottom: '110%'}}>
@@ -395,7 +402,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                       </div>
                       <div className="tooltip-container">
                         <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
-                          {isTestingConsistency ? (<><i className="fas fa-spinner fa-spin"></i><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
+                          {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                          {isTestingConsistency ? (<><span className="fas fa-spinner fa-spin"></span><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
                         </BlurryButton>
                         {!hasOriginalFrames && (
                           <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>
@@ -427,7 +435,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </div>
                     <div className="tooltip-container">
                         <BlurryButton onClick={handleRemixStyle} disabled={isRemixing || !hasOriginalFrames || !remixStyle}>
-                            {isRemixing ? (<><i className="fas fa-spinner fa-spin"></i><span>Remixing...</span></>) : "Remix Style"}
+                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                            {isRemixing ? (<><span className="fas fa-spinner fa-spin"></span><span>Remixing...</span></>) : "Remix Style"}
                         </BlurryButton>
                         {!hasOriginalFrames && (
                             <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>

@@ -1,6 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 
-const GlowCard = ({ children, className = '' }: { children: React.ReactNode, className?: string }) => {
+interface GlowCardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const GlowCard: React.FC<GlowCardProps> = ({ children, className = '' }) => {
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

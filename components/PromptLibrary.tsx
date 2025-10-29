@@ -28,11 +28,8 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
         setRemixError('');
 
         try {
-            // FIX: The remixPrompt function expects only one argument.
             const newPrompts = await remixPrompt(promptToRemix.prompt);
 
-            // FIX: The PromptTemplate type requires a `structuredPrompt` property.
-            // We create one by copying the original and updating the core_focus and objective.
             const newTemplates: PromptTemplate[] = newPrompts.map((p, index) => ({
                 id: `${promptToRemix.id}-remix-${Date.now()}-${index}`,
                 title: `${promptToRemix.title} (Remix ${index + 1})`,
@@ -82,7 +79,8 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                 <header className="p-6 border-b border-border-primary-light dark:border-border-primary-dark flex justify-between items-center flex-shrink-0">
                     <h2 className="text-2xl font-bold">Prompt Library</h2>
                     <button onClick={onClose} disabled={!!remixingId} className="text-text-secondary-light dark:text-text-secondary-dark hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center z-10 disabled:opacity-50">
-                        <i className="fas fa-times"></i>
+                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                        <span className="fas fa-times"></span>
                     </button>
                 </header>
 
@@ -131,7 +129,8 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                                             disabled={!!remixingId}
                                             className="px-3 py-2 text-sm font-semibold rounded-lg bg-gray-500/10 text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait"
                                         >
-                                            {remixingId === prompt.id ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-random"></i>}
+                                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                            {remixingId === prompt.id ? <span className="fas fa-spinner fa-spin"></span> : <span className="fas fa-random"></span>}
                                         </button>
                                         <button 
                                             onClick={() => handleSelect(prompt)}

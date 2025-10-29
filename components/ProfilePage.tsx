@@ -94,7 +94,8 @@ const ProfilePage: React.FC = () => {
                         <form onSubmit={handleSaveChanges} className="space-y-6">
                             <div className="flex flex-col items-center space-y-2">
                                 <div className="w-24 h-24 rounded-full bg-bg-uploader-light dark:bg-bg-uploader-dark border-2 border-dashed border-border-primary-light dark:border-border-primary-dark flex items-center justify-center cursor-pointer overflow-hidden" onClick={() => fileInputRef.current?.click()}>
-                                    {profilePicture ? <img src={profilePicture} alt="Profile preview" className="w-full h-full object-cover" /> : <i className="fas fa-camera text-2xl text-text-secondary-light dark:text-text-secondary-dark"></i>}
+                                    {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                    {profilePicture ? <img src={profilePicture} alt="Profile preview" className="w-full h-full object-cover" /> : <span className="fas fa-camera text-2xl text-text-secondary-light dark:text-text-secondary-dark"></span>}
                                 </div>
                                 <input type="file" ref={fileInputRef} onChange={handlePictureUpload} className="hidden" accept="image/*" />
                                 <button type="button" onClick={() => fileInputRef.current?.click()} className="text-sm font-medium text-primary-light dark:text-primary-dark hover:underline">
@@ -115,7 +116,8 @@ const ProfilePage: React.FC = () => {
                             </div>
                             <div className="flex gap-4 mt-4">
                                 <BlurryButton type="submit" className="flex-1" disabled={isLoading}>
-                                    {isLoading ? <><i className="fas fa-spinner fa-spin mr-2"></i> Saving...</> : 'Save Changes'}
+                                    {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                    {isLoading ? <><span className="fas fa-spinner fa-spin mr-2"></span> Saving...</> : 'Save Changes'}
                                 </BlurryButton>
                                 <button
                                     type="button"

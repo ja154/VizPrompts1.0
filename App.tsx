@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
 import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson } from './services/geminiService.ts';
-import { BrainCircuitIcon, FilmIcon } from './components/icons.tsx';
+import { BrainCircuitIcon, FilmIcon, PlusCircleIcon, LibraryIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
 import UploaderIcon from './components/UploaderIcon.tsx';
@@ -16,6 +16,9 @@ import ProfilePage from './components/ProfilePage.tsx';
 import HistoryPage from './components/HistoryPage.tsx';
 import UserMenu from './components/UserMenu.tsx';
 import PatternBackground from './components/PatternBackground.tsx';
+import PromptLibrary from './components/PromptLibrary.tsx';
+import { PromptTemplate } from './data/promptLibrary.ts';
+import FAQ from './components/FAQ.tsx';
 
 
 type Theme = 'light' | 'dark';
@@ -93,7 +96,8 @@ const Uploader: React.FC<UploaderProps> = ({
                     <p className="text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark truncate" title={file.name}>{file.name}</p>
                     <div className="flex flex-col sm:flex-row gap-4 mt-6">
                         <BlurryButton onClick={onStartAnalysis} className="flex-1">
-                            <i className="fas fa-magic mr-2"></i>
+                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                            <span className="fas fa-magic mr-2"></span>
                             Start Analysis
                         </BlurryButton>
                         <button
@@ -101,7 +105,8 @@ const Uploader: React.FC<UploaderProps> = ({
                             className="flex-1 group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
                         >
                             <span className="relative w-full h-full px-5 py-2.5 text-sm rounded-lg leading-none flex items-center justify-center gap-2">
-                                <i className="fas fa-undo mr-2"></i>
+                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                <span className="fas fa-undo mr-2"></span>
                                 Choose Another File
                             </span>
                         </button>
@@ -123,11 +128,13 @@ const Uploader: React.FC<UploaderProps> = ({
 
             {analysisState === AnalysisState.ERROR && (
                 <div className="text-center animate-fade-in-slide-up">
-                    <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                    {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                    <span className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></span>
                     <h3 className="text-xl font-bold text-red-500 mb-2">Analysis Failed</h3>
                     <p className="text-center text-red-500/90 text-sm bg-red-500/10 p-3 rounded-lg mb-6">{error}</p>
                     <BlurryButton onClick={onResetState}>
-                        <i className="fas fa-undo mr-2"></i>
+                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                        <span className="fas fa-undo mr-2"></span>
                         Try Another File
                     </BlurryButton>
                 </div>
@@ -141,9 +148,9 @@ const Uploader: React.FC<UploaderProps> = ({
     );
 };
 
-const AnalysisInstructionSection = () => {
+const AnalysisInstructionSection: React.FC<{ onOpenLibrary: () => void }> = ({ onOpenLibrary }) => {
     return (
-        <section>
+        <section className="space-y-8">
             <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
                 <div className="rounded-xl p-6">
                     <h3 className="text-xl font-bold mb-4 flex items-center">
@@ -153,6 +160,21 @@ const AnalysisInstructionSection = () => {
                     <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark">
                         Our AI deconstructs your media to infer goals, extract key elements, and outline constraints, generating a detailed, production-ready prompt. The result will be in a structured text format, which can then be converted to JSON if needed.
                     </p>
+                </div>
+            </GlowCard>
+            <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
+                <div className="rounded-xl p-6">
+                     <h3 className="text-xl font-bold mb-4 flex items-center">
+                        <LibraryIcon className="w-6 h-6 mr-3" />
+                        Need Inspiration?
+                    </h3>
+                    <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-6">
+                        Explore our curated library of high-quality prompts to kickstart your creative process or see what's possible.
+                    </p>
+                    <BlurryButton onClick={onOpenLibrary}>
+                        <PlusCircleIcon />
+                        Explore Prompt Library
+                    </BlurryButton>
                 </div>
             </GlowCard>
         </section>
@@ -277,7 +299,8 @@ const AnalyzedFilePreview: React.FC<{file: File, videoUrl: string, onReset: () =
             </div>
         </div>
         <BlurryButton onClick={onReset} className="w-full mt-6">
-            <i className="fas fa-plus mr-2"></i> Start New Analysis
+            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+            <span className="fas fa-plus mr-2"></span> Start New Analysis
         </BlurryButton>
     </GlowCard>
 );
@@ -289,6 +312,7 @@ const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<AppView>('main');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
     // State lifted from Uploader
     const [file, setFile] = useState<File | null>(null);
@@ -632,6 +656,22 @@ const App: React.FC = () => {
         setFile(new File([], `${item.prompt.substring(0, 20)}.history`, { type: 'text/plain' }));
         setCurrentView('main');
     };
+    
+    const handleSelectPromptFromLibrary = (item: PromptTemplate) => {
+        resetState();
+        setAnalysisState(AnalysisState.SUCCESS);
+        setStructuredPrompt(item.structuredPrompt);
+        setGeneratedPrompt(item.prompt);
+
+        const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full p-8 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>`;
+        const placeholderDataUrl = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
+        setVideoUrl(placeholderDataUrl);
+
+        setVideoMeta({ duration: 'N/A', resolution: 'From Library' });
+        setFile(new File([], item.title, { type: 'text/plain' }));
+        setExtractedFrames([]); // No frames for consistency check
+        setCurrentView('main');
+    };
 
     return (
         <>
@@ -644,6 +684,12 @@ const App: React.FC = () => {
                     onAuthSuccess={() => setIsAuthModalOpen(false)}
                 />
             )}
+
+            <PromptLibrary 
+                isOpen={isLibraryOpen}
+                onClose={() => setIsLibraryOpen(false)}
+                onSelectPrompt={handleSelectPromptFromLibrary}
+            />
 
             <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <nav className="flex justify-between items-center w-full">
@@ -700,7 +746,7 @@ const App: React.FC = () => {
                                         onResetState={resetState}
                                     />
                                 )}
-                                <AnalysisInstructionSection />
+                                <AnalysisInstructionSection onOpenLibrary={() => setIsLibraryOpen(true)} />
                             </div>
 
                             <div>
@@ -749,6 +795,7 @@ const App: React.FC = () => {
                                 )}
                             </div>
                         </div>
+                        <FAQ />
                     </>
                 )}
 

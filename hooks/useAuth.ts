@@ -59,7 +59,8 @@ export const useAuth = () => {
         try {
             const historyKey = `${HISTORY_KEY_PREFIX}${username}`;
             const storedHistory = localStorage.getItem(historyKey);
-            setUserHistory(storedHistory ? JSON.parse(storedHistory) : []);
+            // FIX: Explicitly type the parsed JSON to ensure type safety.
+            setUserHistory(storedHistory ? JSON.parse(storedHistory) as PromptHistoryItem[] : []);
         } catch (error) {
             console.error("Failed to load history from localStorage:", error);
             setUserHistory([]);
@@ -70,7 +71,8 @@ export const useAuth = () => {
     useEffect(() => {
         try {
             const storedUsersStr = localStorage.getItem(USERS_KEY);
-            const storedUsers = storedUsersStr ? JSON.parse(storedUsersStr) : {};
+            // FIX: Explicitly type the parsed JSON to ensure type safety.
+            const storedUsers: Record<string, User> = storedUsersStr ? JSON.parse(storedUsersStr) : {};
             setUsers(storedUsers);
 
             const activeUsername = localStorage.getItem(ACTIVE_USER_KEY);
@@ -105,7 +107,7 @@ export const useAuth = () => {
                     return reject(new Error("Google account email is not verified."));
                 }
                 
-                let user = Object.values(users).find(u => u.email === payload.email);
+                let user: User | undefined = Object.values(users).find(u => u.email === payload.email);
 
                 if (!user) {
                     // New user: Create account automatically
@@ -166,7 +168,7 @@ export const useAuth = () => {
 
     const login = (usernameOrEmail: string, password?: string): Promise<User> => {
         return new Promise((resolve, reject) => {
-            const user = Object.values(users).find(
+            const user: User | undefined = Object.values(users).find(
                 u => u.username === usernameOrEmail || u.email === usernameOrEmail
             );
 
