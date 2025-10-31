@@ -9,164 +9,61 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-const MEDIA_ANALYZER_SYSTEM_PROMPT = `System Prompt: Media-to-Prompt Analyzer
-Model Identification:
-[AI Model Name] (v1.0) – A media analysis and prompt generation model optimized for extracting structured details from visual/textual content. Knowledge cutoff: August 2025.
+// MODIFIED: Replaced the long, verbose system prompt with a concise, keyword-focused one.
+const MEDIA_ANALYZER_SYSTEM_PROMPT = `You are an expert prompt engineer for generative AI models. Your task is to analyze media (video frames, images) and convert it into a highly effective, structured text prompt.
 
-Core Capabilities:
-1.
-Media Processing:
-Analyze images, videos, PDFs, and text-based content.
-Extract explicit and implicit details (objects, colors, text, actions, context, style).
-Detect user intent (e.g., commercial, artistic, informational).
-2.
-Prompt Engineering:
-Convert raw media analysis into precise, actionable prompts.
-Prioritize clarity, specificity, and alignment with user goals.
-Handle ambiguity by flagging uncertainties or requesting clarifications.
-3.
-Domain Adaptation:
-Apply domain-specific guidelines (e.g., e-commerce, art, education).
-Optimize prompts for downstream tasks (e.g., image generation, SEO, research).
-Behavioral Standards:
-Thoroughness:
-
-Analyze all visible/embedded elements in media (e.g., foreground/background objects, text, motion in videos).
-Note technical details (resolution, lighting, camera angles) if relevant.
-Objectivity:
-
-Avoid assumptions about user intent. Base prompts strictly on observable data.
-Flag ambiguous content with: "[Unclear: User may need to specify X]".
-Structure:
-
-Organize prompts into sections (Objective, Core Focus, Constraints) for readability.
-Use standardized tags (e.g., <style>, <context>) for easy parsing.
-Proactive Improvement:
-
-Suggest optional additions (e.g., "[Enhancement: Include to emphasize X]") if gaps exist.
-Task-Specific Guidelines:
-For Image Analysis:
-1.
-Extract:
-Objects/people (quantity, attributes like "red dress," "smiling").
-Composition (rule of thirds, symmetry).
-Colors, textures, lighting (e.g., "neon lighting," "soft shadows").
-Text (OCR if applicable).
-2.
-Contextualize:
-Style (photorealistic, watercolor, cyberpunk).
-Use case (e.g., "product photo for e-commerce" vs. "art portfolio").
-For Video Analysis:
-1.
-Temporal Details:
-Key timestamps (e.g., "00:02–00:05: person exits car").
-Motion (e.g., "slow pan," "dynamic transitions").
-2.
-Storyboard Focus:
-Summarize scene progression if user intent is narrative.
-For Text/Link Analysis:
-Extract keywords, tone, and embedded media references (e.g., "PDF mentions 'sustainability'").
-Output Requirements:
-Generate a structured prompt with:
+Your output MUST follow this structure:
 
 <objective>
-[User's inferred goal, e.g., "Create a social media ad for a luxury watch"]
+[A brief, one-sentence goal for the generation. Example: "A cinematic shot of a futuristic city at night."]
 </objective>
 
 <core_focus>
-[Key elements: objects, colors, actions, style, text]
+[A detailed, comma-separated list of keywords and short, descriptive phrases that capture the scene. Focus on nouns, adjectives, and verbs. This is the main part of the prompt. Example: "cinematic, wide shot, futuristic city, partially submerged, dark reflective water, neon lights, glowing cyan and purple, sleek dark hovercraft flying left, vapor trail, ancient stone ruins, translucent domes, tall skyscrapers, mystical, ethereal, high-tech"]
 </core_focus>
 
 <constraints>
-[Technical specs: resolution, format, tone, exclusions]
+[A concise list of key technical and stylistic requirements. Example: "Style: Cyberpunk, photorealistic. Lighting: High-contrast neon. Mood: Mysterious."]
 </constraints>
 
-[Optional: <enhancements> for suggested improvements]
-Example Output:
-Input: User uploads a photo of a sunset with text "Relaxing Vacation."
-Generated Prompt:
-
-<objective>
-Generate a travel blog header image.
-</objective>
-
-<core_focus>
-- Objects: Palm trees, ocean waves, sunset (gradient orange/pink).
-- Text: "Relaxing Vacation" (white font, centered).
-- Style: Photorealistic, warm lighting.
-</core_focus>
-
-<constraints>
-- 1920x1080px, horizontal layout.
-- Exclude text distortion; ensure readability.
-</constraints>
-
-<enhancements>
-[Optional: Add a small boat in the ocean to imply adventure.]
-</enhancements>
-This framework ensures consistency, precision, and adaptability across diverse media types and user goals. Adjust domain-specific rules as needed!
+GUIDELINES:
+- **Be Concise but Descriptive:** Use powerful keywords instead of long sentences.
+- **Prioritize Visuals:** Focus on what is visible: subjects, actions, setting, colors, lighting, and composition.
+- **Structure is Key:** Adhere strictly to the <objective>, <core_focus>, and <constraints> tags. Do not add conversational text.
 `;
 
-// NEW: A more detailed and structured schema for higher quality JSON prompts.
-const DETAILED_JSON_PROMPT_SCHEMA = {
+// NEW: A more compact, AI-friendly schema focusing on keywords. This replaces the old detailed one.
+const COMPACT_JSON_PROMPT_SCHEMA = {
     type: Type.OBJECT,
     properties: {
-        scene_description: {
+        prompt_summary: {
             type: Type.STRING,
-            description: "A high-level, one-sentence summary of the entire scene or sequence."
+            description: "A single, concise, comma-separated paragraph combining all key visual elements. This should be a ready-to-use prompt for a text-to-video model."
         },
-        subjects: {
-            type: Type.ARRAY,
-            description: "An array of all subjects in the scene.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING, description: "A short identifier for the subject, e.g., 'a woman with blonde hair', 'a futuristic hovercraft'." },
-                    description: { type: Type.STRING, description: "Detailed description of the subject's appearance, clothing, expression, and key features." },
-                    action: { type: Type.STRING, description: "What the subject is actively doing in the scene." }
-                },
-                required: ["name", "description", "action"]
-            }
+        primary_subject: {
+            type: Type.STRING,
+            description: "Keywords describing the main subject(s), their appearance, and actions. E.g., 'woman with blonde hair, red sundress, walking barefoot'."
         },
-        setting: {
-            type: Type.OBJECT,
-            description: "Details about the environment.",
-            properties: {
-                location: { type: Type.STRING, description: "The primary location, e.g., 'a beach', 'a cyberpunk metropolis'." },
-                time_of_day: { type: Type.STRING, description: "e.g., 'sunset', 'midnight', 'dusk'." },
-                environment_details: { type: Type.STRING, description: "Specific details about the environment, e.g., 'wet sand reflecting the sky', 'glowing neon signs', 'dense fog'." }
-            },
-            required: ["location", "time_of_day", "environment_details"]
+        environment: {
+            type: Type.STRING,
+            description: "Keywords for the setting and background details. E.g., 'wet sandy beach, vibrant sunset, seagulls in background, ocean waves'."
         },
-        composition: {
-            type: Type.OBJECT,
-            description: "Cinematography and framing details.",
-            properties: {
-                camera_shot: { type: Type.STRING, description: "The type of camera shot, e.g., 'wide shot', 'low angle', 'close-up'." },
-                camera_movement: { type: Type.STRING, description: "How the camera is moving, e.g., 'static', 'slow pan left', 'dynamic dolly zoom'." },
-                framing: { type: Type.STRING, description: "Compositional rules or elements, e.g., 'rule of thirds', 'centered subject', 'leading lines'." }
-            },
-            required: ["camera_shot", "camera_movement"]
+        cinematography: {
+            type: Type.STRING,
+            description: "Keywords for camera work. E.g., 'wide shot, cinematic, low angle, slow pan left'."
         },
-        aesthetics: {
-            type: Type.OBJECT,
-            description: "The visual style and mood.",
-            properties: {
-                style: { type: Type.STRING, description: "The overall artistic style, e.g., 'photorealistic', 'cinematic', 'anime', 'watercolor'." },
-                lighting: { type: Type.STRING, description: "Detailed description of the lighting, e.g., 'warm golden hour light casting long shadows', 'harsh neon glow'." },
-                color_palette: { type: Type.STRING, description: "The dominant colors and overall color scheme, e.g., 'vibrant oranges, pinks, and deep blues'." },
-                mood: { type: Type.STRING, description: "The emotional tone of the scene, e.g., 'serene and peaceful', 'tense and urgent'." }
-            },
-            required: ["style", "lighting", "color_palette", "mood"]
+        style_and_mood: {
+            type: Type.STRING,
+            description: "Keywords for the overall aesthetics. E.g., 'photorealistic, serene and peaceful, warm golden hour light, long shadows, vibrant oranges and pinks'."
         },
-        negative_prompt_suggestions: {
-            type: Type.ARRAY,
-            description: "A list of keywords to exclude to improve generation quality.",
-            items: { type: Type.STRING }
+        negative_prompt: {
+            type: Type.STRING,
+            description: "A comma-separated list of keywords to exclude. E.g., 'blurry, distorted, ugly, watermark'."
         }
     },
-    required: ["scene_description", "subjects", "setting", "composition", "aesthetics"]
+    required: ["prompt_summary", "primary_subject", "environment", "cinematography", "style_and_mood"]
 };
+
 
 // Helper to parse a Data URL into its components for the API
 const parseDataUrl = (dataUrl: string) => {
@@ -190,6 +87,7 @@ const parseStructuredPrompt = (responseText: string): StructuredPrompt => {
     const objective = responseText.match(/<objective>([\s\S]*?)<\/objective>/)?.[1]?.trim() || '';
     const core_focus = responseText.match(/<core_focus>([\s\S]*?)<\/core_focus>/)?.[1]?.trim() || '';
     const constraints = responseText.match(/<constraints>([\s\S]*?)<\/constraints>/)?.[1]?.trim() || '';
+    // NOTE: Enhancements tag removed from system prompt, so this will likely be empty. Keeping for safety.
     const enhancements = responseText.match(/<enhancements>([\s\S]*?)<\/enhancements>/)?.[1]?.trim();
 
     if (!objective && !core_focus && !constraints) {
@@ -198,7 +96,6 @@ const parseStructuredPrompt = (responseText: string): StructuredPrompt => {
             objective: "[Objective could not be parsed]",
             core_focus: responseText,
             constraints: "[Constraints could not be parsed]",
-            enhancements: "[Enhancements could not be parsed]",
         };
     }
 
@@ -322,9 +219,11 @@ export const generateJsonPromptFromFrames = async (
         model: 'gemini-2.5-flash',
         contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
         config: {
-            systemInstruction: "You are a hyper-detailed Media-to-Prompt Analyzer. Your task is to meticulously analyze the provided media frames and generate a single, raw JSON object according to the provided schema. Be exhaustive in your descriptions. Capture every detail about subjects, actions, setting, style, lighting, colors, and camera work. Your goal is to create a production-ready, highly descriptive prompt. Do not include any other text or markdown formatting outside of the JSON object.",
+            // MODIFIED: Updated system instruction to match the new compact, keyword-driven schema.
+            systemInstruction: "You are an efficient Media-to-Prompt engineer. Your task is to analyze media and generate a concise, keyword-driven JSON object based on the provided schema. Focus on creating a `prompt_summary` that is a powerful, ready-to-use prompt for generative AI. Populate all fields with comma-separated keywords and short, descriptive phrases. Avoid long sentences. Your output must be only the raw JSON object.",
             responseMimeType: "application/json",
-            responseSchema: DETAILED_JSON_PROMPT_SCHEMA,
+            // MODIFIED: Using the new compact schema.
+            responseSchema: COMPACT_JSON_PROMPT_SCHEMA,
         }
     });
 
@@ -442,7 +341,7 @@ export const refineJsonPrompt = async (
 
     let content = `
 Your task is to rewrite and enhance the following JSON prompt based on my instruction. 
-Produce a new, hyper-detailed JSON object that is a significant improvement. 
+Produce a new, concise, keyword-driven JSON object. 
 Apply the changes across all relevant fields to ensure a cohesive result.
 
 CURRENT JSON:
@@ -464,9 +363,10 @@ ${negativePrompt}
             model: 'gemini-2.5-flash',
             contents: content,
             config: {
-                systemInstruction: `You are an expert prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a JSON prompt based on a user's instruction. Analyze the instruction carefully and apply it comprehensively across all relevant fields of the JSON object to ensure a cohesive, hyper-detailed, and significantly improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
+                systemInstruction: `You are an expert prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a keyword-driven JSON prompt based on a user's instruction. Apply the instruction comprehensively across all relevant fields of the JSON object to ensure a cohesive and improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
                 responseMimeType: "application/json",
-                responseSchema: DETAILED_JSON_PROMPT_SCHEMA,
+                // MODIFIED: Using the new compact schema for refinement.
+                responseSchema: COMPACT_JSON_PROMPT_SCHEMA,
                 temperature: 0.7,
             }
         });
@@ -673,17 +573,18 @@ export const testJsonConsistency = async (
         return { inlineData: { mimeType, data: base64 } };
     });
 
+    // MODIFIED: Updated prompt to reflect the new compact JSON schema.
     const consistencyCheckPrompt = `
-    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a JSON prompt object and a series of media frames. Your goal is to improve the JSON prompt so its values perfectly represent the provided media.
+    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a keyword-driven JSON prompt object and a series of media frames. Your goal is to improve the JSON prompt so its keyword values perfectly represent the provided media.
 
     **Input:**
-    1.  **JSON Prompt:** A user-provided JSON object with a detailed structure.
+    1.  **JSON Prompt:** A user-provided JSON object with a compact structure.
     2.  **Media Frames:** A sequence of images.
 
     **Instructions:**
 
     **Step 1: Forensic Analysis (Internal Monologue)**
-    *   **Analyze the JSON:** Deconstruct the values in the provided JSON object.
+    *   **Analyze the JSON:** Deconstruct the keyword-based values in the provided JSON object.
     *   **Analyze the Media:** Exhaustively list every observable detail in the media frames.
     *   **Compare:** Identify details present in the media that are missing, vague, or mis-represented in the JSON values.
 
@@ -698,7 +599,7 @@ export const testJsonConsistency = async (
     - **\`consistency_score\` (integer):** A strict score from 0 to 100.
     - **\`explanation\` (string):** A concise summary explaining the score.
     - **\`missing_details\` (array of strings):** A list of the most critical visual details from the media that are missing from the JSON.
-    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields.** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the detailed prompt schema.
+    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields.** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the compact prompt schema.
 
     **Now, analyze the following JSON prompt and media frames:**
 
@@ -723,7 +624,8 @@ export const testJsonConsistency = async (
             consistency_score: { type: Type.INTEGER },
             explanation: { type: Type.STRING },
             missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
-            revised_output: DETAILED_JSON_PROMPT_SCHEMA
+            // MODIFIED: Using the new compact schema for the revised output.
+            revised_output: COMPACT_JSON_PROMPT_SCHEMA
         },
         required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_output"]
     };
@@ -780,7 +682,7 @@ export const convertPromptToJson = async (
     ${prompt.enhancements ? `Enhancements: ${prompt.enhancements}` : ''}
     `;
 
-    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and highly-detailed JSON object. Analyze the text and populate all fields of the provided JSON schema as accurately as possible. Be descriptive and break down the concepts from the text into the appropriate JSON fields.
+    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and concise JSON object using comma-separated keywords. Analyze the text and populate all fields of the provided JSON schema as accurately as possible.
 
     TEXT TO CONVERT:
     ${contentToConvert}
@@ -791,9 +693,11 @@ export const convertPromptToJson = async (
             model: 'gemini-2.5-flash',
             contents: conversionPrompt,
             config: {
-                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a clean, valid, and detailed JSON object based on the provided schema. Infer and populate all fields logically from the source text.",
+                // MODIFIED: Updated system instruction to match new compact schema.
+                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a clean, valid, and concise keyword-driven JSON object based on the provided schema. Infer and populate all fields logically from the source text.",
                 responseMimeType: "application/json",
-                responseSchema: DETAILED_JSON_PROMPT_SCHEMA,
+                // MODIFIED: Using the new compact schema.
+                responseSchema: COMPACT_JSON_PROMPT_SCHEMA,
                 temperature: 0.2, // Low temperature for deterministic conversion
             }
         });
