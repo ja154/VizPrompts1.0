@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
-import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson } from './services/geminiService.ts';
+import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson, analyzeVideoContent } from './services/geminiService.ts';
 import { BrainCircuitIcon, FilmIcon, PlusCircleIcon, LibraryIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
@@ -12,6 +12,7 @@ import Auth from './components/Auth.tsx';
 import { useAuth } from './hooks/useAuth';
 import GlowCard from './components/GlowCard.tsx';
 import ResultsView from './components/ResultsView.tsx';
+import VideoAnalysisView from './components/VideoAnalysisView.tsx';
 import ProfilePage from './components/ProfilePage.tsx';
 import HistoryPage from './components/HistoryPage.tsx';
 import UserMenu from './components/UserMenu.tsx';
@@ -23,6 +24,7 @@ import FAQ from './components/FAQ.tsx';
 
 type Theme = 'light' | 'dark';
 export type AppView = 'main' | 'profile' | 'history';
+type ResultType = 'prompt' | 'video_analysis';
 
 interface UploaderProps {
     analysisState: AnalysisState;
@@ -33,12 +35,13 @@ interface UploaderProps {
     progressMessage: string;
     onFileSelect: (file: File) => void;
     onStartAnalysis: () => void;
+    onStartVideoAnalysis: () => void;
     onResetState: () => void;
 }
 
 const Uploader: React.FC<UploaderProps> = ({
     analysisState, file, videoUrl, error, progress, progressMessage,
-    onFileSelect, onStartAnalysis, onResetState
+    onFileSelect, onStartAnalysis, onStartVideoAnalysis, onResetState
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -96,16 +99,20 @@ const Uploader: React.FC<UploaderProps> = ({
                     <p className="text-center text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark truncate" title={file.name}>{file.name}</p>
                     <div className="flex flex-col sm:flex-row gap-4 mt-6">
                         <BlurryButton onClick={onStartAnalysis} className="flex-1">
-                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                             <span className="fas fa-magic mr-2"></span>
-                            Start Analysis
+                            Generate Prompt
                         </BlurryButton>
+                        <BlurryButton onClick={onStartVideoAnalysis} className="flex-1">
+                            <BrainCircuitIcon className="w-5 h-5 mr-2" />
+                            Understand Video
+                        </BlurryButton>
+                    </div>
+                     <div className="mt-4">
                         <button
                             onClick={onResetState}
-                            className="flex-1 group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
+                            className="w-full group relative inline-flex items-center justify-center p-0.5 rounded-xl font-semibold transition-all duration-200 ease-in-out bg-bg-primary-light dark:bg-bg-primary-dark hover:bg-gray-200 dark:hover:bg-gray-700/80 text-text-primary-light dark:text-text-primary-dark"
                         >
                             <span className="relative w-full h-full px-5 py-2.5 text-sm rounded-lg leading-none flex items-center justify-center gap-2">
-                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                                 <span className="fas fa-undo mr-2"></span>
                                 Choose Another File
                             </span>
@@ -128,19 +135,16 @@ const Uploader: React.FC<UploaderProps> = ({
 
             {analysisState === AnalysisState.ERROR && (
                 <div className="text-center animate-fade-in-slide-up">
-                    {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                     <span className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></span>
                     <h3 className="text-xl font-bold text-red-500 mb-2">Analysis Failed</h3>
                     <p className="text-center text-red-500/90 text-sm bg-red-500/10 p-3 rounded-lg mb-6">{error}</p>
                     <BlurryButton onClick={onResetState}>
-                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                         <span className="fas fa-undo mr-2"></span>
                         Try Another File
                     </BlurryButton>
                 </div>
             )}
 
-            {/* Fallback for errors during non-processing states */}
             {(analysisState === AnalysisState.IDLE || analysisState === AnalysisState.PREVIEW) && error && (
                 <p className="text-center text-red-500 mt-4">{error}</p>
             )}
@@ -299,7 +303,6 @@ const AnalyzedFilePreview: React.FC<{file: File, videoUrl: string, onReset: () =
             </div>
         </div>
         <BlurryButton onClick={onReset} className="w-full mt-6">
-            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
             <span className="fas fa-plus mr-2"></span> Start New Analysis
         </BlurryButton>
     </GlowCard>
@@ -321,9 +324,15 @@ const App: React.FC = () => {
     const [analysisState, setAnalysisState] = useState<AnalysisState>(AnalysisState.IDLE);
     const [progress, setProgress] = useState(0);
     const [progressMessage, setProgressMessage] = useState('');
+    const [error, setError] = useState('');
+    
+    // Results State
+    const [resultType, setResultType] = useState<ResultType | null>(null);
     const [generatedPrompt, setGeneratedPrompt] = useState('');
     const [structuredPrompt, setStructuredPrompt] = useState<StructuredPrompt | null>(null);
-    const [error, setError] = useState('');
+    const [videoAnalysisResult, setVideoAnalysisResult] = useState<string | null>(null);
+    
+    // UI Interaction State
     const [isCopied, setIsCopied] = useState(false);
     const [isRefining, setIsRefining] = useState(false);
     const [isDetailing, setIsDetailing] = useState(false);
@@ -341,7 +350,6 @@ const App: React.FC = () => {
     const [remixStyle, setRemixStyle] = useState('');
     const [isConvertingToJson, setIsConvertingToJson] = useState(false);
     
-    // Logic lifted from Uploader
     const resetState = useCallback(() => {
         setFile(null);
         if (videoUrl) URL.revokeObjectURL(videoUrl);
@@ -350,9 +358,11 @@ const App: React.FC = () => {
         setAnalysisState(AnalysisState.IDLE);
         setProgress(0);
         setProgressMessage('');
+        setError('');
+        setResultType(null);
         setGeneratedPrompt('');
         setStructuredPrompt(null);
-        setError('');
+        setVideoAnalysisResult(null);
         setIsCopied(false);
         setIsRefining(false);
         setIsDetailing(false);
@@ -418,20 +428,20 @@ const App: React.FC = () => {
         setProgress(0);
         setProgressMessage('Preparing media...');
         setError('');
+        setResultType('prompt');
 
         try {
             let frameDataUrls: string[] = [];
             
-            // Step 1: Extract frames (0% -> 50%)
             if (file.type.startsWith('video/')) {
                 setProgressMessage('Extracting video frames...');
                 frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => {
-                    setProgress(prog * 0.5); // Scale 0-100 to 0-50
+                    setProgress(prog * 0.5);
                 });
             } else if (file.type.startsWith('image/')) {
                 setProgressMessage('Processing image...');
                 frameDataUrls = [videoUrl];
-                await new Promise(res => setTimeout(res, 500)); // Simulate work
+                await new Promise(res => setTimeout(res, 500));
                 setProgress(50);
             }
             
@@ -440,7 +450,6 @@ const App: React.FC = () => {
             }
             setExtractedFrames(frameDataUrls);
             
-            // Step 2: AI Analysis (50% -> 100%)
             setProgressMessage('Analyzing with Gemini AI...');
             
             progressInterval = setInterval(() => {
@@ -460,7 +469,6 @@ const App: React.FC = () => {
             if (progressInterval) clearInterval(progressInterval);
             setProgress(100);
             
-            // Step 3: Finalize and display results
             populateStateFromAnalysis(finalAnalysis);
             addToHistory({
                 id: Date.now().toString(),
@@ -469,6 +477,68 @@ const App: React.FC = () => {
                 thumbnail: frameDataUrls[0],
                 timestamp: new Date().toISOString(),
             });
+
+            setTimeout(() => {
+                setAnalysisState(AnalysisState.SUCCESS);
+            }, 300);
+
+        } catch (err) {
+            if (progressInterval) clearInterval(progressInterval);
+            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+            setAnalysisState(AnalysisState.ERROR);
+        }
+    };
+
+    const handleStartVideoAnalysis = async () => {
+        if (!file) return;
+
+        let progressInterval: ReturnType<typeof setInterval> | undefined;
+        setAnalysisState(AnalysisState.PROCESSING);
+        setProgress(0);
+        setProgressMessage('Preparing media...');
+        setError('');
+        setResultType('video_analysis');
+
+        try {
+            let frameDataUrls: string[] = [];
+            
+            if (file.type.startsWith('video/')) {
+                setProgressMessage('Extracting video frames...');
+                frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => {
+                    setProgress(prog * 0.5);
+                });
+            } else if (file.type.startsWith('image/')) {
+                setProgressMessage('Processing image...');
+                frameDataUrls = [videoUrl];
+                await new Promise(res => setTimeout(res, 500));
+                setProgress(50);
+            }
+            
+            if (frameDataUrls.length === 0) {
+                throw new Error("Could not extract frames or process the media.");
+            }
+            setExtractedFrames(frameDataUrls); // Store frames in case user wants to test consistency later, though that's not a feature for this view yet.
+            
+            setProgressMessage('Analyzing with Gemini Pro...');
+            
+            progressInterval = setInterval(() => {
+                setProgress(prev => {
+                    if (prev >= 95) {
+                        if (progressInterval) clearInterval(progressInterval);
+                        return prev;
+                    }
+                    return prev + 1;
+                });
+            }, 200); // Slower interval for the more powerful model
+
+            const analysisResultText = await analyzeVideoContent(frameDataUrls, (msg) => {
+                 setProgressMessage(msg);
+            });
+
+            if (progressInterval) clearInterval(progressInterval);
+            setProgress(100);
+            
+            setVideoAnalysisResult(analysisResultText);
 
             setTimeout(() => {
                 setAnalysisState(AnalysisState.SUCCESS);
@@ -560,19 +630,11 @@ const App: React.FC = () => {
     };
 
     const handleApplyImprovements = (newOutput: string) => {
-        // Close modal and clear related state immediately.
         setShowConsistencyModal(false);
         setConsistencyResult(null);
         setError('');
-    
-        // Apply state updates directly for a real-time feel.
         setGeneratedPrompt(newOutput);
-    
         if (structuredPrompt) {
-            // For both JSON and text mode, the main updatable text is the "core_focus".
-            // In JSON mode, core_focus holds the entire JSON string.
-            // In text mode, it holds the main prompt paragraph.
-            // This unified logic is simpler and more robust.
             setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
         }
     };
@@ -602,11 +664,8 @@ const App: React.FC = () => {
 
     const handleConvertToJason = async () => {
         if (!structuredPrompt) return;
-    
-        // Don't convert if it's already JSON.
         try {
             JSON.parse(generatedPrompt);
-            // It's already JSON, do nothing.
             return;
         } catch (e) {
             // It's not JSON, proceed.
@@ -617,7 +676,6 @@ const App: React.FC = () => {
         try {
             const jsonString = await convertPromptToJson(structuredPrompt);
             setGeneratedPrompt(jsonString);
-            // Update structured prompt to reflect JSON output mode
             setStructuredPrompt({
                 objective: "JSON Format Output",
                 core_focus: jsonString,
@@ -649,6 +707,7 @@ const App: React.FC = () => {
     const handleSelectHistoryItem = (item: PromptHistoryItem) => {
         resetState();
         setAnalysisState(AnalysisState.SUCCESS);
+        setResultType('prompt');
         setStructuredPrompt(item.structuredPrompt);
         setGeneratedPrompt(item.prompt);
         setVideoUrl(item.thumbnail);
@@ -660,6 +719,7 @@ const App: React.FC = () => {
     const handleSelectPromptFromLibrary = (item: PromptTemplate) => {
         resetState();
         setAnalysisState(AnalysisState.SUCCESS);
+        setResultType('prompt');
         setStructuredPrompt(item.structuredPrompt);
         setGeneratedPrompt(item.prompt);
 
@@ -669,7 +729,7 @@ const App: React.FC = () => {
 
         setVideoMeta({ duration: 'N/A', resolution: 'From Library' });
         setFile(new File([], item.title, { type: 'text/plain' }));
-        setExtractedFrames([]); // No frames for consistency check
+        setExtractedFrames([]);
         setCurrentView('main');
     };
 
@@ -693,7 +753,6 @@ const App: React.FC = () => {
 
             <header className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <nav className="flex justify-between items-center w-full">
-                    {/* Left-aligned controls */}
                     <div className="flex-1 flex justify-start">
                         {!currentUser && (
                             <BlurryButton onClick={() => setIsAuthModalOpen(true)}>
@@ -702,14 +761,12 @@ const App: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Centered Logo */}
                     <div className="flex-shrink-0">
                          <div onClick={() => handleNavigate('main')} className="flex items-center gap-2 cursor-pointer group">
                             <LogoLoader />
                         </div>
                     </div>
 
-                    {/* Right-aligned User Controls */}
                     <div className="flex-1 flex justify-end items-center gap-4">
                        <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
                        {currentUser && (
@@ -743,6 +800,7 @@ const App: React.FC = () => {
                                         progressMessage={progressMessage}
                                         onFileSelect={handleFileSelect}
                                         onStartAnalysis={handleStartAnalysis}
+                                        onStartVideoAnalysis={handleStartVideoAnalysis}
                                         onResetState={resetState}
                                     />
                                 )}
@@ -750,7 +808,7 @@ const App: React.FC = () => {
                             </div>
 
                             <div>
-                                {analysisState === AnalysisState.SUCCESS && structuredPrompt ? (
+                                {analysisState === AnalysisState.SUCCESS && resultType === 'prompt' && structuredPrompt ? (
                                     <ResultsView 
                                         file={file}
                                         videoUrl={videoUrl}
@@ -789,6 +847,15 @@ const App: React.FC = () => {
                                         handleRemixStyle={handleRemixStyle}
                                         isConvertingToJson={isConvertingToJson}
                                         onConvertToJason={handleConvertToJason}
+                                    />
+                                ) : analysisState === AnalysisState.SUCCESS && resultType === 'video_analysis' && videoAnalysisResult ? (
+                                    <VideoAnalysisView
+                                        file={file}
+                                        videoUrl={videoUrl}
+                                        videoMeta={videoMeta}
+                                        analysisResult={videoAnalysisResult}
+                                        isCopied={isCopied}
+                                        handleCopy={handleCopy}
                                     />
                                 ) : (
                                     <ResultsPlaceholder />

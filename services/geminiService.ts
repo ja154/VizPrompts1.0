@@ -716,3 +716,53 @@ export const convertPromptToJson = async (
         throw new Error("An unknown error occurred while converting the prompt to JSON.");
     }
 };
+
+/**
+ * Analyzes video frames using the Gemini Pro model to generate a summary of the content.
+ * @param frameDataUrls An array of data URLs for the video frames.
+ * @param onProgress A callback to update the UI with processing messages.
+ * @returns A promise that resolves to a descriptive string summary of the video.
+ */
+export const analyzeVideoContent = async (
+    frameDataUrls: string[],
+    onProgress: (message: string) => void
+): Promise<string> => {
+    if (frameDataUrls.length === 0) {
+        throw new Error("No frames provided for video analysis.");
+    }
+
+    onProgress('Analyzing video content with Gemini Pro...');
+
+    try {
+        const imagePartsForAnalysis = frameDataUrls.map(dataUrl => {
+            const { base64, mimeType } = parseDataUrl(dataUrl);
+            return { inlineData: { mimeType, data: base64 } };
+        });
+
+        const analysisPrompt = `Analyze this sequence of video frames and provide a comprehensive summary. Describe the main subjects, their actions, the environment, and any narrative or key events that unfold. Structure your response in clear sections using Markdown for readability.`;
+        
+        const analysisResponse: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-pro', 
+            contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
+            config: {
+                systemInstruction: "You are an expert video analyst AI. Your task is to watch a sequence of frames and provide a detailed, structured summary of the video's content.",
+                temperature: 0.5,
+            }
+        });
+        
+        const responseText = analysisResponse.text.trim();
+
+        if (!responseText) {
+            throw new Error("The AI model returned an empty analysis. Please try a different video.");
+        }
+
+        return responseText;
+
+    } catch (error) {
+        console.error("Error during Gemini Pro video analysis:", error);
+        if (error instanceof Error) {
+            throw new Error(`AI analysis failed: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while communicating with the AI.");
+    }
+};

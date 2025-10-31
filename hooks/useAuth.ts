@@ -72,7 +72,7 @@ export const useAuth = () => {
         try {
             const storedUsersStr = localStorage.getItem(USERS_KEY);
             // FIX: Explicitly type the parsed JSON to ensure type safety.
-            const storedUsers: Record<string, User> = storedUsersStr ? JSON.parse(storedUsersStr) : {};
+            const storedUsers: Record<string, User> = storedUsersStr ? JSON.parse(storedUsersStr) as Record<string, User> : {};
             setUsers(storedUsers);
 
             const activeUsername = localStorage.getItem(ACTIVE_USER_KEY);
@@ -107,8 +107,7 @@ export const useAuth = () => {
                     return reject(new Error("Google account email is not verified."));
                 }
                 
-                // FIX: Explicitly type the lambda parameter `u` as `User` to fix type inference issues.
-                let user: User | undefined = Object.values(users).find((u: User) => u.email === payload.email);
+                let user: User | undefined = Object.values(users).find(u => u.email === payload.email);
 
                 if (!user) {
                     // New user: Create account automatically
@@ -144,8 +143,7 @@ export const useAuth = () => {
             if (users[data.username]) {
                 return reject(new Error('Username is already taken.'));
             }
-            // FIX: Explicitly type the lambda parameter `u` as `User` to fix type inference issues.
-            if (Object.values(users).some((u: User) => u.email === data.email)) {
+            if (Object.values(users).some(u => u.email === data.email)) {
                 return reject(new Error('An account with this email already exists.'));
             }
             if (!data.password || data.password.length < 6) {
@@ -170,9 +168,8 @@ export const useAuth = () => {
 
     const login = (usernameOrEmail: string, password?: string): Promise<User> => {
         return new Promise((resolve, reject) => {
-            // FIX: Explicitly type the lambda parameter `u` as `User` to fix type inference issues.
             const user: User | undefined = Object.values(users).find(
-                (u: User) => u.username === usernameOrEmail || u.email === usernameOrEmail
+                u => u.username === usernameOrEmail || u.email === usernameOrEmail
             );
 
             if (!user) {
