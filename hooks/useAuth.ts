@@ -107,7 +107,8 @@ export const useAuth = () => {
                     return reject(new Error("Google account email is not verified."));
                 }
                 
-                let user: User | undefined = Object.values(users).find(u => u.email === payload.email);
+                // FIX: Explicitly type the parameter 'u' to resolve type inference issues where it was being treated as 'unknown'.
+                let user: User | undefined = Object.values(users).find((u: User) => u.email === payload.email);
 
                 if (!user) {
                     // New user: Create account automatically
@@ -143,7 +144,8 @@ export const useAuth = () => {
             if (users[data.username]) {
                 return reject(new Error('Username is already taken.'));
             }
-            if (Object.values(users).some(u => u.email === data.email)) {
+            // FIX: Explicitly type the parameter 'u' to resolve type inference issues where it was being treated as 'unknown'.
+            if (Object.values(users).some((u: User) => u.email === data.email)) {
                 return reject(new Error('An account with this email already exists.'));
             }
             if (!data.password || data.password.length < 6) {
@@ -168,8 +170,9 @@ export const useAuth = () => {
 
     const login = (usernameOrEmail: string, password?: string): Promise<User> => {
         return new Promise((resolve, reject) => {
+            // FIX: Explicitly type the parameter 'u' to resolve type inference issues where it was being treated as 'unknown'.
             const user: User | undefined = Object.values(users).find(
-                u => u.username === usernameOrEmail || u.email === usernameOrEmail
+                (u: User) => u.username === usernameOrEmail || u.email === usernameOrEmail
             );
 
             if (!user) {

@@ -32,36 +32,108 @@ GUIDELINES:
 - **Structure is Key:** Adhere strictly to the <objective>, <core_focus>, and <constraints> tags. Do not add conversational text.
 `;
 
-// NEW: A more compact, AI-friendly schema focusing on keywords. This replaces the old detailed one.
-const COMPACT_JSON_PROMPT_SCHEMA = {
+// NEW: A detailed schema for video production pipelines.
+const VIDEO_PRODUCTION_JSON_SCHEMA = {
     type: Type.OBJECT,
     properties: {
-        prompt_summary: {
-            type: Type.STRING,
-            description: "A single, concise, comma-separated paragraph combining all key visual elements. This should be a ready-to-use prompt for a text-to-video model."
+        video_length_seconds: {
+            type: Type.INTEGER,
+            description: "The total duration of the video in seconds."
         },
-        primary_subject: {
+        aspect_ratio: {
             type: Type.STRING,
-            description: "Keywords describing the main subject(s), their appearance, and actions. E.g., 'woman with blonde hair, red sundress, walking barefoot'."
+            description: "The aspect ratio of the video, e.g., '16:9' or '9:16'."
         },
-        environment: {
-            type: Type.STRING,
-            description: "Keywords for the setting and background details. E.g., 'wet sandy beach, vibrant sunset, seagulls in background, ocean waves'."
+        overall_style: {
+            type: Type.OBJECT,
+            description: "Describes the overarching aesthetic and mood of the entire video.",
+            properties: {
+                visual_aesthetic: {
+                    type: Type.STRING,
+                    description: "A detailed description of the visual style, including textures, realism, and unique artistic elements."
+                },
+                color_palette: {
+                    type: Type.STRING,
+                    description: "A description of the primary and secondary colors used throughout the video."
+                },
+                film_attributes: {
+                    type: Type.STRING,
+                    description: "Details on cinematic qualities like camera work, lens effects, and transitions."
+                },
+                tone_and_mood: {
+                    type: Type.STRING,
+                    description: "The emotional and atmospheric feel of the video (e.g., inspiring, mysterious, energetic)."
+                }
+            },
+            required: ["visual_aesthetic", "color_palette", "film_attributes", "tone_and_mood"]
         },
-        cinematography: {
-            type: Type.STRING,
-            description: "Keywords for camera work. E.g., 'wide shot, cinematic, low angle, slow pan left'."
+        keywords: {
+            type: Type.ARRAY,
+            description: "A list of relevant keywords for the video content and style.",
+            items: { type: Type.STRING }
         },
-        style_and_mood: {
-            type: Type.STRING,
-            description: "Keywords for the overall aesthetics. E.g., 'photorealistic, serene and peaceful, warm golden hour light, long shadows, vibrant oranges and pinks'."
+        scenes: {
+            type: Type.ARRAY,
+            description: "A chronological breakdown of each scene in the video.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    scene_id: { type: Type.INTEGER, description: "A unique identifier for the scene, starting from 1." },
+                    start_time_seconds: { type: Type.INTEGER, description: "The start time of the scene in seconds." },
+                    end_time_seconds: { type: Type.INTEGER, description: "The end time of the scene in seconds." },
+                    description: { type: Type.STRING, description: "A detailed description of the action and visuals in the scene." },
+                    camera: {
+                        type: Type.OBJECT,
+                        properties: {
+                            composition: { type: Type.STRING },
+                            motion: { type: Type.STRING },
+                            angle: { type: Type.STRING },
+                            lens: { type: Type.STRING }
+                        },
+                        required: ["composition", "motion", "angle", "lens"]
+                    },
+                    environment_details: {
+                        type: Type.OBJECT,
+                        properties: {
+                            setting: { type: Type.STRING, description: "Description of the scene's environment." }
+                        },
+                        required: ["setting"]
+                    },
+                    transition_to_next_scene: { type: Type.STRING, description: "How this scene transitions to the next." },
+                    audio_design_for_scene: {
+                        type: Type.OBJECT,
+                        properties: {
+                            ambient_sounds: { type: Type.STRING },
+                            music: { type: Type.STRING },
+                            sfx: { type: Type.STRING },
+                            voiceover: { type: Type.STRING }
+                        },
+                        required: ["ambient_sounds", "music", "sfx", "voiceover"]
+                    },
+                    elements_in_scene: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    motion_elements_internal: { type: Type.STRING, description: "Description of movements within the scene." },
+                    on_screen_text: { type: Type.STRING },
+                    visual_effects: { type: Type.ARRAY, items: { type: Type.STRING } }
+                },
+                required: ["scene_id", "start_time_seconds", "end_time_seconds", "description", "camera", "environment_details", "transition_to_next_scene", "audio_design_for_scene", "elements_in_scene", "motion_elements_internal", "on_screen_text", "visual_effects"]
+            }
         },
-        negative_prompt: {
-            type: Type.STRING,
-            description: "A comma-separated list of keywords to exclude. E.g., 'blurry, distorted, ugly, watermark'."
-        }
+        brand_info: {
+            type: Type.OBJECT,
+            properties: {
+                key_colors: { type: Type.ARRAY, items: { type: Type.STRING } },
+                logo_description: { type: Type.STRING },
+                name: { type: Type.STRING },
+                product: { type: Type.STRING },
+                slogan: { type: Type.STRING }
+            },
+            required: ["key_colors", "logo_description", "name", "product", "slogan"]
+        },
+        ending_visual: { type: Type.STRING, description: "A description of the final shot or visual." },
+        final_audio_cue: { type: Type.STRING, description: "The final sound or music cue." },
+        final_on_screen_text: { type: Type.STRING, description: "Any text that appears at the end." }
     },
-    required: ["prompt_summary", "primary_subject", "environment", "cinematography", "style_and_mood"]
+    required: ["video_length_seconds", "aspect_ratio", "overall_style", "keywords", "scenes", "brand_info", "ending_visual", "final_audio_cue", "final_on_screen_text"]
 };
 
 
@@ -219,11 +291,11 @@ export const generateJsonPromptFromFrames = async (
         model: 'gemini-2.5-flash',
         contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
         config: {
-            // MODIFIED: Updated system instruction to match the new compact, keyword-driven schema.
-            systemInstruction: "You are an efficient Media-to-Prompt engineer. Your task is to analyze media and generate a concise, keyword-driven JSON object based on the provided schema. Focus on creating a `prompt_summary` that is a powerful, ready-to-use prompt for generative AI. Populate all fields with comma-separated keywords and short, descriptive phrases. Avoid long sentences. Your output must be only the raw JSON object.",
+            // MODIFIED: Updated system instruction to match the new detailed schema.
+            systemInstruction: "You are an expert video production assistant. Your task is to analyze media frames and generate a highly detailed, structured JSON shot list suitable for a video production pipeline. Populate all fields of the provided schema with meticulous detail, describing scenes, camera movements, styles, and timing. Infer details like `video_length_seconds` and scene timings based on the number of frames provided. Your output must be only the raw JSON object.",
             responseMimeType: "application/json",
-            // MODIFIED: Using the new compact schema.
-            responseSchema: COMPACT_JSON_PROMPT_SCHEMA,
+            // MODIFIED: Using the new video production schema.
+            responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
         }
     });
 
@@ -340,8 +412,8 @@ export const refineJsonPrompt = async (
     }
 
     let content = `
-Your task is to rewrite and enhance the following JSON prompt based on my instruction. 
-Produce a new, concise, keyword-driven JSON object. 
+Your task is to rewrite and enhance the following JSON shot list based on my instruction. 
+Produce a new, detailed, and valid JSON object based on the provided schema. 
 Apply the changes across all relevant fields to ensure a cohesive result.
 
 CURRENT JSON:
@@ -363,10 +435,10 @@ ${negativePrompt}
             model: 'gemini-2.5-flash',
             contents: content,
             config: {
-                systemInstruction: `You are an expert prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a keyword-driven JSON prompt based on a user's instruction. Apply the instruction comprehensively across all relevant fields of the JSON object to ensure a cohesive and improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
+                systemInstruction: `You are an expert video editor and prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a detailed JSON shot list based on a user's instruction. Apply the instruction comprehensively across all relevant fields of the JSON object, including scenes, styles, and descriptions, to ensure a cohesive and improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
                 responseMimeType: "application/json",
-                // MODIFIED: Using the new compact schema for refinement.
-                responseSchema: COMPACT_JSON_PROMPT_SCHEMA,
+                // MODIFIED: Using the new video production schema for refinement.
+                responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
                 temperature: 0.7,
             }
         });
@@ -573,18 +645,18 @@ export const testJsonConsistency = async (
         return { inlineData: { mimeType, data: base64 } };
     });
 
-    // MODIFIED: Updated prompt to reflect the new compact JSON schema.
+    // MODIFIED: Updated prompt to reflect the new detailed JSON schema.
     const consistencyCheckPrompt = `
-    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a keyword-driven JSON prompt object and a series of media frames. Your goal is to improve the JSON prompt so its keyword values perfectly represent the provided media.
+    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a detailed JSON shot list and a series of media frames. Your goal is to improve the JSON so it perfectly represents the provided media.
 
     **Input:**
-    1.  **JSON Prompt:** A user-provided JSON object with a compact structure.
+    1.  **JSON Prompt:** A user-provided JSON object with a detailed video production structure.
     2.  **Media Frames:** A sequence of images.
 
     **Instructions:**
 
     **Step 1: Forensic Analysis (Internal Monologue)**
-    *   **Analyze the JSON:** Deconstruct the keyword-based values in the provided JSON object.
+    *   **Analyze the JSON:** Deconstruct the values in the provided JSON object.
     *   **Analyze the Media:** Exhaustively list every observable detail in the media frames.
     *   **Compare:** Identify details present in the media that are missing, vague, or mis-represented in the JSON values.
 
@@ -599,7 +671,7 @@ export const testJsonConsistency = async (
     - **\`consistency_score\` (integer):** A strict score from 0 to 100.
     - **\`explanation\` (string):** A concise summary explaining the score.
     - **\`missing_details\` (array of strings):** A list of the most critical visual details from the media that are missing from the JSON.
-    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields.** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the compact prompt schema.
+    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields (e.g., scene descriptions, style elements).** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the video production shot list schema.
 
     **Now, analyze the following JSON prompt and media frames:**
 
@@ -624,8 +696,8 @@ export const testJsonConsistency = async (
             consistency_score: { type: Type.INTEGER },
             explanation: { type: Type.STRING },
             missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
-            // MODIFIED: Using the new compact schema for the revised output.
-            revised_output: COMPACT_JSON_PROMPT_SCHEMA
+            // MODIFIED: Using the new video production schema for the revised output.
+            revised_output: VIDEO_PRODUCTION_JSON_SCHEMA
         },
         required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_output"]
     };
@@ -682,7 +754,7 @@ export const convertPromptToJson = async (
     ${prompt.enhancements ? `Enhancements: ${prompt.enhancements}` : ''}
     `;
 
-    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and concise JSON object using comma-separated keywords. Analyze the text and populate all fields of the provided JSON schema as accurately as possible.
+    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and detailed JSON shot list based on the provided schema. Analyze the text and populate all fields as accurately as possible, breaking down the description into distinct scenes where appropriate.
 
     TEXT TO CONVERT:
     ${contentToConvert}
@@ -693,11 +765,11 @@ export const convertPromptToJson = async (
             model: 'gemini-2.5-flash',
             contents: conversionPrompt,
             config: {
-                // MODIFIED: Updated system instruction to match new compact schema.
-                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a clean, valid, and concise keyword-driven JSON object based on the provided schema. Infer and populate all fields logically from the source text.",
+                // MODIFIED: Updated system instruction to match new detailed schema.
+                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a detailed JSON shot list based on the provided schema. Infer and populate all fields logically from the source text, breaking down the description into distinct scenes where appropriate.",
                 responseMimeType: "application/json",
-                // MODIFIED: Using the new compact schema.
-                responseSchema: COMPACT_JSON_PROMPT_SCHEMA,
+                // MODIFIED: Using the new video production schema.
+                responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
                 temperature: 0.2, // Low temperature for deterministic conversion
             }
         });
