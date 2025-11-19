@@ -265,6 +265,78 @@ export const generateStructuredPromptFromFrames = async (
 };
 
 /**
+ * Generates a structured prompt from an existing textual video analysis.
+ * This allows users to pivot from the "Understand Video" feature to the prompt generation flow.
+ * @param analysisText The descriptive text from the video analysis.
+ * @returns A promise that resolves to a StructuredPrompt object.
+ */
+export const generatePromptFromAnalysis = async (
+    analysisText: string
+): Promise<StructuredPrompt> => {
+    // We reuse the core structural instructions to ensure compatibility.
+    const structureInstructions = `
+Your output MUST follow this structure:
+
+<objective>
+[A brief, one-sentence goal for the generation.]
+</objective>
+
+<core_focus>
+[A detailed, comma-separated list of keywords and short, descriptive phrases that capture the scene. Focus on nouns, adjectives, and verbs.]
+</core_focus>
+
+<constraints>
+[A concise list of key technical and stylistic requirements.]
+</constraints>
+
+GUIDELINES:
+- **Be Concise but Descriptive:** Use powerful keywords.
+- **Structure is Key:** Adhere strictly to the tags.
+`;
+
+    const prompt = `
+    You are an expert prompt engineer. I have a detailed video analysis below. 
+    Your task is to convert this analysis into a highly effective, structured text-to-video prompt based on the content described.
+
+    VIDEO ANALYSIS:
+    "${analysisText}"
+
+    ${structureInstructions}
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.7,
+            }
+        });
+
+        const responseText = response.text.trim();
+        const result = parseStructuredPrompt(responseText);
+
+        // If strict parsing fails, fallback to wrapping the text
+        if (!result.objective || !result.core_focus || !result.constraints) {
+            return {
+                objective: "Generate a video based on the provided analysis.",
+                core_focus: responseText,
+                constraints: "Adhere to the visual style described in the analysis."
+            };
+        }
+        return result;
+
+    } catch (error) {
+        console.error("Error generating prompt from analysis:", error);
+        if (error instanceof Error) {
+            throw new Error(`Prompt generation failed: ${error.message}`);
+        }
+        throw new Error("An unknown error occurred while communicating with the AI.");
+    }
+};
+
+
+/**
  * Generates a structured prompt as a raw JSON string from media frames.
  * @param frameDataUrls An array of data URLs for the video frames or images.
  * @param onProgress A callback to update the UI with processing messages.

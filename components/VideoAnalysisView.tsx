@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrainCircuitIcon, FilmIcon } from './icons';
 import GlowCard from './GlowCard';
+import BlurryButton from './Button';
 
 interface VideoAnalysisViewProps {
     file: File | null;
@@ -9,10 +10,12 @@ interface VideoAnalysisViewProps {
     analysisResult: string;
     isCopied: boolean;
     handleCopy: (text: string) => void;
+    isGeneratingPrompt: boolean;
+    onGeneratePrompt: () => void;
 }
 
 const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
-    file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy
+    file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt
 }) => {
     const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
 
@@ -54,6 +57,14 @@ const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
                         <pre className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-4 rounded-lg min-h-[200px] max-h-[500px] overflow-y-auto whitespace-pre-wrap font-sans">
                             {analysisResult}
                         </pre>
+
+                        <div className="mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-6">
+                             <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4 text-center">Want to turn this analysis into a generative prompt?</p>
+                             <BlurryButton onClick={onGeneratePrompt} className="w-full" disabled={isGeneratingPrompt}>
+                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                                {isGeneratingPrompt ? <><span className="fas fa-spinner fa-spin mr-2"></span>Generating Prompt...</> : <><span className="fas fa-magic mr-2"></span>Generate Prompt from Analysis</>}
+                            </BlurryButton>
+                        </div>
                     </div>
                 </GlowCard>
             </div>

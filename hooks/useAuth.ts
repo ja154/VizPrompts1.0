@@ -107,8 +107,8 @@ export const useAuth = () => {
                     return reject(new Error("Google account email is not verified."));
                 }
                 
-                // FIX: Explicitly type the parameter 'u' to resolve type inference issues where it was being treated as 'unknown'.
-                let user: User | undefined = Object.values(users).find((u: User) => u.email === payload.email);
+                // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
+                let user: User | undefined = (Object.values(users) as User[]).find((u) => u.email === payload.email);
 
                 if (!user) {
                     // New user: Create account automatically
@@ -144,8 +144,8 @@ export const useAuth = () => {
             if (users[data.username]) {
                 return reject(new Error('Username is already taken.'));
             }
-            // FIX: Explicitly type the parameter 'u' to resolve type inference issues where it was being treated as 'unknown'.
-            if (Object.values(users).some((u: User) => u.email === data.email)) {
+            // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
+            if ((Object.values(users) as User[]).some((u) => u.email === data.email)) {
                 return reject(new Error('An account with this email already exists.'));
             }
             if (!data.password || data.password.length < 6) {
@@ -170,9 +170,9 @@ export const useAuth = () => {
 
     const login = (usernameOrEmail: string, password?: string): Promise<User> => {
         return new Promise((resolve, reject) => {
-            // FIX: Explicitly type the parameter 'u' to resolve type inference issues where it was being treated as 'unknown'.
-            const user: User | undefined = Object.values(users).find(
-                (u: User) => u.username === usernameOrEmail || u.email === usernameOrEmail
+            // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
+            const user: User | undefined = (Object.values(users) as User[]).find(
+                (u) => u.username === usernameOrEmail || u.email === usernameOrEmail
             );
 
             if (!user) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
-import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson, analyzeVideoContent } from './services/geminiService.ts';
+import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson, analyzeVideoContent, generatePromptFromAnalysis } from './services/geminiService.ts';
 import { BrainCircuitIcon, FilmIcon, PlusCircleIcon, LibraryIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
@@ -349,6 +349,7 @@ const App: React.FC = () => {
     const [isRemixing, setIsRemixing] = useState(false);
     const [remixStyle, setRemixStyle] = useState('');
     const [isConvertingToJson, setIsConvertingToJson] = useState(false);
+    const [isGeneratingPromptFromAnalysis, setIsGeneratingPromptFromAnalysis] = useState(false);
     
     const resetState = useCallback(() => {
         setFile(null);
@@ -379,6 +380,7 @@ const App: React.FC = () => {
         setIsRemixing(false);
         setRemixStyle('');
         setIsConvertingToJson(false);
+        setIsGeneratingPromptFromAnalysis(false);
     }, [videoUrl]);
 
     const populateStateFromAnalysis = (analysis: StructuredPrompt) => {
@@ -687,6 +689,30 @@ const App: React.FC = () => {
             setIsConvertingToJson(false);
         }
     };
+
+    const handleGeneratePromptFromAnalysis = async () => {
+        if (!videoAnalysisResult) return;
+        setIsGeneratingPromptFromAnalysis(true);
+        setError('');
+        try {
+            const result = await generatePromptFromAnalysis(videoAnalysisResult);
+            populateStateFromAnalysis(result);
+            setResultType('prompt'); // Switch view to prompt results
+            
+            // Optional: Add this new prompt generation to history
+            addToHistory({
+                id: Date.now().toString(),
+                prompt: result.core_focus,
+                structuredPrompt: result,
+                thumbnail: extractedFrames[0] || videoUrl, 
+                timestamp: new Date().toISOString(),
+            });
+        } catch (err) {
+             setError(err instanceof Error ? err.message : 'Failed to generate prompt from analysis.');
+        } finally {
+            setIsGeneratingPromptFromAnalysis(false);
+        }
+    };
     
     useEffect(() => {
         if (theme === 'dark') {
@@ -856,6 +882,8 @@ const App: React.FC = () => {
                                         analysisResult={videoAnalysisResult}
                                         isCopied={isCopied}
                                         handleCopy={handleCopy}
+                                        isGeneratingPrompt={isGeneratingPromptFromAnalysis}
+                                        onGeneratePrompt={handleGeneratePromptFromAnalysis}
                                     />
                                 ) : (
                                     <ResultsPlaceholder />
