@@ -1,560 +1,140 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VizPrompts: AI Video to Prompt Generator</title>
-    <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJhIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjNEI1NTYzIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjYzAyNmQzIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNCIgZmlsbD0idXJsKCNhKSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkuNSAxMy41YzAgMS42NTcgMS4zNDMgMyAzIDNzMy0xLjM0MyAzLTMtMS4zNDMtMy0zLTMtMyAxLjM0My0zIDN6Ii8+PHBhdGggZD0iTTEyIDN2Mi4yNU0xMiAxOC43NVYyMU0zIDEyaDIuMjVNMTguNzUgMTJIMjEiLz48cGF0aCBkPSJNMTYuNSA3LjVsLTEuNSAxLjVNNy41IDcuNWwxLjUgMS41TTE2LjUgMTYuNWwtMS41LTEuNU03LjUgMTYuNWwxLjUtMS41Ii8+PHBhdGggZD0iTTkgMjAuMjVjLTIuNDg4LTEuMjMtNC41LTMuNTEtNS40Ni02LjI1TTMuNTQgNy41QzQuNSA0Ljc2IDYuNTEyIDIuNDggOSAxLjc1TTE1IDEuNzVjMi40ODggMS4yMyA0LjUgMy41MSA1LjQ2IDYuMjVNMjAuNDYgMTYuNWMtMS4yMyAyLjQ4OC0zLjUxIDQuNS02LjI1IDUuNDYiLz48L2c+PC9zdmc+">
-    <meta name="description" content="Instantly convert any video into a hyper-detailed text-to-video prompt with our AI-powered generator. Using Google's Gemini AI, VizPrompts analyzes video frames to capture style, lighting, and composition, creating production-ready prompts for generative AI art and video models." />
-    <meta name="keywords" content="video to prompt, ai video analysis, text to video prompt, generative ai, prompt engineering, gemini ai, video analysis, creative ai tools, video to text" />
-    <meta name="author" content="VizPrompts">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://visionary-prompts.example.com/" />
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://visionary-prompts.example.com/" />
-    <meta property="og:title" content="Visionary Prompts: AI Video to Prompt Generator" />
-    <meta property="og:description" content="Turn any video into a detailed, production-ready prompt for generative AI models. Analyze aesthetics, lighting, and composition in seconds." />
-    <meta property="og:image" content="/social-preview.png" />
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://visionary-prompts.example.com/" />
-    <meta property="twitter:title" content="Visionary Prompts: AI Video to Prompt Generator" />
-    <meta property="twitter:description" content="Turn any video into a detailed, production-ready prompt for generative AI models. Analyze aesthetics, lighting, and composition in seconds." />
-    <meta property="twitter:image" content="/social-preview.png" />
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Google Sign-In -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- IMPORTANT: Replace with your actual Google Client ID -->
-    <meta name="google-client-id" content="537242218704-ah7b13unuri7tiv17qv1lg1vitbntnf8.apps.googleusercontent.com">
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VizPrompts Studio Pro Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<!-- Google Sign-In -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<meta name="google-client-id" content="537242218704-ah7b13unuri7tiv17qv1lg1vitbntnf8.apps.googleusercontent.com">
 
-    <!-- Tailwind -->
-    <!-- 
-      NOTE: The Tailwind Play CDN is used for development and prototyping in this environment.
-      For production, it is highly recommended to set up a build process with the Tailwind CLI or PostCSS 
-      to generate a smaller, optimized CSS file. This will significantly improve performance.
-    -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
+<script>
+    tailwind.config = {
+        darkMode: "class",
         theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+            extend: {
+                colors: {
+                    "primary": "#4b2bee",
+                    "background-light": "#f6f6f8",
+                    "background-dark": "#131022",
+                },
+                fontFamily: {
+                    "display": ["Space Grotesk", "sans-serif"],
+                    "sans": ["Inter", "sans-serif"]
+                },
+                borderRadius: {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
             },
-            colors: {
-              primary: {
-                light: '#4B5563', // Gray-600
-                dark: '#FFFAF0',  // FloralWhite (Creamy White)
-              },
-              secondary: {
-                light: '#6B7280', // Gray-500
-                dark: '#F5F5DC',  // Beige (Creamy White)
-              },
-              accent: {
-                light: '#c026d3',
-                dark: '#FBCFE8',
-              },
-              bg: {
-                secondary: {
-                  light: 'rgba(255, 255, 255, 0.95)',
-                  dark: 'rgba(46, 26, 71, 0.95)',
-                },
-                uploader: {
-                  light: 'rgba(249, 250, 251, 0.95)',
-                  dark: 'rgba(38, 20, 60, 0.95)',
-                },
-              },
-              text: {
-                primary: {
-                  light: '#111827',
-                  dark: '#f9fafb',
-                },
-                secondary: {
-                  light: '#4b5563',
-                  dark: '#d1d5db',
-                },
-              },
-              border: {
-                primary: {
-                  light: '#e5e7eb',
-                  dark: '#4B5563', // Changed from purple to gray-600
-                },
-              },
-            },
-          },
         },
-      }
-    </script>
+    }
+</script>
+<style>
+    /* Light mode defaults */
+    .glassmorphic-card {
+        background-color: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    .glassmorphic-sidebar {
+        background-color: rgba(246, 246, 248, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .glassmorphic-input {
+        background-color: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    .glassmorphic {
+      background-color: rgba(250, 250, 250, 0.5);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
     
-    <style>
-      html, body {
-        width: 100%;
-        overflow-x: hidden;
-      }
-      :root {
-        font-family: 'Inter', sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
+    /* Dark mode overrides */
+    .dark .glassmorphic-card {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dark .glassmorphic-sidebar {
+        background-color: rgba(28, 25, 44, 0.5);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dark .glassmorphic-input {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .dark .glassmorphic {
+      background-color: rgba(26, 26, 34, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-      /* 
-        Fallback background for the page.
-        This ensures there's always a themed background color, especially on mobile
-        where the pattern component might not render correctly otherwise.
-      */
-      html {
-        background-color: #e9ecef;
-      }
-      .dark html {
-        background-color: #0a0520;
-      }
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings:
+      'FILL' 1,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24
+    }
 
-      /* 
-        Body background should be transparent to allow the html background to show through,
-        behind our PatternBackground component.
-        Set default text colors for light and dark modes.
-      */
-      body {
-          background-color: transparent !important;
-          background-image: none !important;
-          color: #111827;
-      }
-
-      .dark body {
-        color: #f9fafb;
-      }
-
-      /*
-        Create a new stacking context on the #root element.
-        This ensures that the `PatternBackground` component (with its negative z-index)
-        is contained within our app's root. This is a more reliable method for
-        ensuring the background is visible on all browsers, especially mobile, as
-        it avoids modifying the <body> element's stacking behavior directly, which was causing issues.
-      */
-      #root {
-        position: relative;
-        isolation: isolate;
-      }
-      
-      .dark {
-        /* Dark theme specific CSS variables can be defined here if needed */
-      }
-      
-      @keyframes title-glow-animation {
-        0%, 100% {
-          text-shadow: 0 0 8px rgba(127, 86, 217, 0.2), 0 0 16px rgba(127, 86, 217, 0.1);
-        }
-        50% {
-          text-shadow: 0 0 12px rgba(127, 86, 217, 0.2), 0 0 24px rgba(127, 86, 217, 0.1);
-        }
-      }
-      
-      @keyframes fade-in-slide-up {
+    /* Animations */
+    @keyframes fade-in-slide-up {
         from { opacity: 0; filter: blur(5px); transform: translateY(20px); }
         to { opacity: 1; filter: blur(0); transform: translateY(0); }
-      }
-      
-      @keyframes scale-in {
+    }
+    @keyframes scale-in {
         from { opacity: 0; transform: scale(0.95); }
         to { opacity: 1; transform: scale(1); }
-      }
-      
-      @keyframes progress-bar-stripes {
-        from { background-position: 1rem 0; }
-        to { background-position: 0 0; }
-      }
-      
-      .animate-fade-in-slide-up { 
+    }
+    .animate-fade-in-slide-up { 
         animation: fade-in-slide-up 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
         opacity: 0;
-      }
-      
-      .animate-scale-in { 
+    }
+    .animate-scale-in { 
         animation: scale-in 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
         opacity: 0;
-      }
-      
-      .animate-title-glow {
-        animation: title-glow-animation 4s ease-in-out infinite;
-      }
-      
-      .animation-delay-100 { animation-delay: 100ms; }
-      .animation-delay-200 { animation-delay: 200ms; }
-      .animation-delay-300 { animation-delay: 300ms; }
-      .animation-delay-400 { animation-delay: 400ms; }
-      .animation-delay-500 { animation-delay: 500ms; }
-      .animation-delay-700 { animation-delay: 700ms; }
-      
-      .card-interactive-glow-bg {
-        position: absolute;
-        inset: 0;
-        border-radius: inherit; /* Inherit border-radius from parent, e.g., rounded-2xl */
-        overflow: hidden; /* This is crucial for clipping the glow */
-        z-index: 0; /* Sit behind the content */
-        pointer-events: none; /* Let mouse events pass through */
-      }
-      
-      /* PERFORMANCE: Disable expensive mouse-move glow effect on touch devices */
-      @media (hover: hover) and (pointer: fine) {
-        .card-interactive-glow-bg::before {
-          content: '';
-          position: absolute;
-          left: var(--mouse-x, -500px);
-          top: var(--mouse-y, -500px);
-          width: 450px;
-          height: 450px;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(75, 85, 99, 0.15), transparent 70%);
-          transform: translate(-50%, -50%);
-          transition: left 0.6s ease-out, top 0.6s ease-out;
-        }
-        
-        .dark .card-interactive-glow-bg::before {
-          background: radial-gradient(circle, rgba(255, 250, 240, 0.2), transparent 70%);
-        }
-      }
+    }
+    .animation-delay-100 { animation-delay: 100ms; }
+    .animation-delay-200 { animation-delay: 200ms; }
+    .animation-delay-300 { animation-delay: 300ms; }
 
-      .progress-bar {
-        background-image: linear-gradient(
-          45deg,
-          rgba(255, 255, 255, 0.15) 25%,
-          transparent 25%,
-          transparent 50%,
-          rgba(255, 255, 255, 0.15) 50%,
-          rgba(255, 255, 255, 0.15) 75%,
-          transparent 75%,
-          transparent
-        );
-        background-size: 1rem 1rem;
-        animation: progress-bar-stripes 1s linear infinite;
-      }
-      
-      .video-preview {
-        aspect-ratio: 16/9;
-      }
-      
-      .prompt-textarea {
-        min-height: 200px;
-        resize: none;
-      }
-      
-      /* Custom scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      
-      ::-webkit-scrollbar-track {
-        background: rgba(0, 0, 0, 0.05);
-      }
-      
-      ::-webkit-scrollbar-thumb {
-        background: rgba(75, 85, 99, 0.5);
-        border-radius: 4px;
-      }
-      
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgba(75, 85, 99, 0.7);
-      }
-      
-      .dark ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-      }
-      
-      .dark ::-webkit-scrollbar-thumb {
-        background: rgba(255, 250, 240, 0.5);
-      }
-      
-      .dark ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 250, 240, 0.7);
-      }
-
-      /* Tooltip */
-      .tooltip-container {
-        position: relative;
-      }
-      
-      .tooltip-container .tooltip-text {
-        visibility: hidden;
-        width: 140px;
-        background-color: #111827;
-        color: #fff;
-        text-align: center;
-        border-radius: 6px;
-        padding: 5px 0;
-        position: absolute;
-        z-index: 1;
-        bottom: 125%;
-        left: 50%;
-        transform: translateX(-50%);
-        opacity: 0;
-        transition: opacity 0.3s;
-        font-size: 0.875rem;
-      }
-      
-      .tooltip-container:hover .tooltip-text {
-        visibility: visible;
-        opacity: 1;
-      }
-      
-      .dark .tooltip-container .tooltip-text {
-        background-color: #f9fafb;
-        color: #111827;
-      }
-      
-      /* Redesigned Footer Styles */
-      .footer-link {
-        color: #4b5563; /* text-secondary-light */
-        transition: color 0.2s ease-in-out;
-      }
-      .footer-link:hover {
-        color: #111827; /* text-primary-light */
-        text-decoration: underline;
-      }
-      .dark .footer-link {
-        color: #d1d5db; /* text-secondary-dark */
-      }
-      .dark .footer-link:hover {
-        color: #f9fafb; /* text-primary-dark */
-      }
-
-      .social-icon {
-        color: #4b5563; /* text-secondary-light */
-        transition: all 0.2s ease-in-out;
-      }
-      .social-icon:hover {
-        color: #111827; /* text-primary-light */
-        transform: scale(1.1);
-      }
-      .dark .social-icon {
-        color: #d1d5db; /* text-secondary-dark */
-      }
-      .dark .social-icon:hover {
-        color: #f9fafb; /* text-primary-dark */
-      }
-      .social-icon svg {
-        width: 1.5rem; /* 24px */
-        height: 1.5rem; /* 24px */
-      }
-
-      /* Theme Switcher */
-      .theme-switch {
-        --toggle-size: 30px;
-        /* the size is adjusted using font-size,
-          this is not transform scale,
-          so you can choose any size */
-        --container-width: 5.625em;
-        --container-height: 2.5em;
-        --container-radius: 6.25em;
-        /* radius 0 - minecraft mode :) */
-        --container-light-bg: #3D7EAE;
-        --container-night-bg: #1D1F2C;
-        --circle-container-diameter: 3.375em;
-        --sun-moon-diameter: 2.125em;
-        --sun-bg: #ECCA2F;
-        --moon-bg: #C4C9D1;
-        --spot-color: #959DB1;
-        --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
-        --stars-color: #fff;
-        --clouds-color: #F3FDFF;
-        --back-clouds-color: #AACADF;
-        --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
-        --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
-      }
-
-      .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
-        -webkit-box-sizing: border-box;
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        font-size: var(--toggle-size);
-      }
-
-      .theme-switch__container {
-        width: var(--container-width);
-        height: var(--container-height);
-        background-color: var(--container-light-bg);
-        border-radius: var(--container-radius);
-        overflow: hidden;
-        cursor: pointer;
-        -webkit-box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
-        box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
-        -webkit-transition: var(--transition);
-        -o-transition: var(--transition);
-        transition: var(--transition);
-        position: relative;
-      }
-
-      .theme-switch__container::before {
-        content: "";
-        position: absolute;
-        z-index: 1;
-        inset: 0;
-        -webkit-box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
-        box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
-        border-radius: var(--container-radius)
-      }
-
-      .theme-switch__checkbox {
-        display: none;
-      }
-
-      .theme-switch__circle-container {
-        width: var(--circle-container-diameter);
-        height: var(--circle-container-diameter);
-        background-color: rgba(255, 255, 255, 0.1);
-        position: absolute;
-        left: var(--circle-container-offset);
-        top: var(--circle-container-offset);
-        border-radius: var(--container-radius);
-        -webkit-box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
-        box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
-        display: -webkit-box;
-        display: -ms-flexbox;
-        display: flex;
-        -webkit-transition: var(--circle-transition);
-        -o-transition: var(--circle-transition);
-        transition: var(--circle-transition);
-        pointer-events: none;
-      }
-
-      .theme-switch__sun-moon-container {
-        pointer-events: auto;
-        position: relative;
-        z-index: 2;
-        width: var(--sun-moon-diameter);
-        height: var(--sun-moon-diameter);
-        margin: auto;
-        border-radius: var(--container-radius);
-        background-color: var(--sun-bg);
-        -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
-        box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
-        -webkit-filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
-        filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
-        overflow: hidden;
-        -webkit-transition: var(--transition);
-        -o-transition: var(--transition);
-        transition: var(--transition);
-      }
-
-      .theme-switch__moon {
-        -webkit-transform: translateX(100%);
-        -ms-transform: translateX(100%);
-        transform: translateX(100%);
-        width: 100%;
-        height: 100%;
-        background-color: var(--moon-bg);
-        border-radius: var(--container-radius);
-        -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #959db1 inset;
-        box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #959db1 inset;
-        -webkit-transition: var(--transition);
-        -o-transition: var(--transition);
-        transition: var(--transition);
-        position: relative;
-      }
-
-      .theme-switch__spot {
-        position: absolute;
-        top: 0.75em;
-        left: 0.312em;
-        width: 0.75em;
-        height: 0.75em;
-        border-radius: var(--container-radius);
-        background-color: var(--spot-color);
-        -webkit-box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
-        box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
-      }
-
-      .theme-switch__spot:nth-of-type(2) {
-        width: 0.375em;
-        height: 0.375em;
-        top: 0.937em;
-        left: 1.375em;
-      }
-
-      .theme-switch__spot:nth-of-type(3) {
-        width: 0.25em;
-        height: 0.25em;
-        top: 0.312em;
-        left: 0.812em;
-      }
-      
-      .theme-switch__stars-container {
-        position: absolute;
-        color: var(--stars-color);
-        top: -0.0625em;
-        left: 0.312em;
-        width: 2.5em;
-        height: auto;
-        -webkit-transform: translateY(100%);
-        -ms-transform: translateY(100%);
-        transform: translateY(100%);
-        -webkit-transition: var(--transition);
-        -o-transition: var(--transition);
-        transition: var(--transition);
-      }
-
-      .theme-switch__clouds {
-        border-radius: var(--container-radius);
-        position: absolute;
-        top: 0.5em;
-        left: 0.5em;
-        width: 1.25em;
-        height: 1.25em;
-        background-color: var(--clouds-color);
-        -webkit-transition: var(--transition);
-        -o-transition: var(--transition);
-        transition: var(--transition);
-        -webkit-box-shadow: 0.937em 0.625em 0 -0.187em var(--clouds-color), -0.5em 1em 0 -0.312em var(--clouds-color), 0.812em 1.312em 0 -0.25em var(--clouds-color), 1.562em 0.312em 0 -0.312em var(--back-clouds-color), 0.312em 0.5em 0 -0.125em var(--back-clouds-color), 1.25em 1.125em 0 -0.312em var(--back-clouds-color), 0.437em 1.437em 0 -0.375em var(--back-clouds-color);
-        box-shadow: 0.937em 0.625em 0 -0.187em var(--clouds-color), -0.5em 1em 0 -0.312em var(--clouds-color), 0.812em 1.312em 0 -0.25em var(--clouds-color), 1.562em 0.312em 0 -0.312em var(--back-clouds-color), 0.312em 0.5em 0 -0.125em var(--back-clouds-color), 1.25em 1.125em 0 -0.312em var(--back-clouds-color), 0.437em 1.437em 0 -0.375em var(--back-clouds-color);
-      }
-
-      .theme-switch__checkbox:checked + .theme-switch__container {
-        background-color: var(--container-night-bg);
-      }
-
-      .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
-        left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
-      }
-
-      .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__sun-moon-container {
-        -webkit-transform: rotate(360deg);
-        -ms-transform: rotate(360deg);
-        transform: rotate(360deg);
-      }
-      
-      .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
-        -webkit-transform: translate(0);
-        -ms-transform: translate(0);
-        transform: translate(0);
-      }
-      
-      .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
-        -webkit-transform: translateY(0);
-        -ms-transform: translateY(0);
-        transform: translateY(0);
-      }
-
-      .theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
-        -webkit-transform: translateX(calc(var(--container-width) * -1));
-        -ms-transform: translateX(calc(var(--container-width) * -1));
-        transform: translateX(calc(var(--container-width) * -1));
-      }
-    </style>
-  <script type="importmap">
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.5);
+        border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(156, 163, 175, 0.8);
+    }
+</style>
+<script type="importmap">
 {
   "imports": {
     "react/": "https://esm.sh/react@^19.1.1/",
@@ -565,8 +145,8 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body class="font-sans bg-background-light dark:bg-background-dark text-gray-800 dark:text-white overflow-hidden">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

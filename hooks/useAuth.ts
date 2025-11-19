@@ -108,7 +108,8 @@ export const useAuth = () => {
                 }
                 
                 // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
-                let user: User | undefined = (Object.values(users) as User[]).find((u) => u.email === payload.email);
+                const allUsers = Object.values(users) as User[];
+                let user: User | undefined = allUsers.find((u) => u.email === payload.email);
 
                 if (!user) {
                     // New user: Create account automatically
@@ -145,7 +146,8 @@ export const useAuth = () => {
                 return reject(new Error('Username is already taken.'));
             }
             // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
-            if ((Object.values(users) as User[]).some((u) => u.email === data.email)) {
+            const allUsers = Object.values(users) as User[];
+            if (allUsers.some((u) => u.email === data.email)) {
                 return reject(new Error('An account with this email already exists.'));
             }
             if (!data.password || data.password.length < 6) {
@@ -171,7 +173,8 @@ export const useAuth = () => {
     const login = (usernameOrEmail: string, password?: string): Promise<User> => {
         return new Promise((resolve, reject) => {
             // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
-            const user: User | undefined = (Object.values(users) as User[]).find(
+            const allUsers = Object.values(users) as User[];
+            const user: User | undefined = allUsers.find(
                 (u) => u.username === usernameOrEmail || u.email === usernameOrEmail
             );
 

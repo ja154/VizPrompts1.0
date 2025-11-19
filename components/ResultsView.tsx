@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon } from './icons';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
-import GlowCard from './GlowCard';
 import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
 import { remixStyles } from '../data/remixStyles.ts';
@@ -79,12 +78,11 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
             onClick={onClose}
         >
             <div 
-                className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 max-w-lg w-full shadow-2xl border border-border-primary-light dark:border-border-primary-dark relative animate-scale-in flex flex-col max-h-[90vh]"
+                className="bg-white dark:bg-[#171122] rounded-2xl p-1 max-w-lg w-full shadow-2xl border border-gray-200 dark:border-white/10 relative animate-scale-in flex flex-col max-h-[90vh]"
                 style={{ animationDuration: '400ms' }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <button onClick={onClose} className="absolute top-3 right-3 text-text-secondary-light dark:text-text-secondary-dark hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center z-10">
-                    {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center z-10">
                     <span className="fas fa-times"></span>
                 </button>
                 <div className="p-8 overflow-y-auto">
@@ -92,8 +90,8 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                     <div className="flex flex-col items-center justify-center min-h-[200px]">
                         {isLoading && (
                             <>
-                                <div className="w-12 h-12 border-4 border-purple-400 border-t-transparent rounded-full animate-spin"></div>
-                                <p className="mt-4 text-text-secondary-light dark:text-text-secondary-dark">Analyzing consistency...</p>
+                                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                <p className="mt-4 text-gray-500">Analyzing consistency...</p>
                             </>
                         )}
                         {error && !isLoading && (
@@ -104,12 +102,12 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                 <div className="flex justify-center">
                                   <ScoreGauge score={result.consistency_score} />
                                 </div>
-                                <p className="mt-4 text-center text-text-secondary-light dark:text-text-secondary-dark">{result.explanation}</p>
+                                <p className="mt-4 text-center text-gray-600 dark:text-gray-300">{result.explanation}</p>
                                 
                                 {result.missing_details && result.missing_details.length > 0 && (
-                                    <div className="text-left mt-4 bg-bg-uploader-light dark:bg-bg-uploader-dark p-4 rounded-lg border border-border-primary-light dark:border-border-primary-dark">
-                                        <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Missing Details:</h4>
-                                        <ul className="list-disc list-inside space-y-1 text-sm text-text-secondary-light dark:text-text-secondary-dark">
+                                    <div className="text-left mt-4 bg-gray-100 dark:bg-white/5 p-4 rounded-lg border border-gray-200 dark:border-white/10">
+                                        <h4 className="font-semibold mb-2">Missing Details:</h4>
+                                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
                                             {result.missing_details.map((detail, index) => (
                                                 <li key={index}>{detail}</li>
                                             ))}
@@ -118,7 +116,7 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                 )}
 
                                 {result.reasoning && (
-                                    <div className="text-left mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-4">
+                                    <div className="text-left mt-6 border-t border-gray-200 dark:border-white/10 pt-4">
                                         <button 
                                             onClick={() => setIsAnalysisVisible(!isAnalysisVisible)}
                                             className="w-full flex justify-between items-center text-left font-semibold"
@@ -128,17 +126,17 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                             <ChevronDownIcon className={`w-5 h-5 transition-transform duration-200 ${isAnalysisVisible ? 'transform rotate-180' : ''}`} />
                                         </button>
                                         {isAnalysisVisible && (
-                                            <div className="mt-2 space-y-4 text-sm text-text-secondary-light dark:text-text-secondary-dark animate-fade-in-slide-up" style={{animationDuration: '300ms'}}>
-                                                <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
-                                                    <h5 className="font-bold text-text-primary-light dark:text-text-primary-dark">Prompt Analysis:</h5>
+                                            <div className="mt-2 space-y-4 text-sm text-gray-600 dark:text-gray-400 animate-fade-in-slide-up" style={{animationDuration: '300ms'}}>
+                                                <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg">
+                                                    <h5 className="font-bold text-gray-800 dark:text-white">Prompt Analysis:</h5>
                                                     <p className="whitespace-pre-wrap font-mono text-xs">{result.reasoning.analysis_of_prompt}</p>
                                                 </div>
-                                                <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
-                                                    <h5 className="font-bold text-text-primary-light dark:text-text-primary-dark">Media Analysis:</h5>
+                                                <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg">
+                                                    <h5 className="font-bold text-gray-800 dark:text-white">Media Analysis:</h5>
                                                     <p className="whitespace-pre-wrap font-mono text-xs">{result.reasoning.analysis_of_media}</p>
                                                 </div>
-                                                <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
-                                                    <h5 className="font-bold text-text-primary-light dark:text-text-primary-dark">Comparison:</h5>
+                                                <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg">
+                                                    <h5 className="font-bold text-gray-800 dark:text-white">Comparison:</h5>
                                                     <p className="whitespace-pre-wrap font-mono text-xs">{result.reasoning.comparison}</p>
                                                 </div>
                                             </div>
@@ -148,15 +146,13 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
 
                                 {result.revised_output && (
                                     <div className="text-left mt-4">
-                                        <h4 className="font-semibold mb-2 text-text-primary-light dark:text-text-primary-dark">Revised Output:</h4>
+                                        <h4 className="font-semibold mb-2">Revised Output:</h4>
                                         <div className="relative">
                                             <button 
                                                 onClick={() => navigator.clipboard.writeText(result.revised_output)} 
-                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700/80 transition-colors tooltip z-10"
+                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-10"
                                             >
-                                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                                                 <span className="far fa-copy"></span>
-                                                <span className="tooltip-text" style={{width: '100px'}}>Copy Text</span>
                                             </button>
                                             <SyntaxHighlightedTextarea
                                                 mode={result.revised_output.trim().startsWith('{') ? 'json' : 'text'}
@@ -168,10 +164,9 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                     </div>
                                 )}
                                 {result.revised_output && (
-                                    <div className="mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-4 text-center">
-                                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark mb-4">Implement these improvements?</p>
+                                    <div className="mt-6 border-t border-gray-200 dark:border-white/10 pt-4 text-center">
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Implement these improvements?</p>
                                         <BlurryButton onClick={() => onApplyImprovements(result.revised_output)}>
-                                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                                             <span className="fas fa-check mr-2"></span>
                                             Apply & Close
                                         </BlurryButton>
@@ -252,12 +247,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             error={error}
             onApplyImprovements={onApplyImprovements}
         />
-        <div className="animate-fade-in-slide-up animation-delay-300">
-            <div className="flex flex-col gap-8">
-              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                <div className="rounded-xl p-6">
-                  <h2 className="text-xl font-bold mb-4 flex items-center"><FilmIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Media Preview</h2>
-                  <div className="video-preview bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center">
+        <div className="animate-fade-in-slide-up animation-delay-300 flex flex-col gap-8">
+            
+              {/* Media Preview */}
+              <div className="glassmorphic-card rounded-xl p-6">
+                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-white">
+                      <FilmIcon className="w-6 h-6 text-primary"/>
+                      Media Preview
+                  </h2>
+                  <div className="bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center aspect-video max-h-64 border border-white/10">
                     {isVideo ? (
                         <video src={videoUrl} controls className="w-full h-full object-contain" key={videoUrl}></video>
                     ) : (
@@ -265,40 +263,42 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
-                      <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Duration</p>
+                    <div className="glassmorphic-input p-3 rounded-lg">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Duration</p>
                       <p className="font-medium">{videoMeta?.duration}</p>
                     </div>
-                    <div className="bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg">
-                      <p className="text-xs text-text-secondary-light dark:text-text-secondary-dark">Resolution</p>
+                    <div className="glassmorphic-input p-3 rounded-lg">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Resolution</p>
                       <p className="font-medium">{videoMeta?.resolution}</p>
                     </div>
                   </div>
-                </div>
-              </GlowCard>
+              </div>
               
-              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                <div className="rounded-xl p-6">
+              {/* Analysis Results */}
+              <div className="glassmorphic-card rounded-xl p-6">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold flex items-center"><BrainCircuitIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300"/>Analysis Results</h2>
+                    <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
+                        <BrainCircuitIcon className="w-6 h-6 text-primary"/>
+                        Analysis Results
+                    </h2>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {!isJsonOutput && (
                         <div>
-                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Objective</h3>
-                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt?.objective}</p>
+                            <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Objective</h3>
+                            <div className="glassmorphic-input p-4 rounded-lg text-sm text-gray-600 dark:text-gray-300">
+                                {structuredPrompt?.objective}
+                            </div>
                         </div>
                     )}
                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Core Focus</h3>
-                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-150 transform active:scale-90 tooltip">
-                                {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-semibold text-gray-700 dark:text-gray-200">Core Focus</h3>
+                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400">
                                 {isCopied ? <span className="fas fa-check text-green-500"></span> : <span className="far fa-copy"></span>}
-                                <span className="tooltip-text">Copy prompt</span>
                             </button>
                         </div>
-                        <div className="relative">
+                        <div className="glassmorphic-input rounded-lg overflow-hidden">
                             {isJsonOutput ? (
                                 <SyntaxHighlightedTextarea
                                     mode="json"
@@ -318,27 +318,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </div>
                      {!isJsonOutput && (
                         <div>
-                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Constraints</h3>
-                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1 whitespace-pre-wrap">{structuredPrompt?.constraints}</p>
+                            <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Constraints</h3>
+                            <div className="glassmorphic-input p-4 rounded-lg text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                                {structuredPrompt?.constraints}
+                            </div>
                         </div>
                      )}
-                    {!isJsonOutput && structuredPrompt?.enhancements && (
-                         <div>
-                            <h3 className="font-semibold text-text-primary-light dark:text-text-primary-dark">Enhancements</h3>
-                            <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark bg-bg-uploader-light dark:bg-bg-uploader-dark p-3 rounded-lg mt-1">{structuredPrompt.enhancements}</p>
-                        </div>
-                    )}
                   </div>
-                </div>
-              </GlowCard>
+              </div>
               
               {/* Refine Card */}
-              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                <div className="rounded-xl p-6 relative">
-                  <h2 className="text-xl font-bold mb-4 flex items-center"><MagicWandIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300" />Refine Prompt</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="glassmorphic-card rounded-xl p-6 relative">
+                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 dark:text-white">
+                      <MagicWandIcon className="w-6 h-6 text-primary" />
+                      Refine Prompt
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Tone</label>
+                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Tone</label>
                         <AnimatedList 
                             items={["Default", ...refinementOptions.tone]}
                             selectedItem={refineTone || "Default"}
@@ -346,7 +343,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Style</label>
+                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Style</label>
                         <AnimatedList
                             items={["Default", ...refinementOptions.style]}
                             selectedItem={refineStyle || "Default"}
@@ -354,7 +351,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Camera</label>
+                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Camera</label>
                         <AnimatedList
                             items={["Default", ...refinementOptions.camera]}
                             selectedItem={refineCamera || "Default"}
@@ -362,7 +359,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Lighting</label>
+                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Lighting</label>
                          <AnimatedList
                             items={["Default", ...refinementOptions.lighting]}
                             selectedItem={refineLighting || "Default"}
@@ -370,61 +367,43 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                   </div>
-                  <div className="mb-4">
-                    <label htmlFor="refine-instruction" className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Custom Instruction</label>
-                    <textarea id="refine-instruction" value={refineInstruction} onChange={(e) => setRefineInstruction(e.target.value)} placeholder="e.g., make it shorter, add a dragon" rows={2} className="w-full p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200 hover:border-purple-400 dark:hover:border-purple-500"></textarea>
+                  <div className="mb-6">
+                    <label htmlFor="refine-instruction" className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Custom Instruction</label>
+                    <textarea id="refine-instruction" value={refineInstruction} onChange={(e) => setRefineInstruction(e.target.value)} placeholder="e.g., make it shorter, add a dragon" rows={2} className="w-full p-3 rounded-lg glassmorphic-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm"></textarea>
                   </div>
 
-                  <div className="mt-6 border-t border-border-primary-light dark:border-border-primary-dark pt-4">
-                    <label htmlFor="negative-prompt" className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Negative Prompt (Elements to Exclude)</label>
-                    <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-2 rounded-lg bg-bg-uploader-light dark:bg-bg-uploader-dark border border-border-primary-light dark:border-border-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors duration-200 hover:border-purple-400 dark:hover:border-purple-500"></textarea>
+                  <div className="mb-6 border-t border-gray-200 dark:border-white/10 pt-6">
+                    <label htmlFor="negative-prompt" className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Negative Prompt (Elements to Exclude)</label>
+                    <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-3 rounded-lg glassmorphic-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm"></textarea>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 mt-4">
+                  <div className="flex flex-wrap gap-3">
                       <BlurryButton onClick={() => handleRefinePrompt('refine')} disabled={isRefining || isDetailing}>
-                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                         {isRefining ? (<><span className="fas fa-spinner fa-spin"></span><span>Refining...</span></>) : "Refine"}
                       </BlurryButton>
                        <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing}>
-                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                         {isDetailing ? (<><span className="fas fa-spinner fa-spin"></span><span>Detailing...</span></>) : "Add More Detail"}
                       </BlurryButton>
-                      <div className="tooltip-container">
-                        <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput}>
-                          {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-                          {isConvertingToJson ? (<><span className="fas fa-spinner fa-spin"></span><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
-                        </BlurryButton>
-                        {isJsonOutput && (
-                            <span className="tooltip-text" style={{width: 150, bottom: '110%'}}>
-                                Already in JSON format.
-                            </span>
-                        )}
-                      </div>
-                      <div className="tooltip-container">
-                        <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
-                          {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-                          {isTestingConsistency ? (<><span className="fas fa-spinner fa-spin"></span><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
-                        </BlurryButton>
-                        {!hasOriginalFrames && (
-                          <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>
-                            Only available for new media uploads.
-                          </span>
-                        )}
-                      </div>
+                      
+                      <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput}>
+                        {isConvertingToJson ? (<><span className="fas fa-spinner fa-spin"></span><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
+                      </BlurryButton>
+                      
+                      <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
+                        {isTestingConsistency ? (<><span className="fas fa-spinner fa-spin"></span><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
+                      </BlurryButton>
                   </div>
-                </div>
-              </GlowCard>
+              </div>
 
                 {/* Video Style Remix Card */}
-              <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark">
-                <div className="rounded-xl p-6 relative">
-                    <h2 className="text-xl font-bold mb-4 flex items-center">
-                        <PaintBrushIcon className="w-6 h-6 mr-2 text-gray-700 dark:text-stone-300" />
+              <div className="glassmorphic-card rounded-xl p-6 relative">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 dark:text-white">
+                        <PaintBrushIcon className="w-6 h-6 text-primary" />
                         Video Style Remix
                     </h2>
-                    <div className="grid grid-cols-1 gap-4 mb-4">
+                    <div className="grid grid-cols-1 gap-4 mb-6">
                         <div>
-                            <label className="block text-sm font-medium text-text-secondary-light dark:text-text-secondary-dark mb-1">Target Style</label>
+                            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Target Style</label>
                             <AnimatedList
                                 items={remixStyles.map(s => s.name)}
                                 selectedItem={remixStyle || null}
@@ -433,20 +412,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                             />
                         </div>
                     </div>
-                    <div className="tooltip-container">
+                    <div>
                         <BlurryButton onClick={handleRemixStyle} disabled={isRemixing || !hasOriginalFrames || !remixStyle}>
-                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
                             {isRemixing ? (<><span className="fas fa-spinner fa-spin"></span><span>Remixing...</span></>) : "Remix Style"}
                         </BlurryButton>
-                        {!hasOriginalFrames && (
-                            <span className="tooltip-text" style={{width: 200, bottom: '110%'}}>
-                                Only available for new media uploads.
-                            </span>
-                        )}
                     </div>
-                </div>
-              </GlowCard>
-            </div>
+              </div>
         </div>
         </>
     );
