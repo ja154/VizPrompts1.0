@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { BrainCircuitIcon, FilmIcon } from './icons';
+import { BrainCircuitIcon, FilmIcon, CopyIcon, CheckIcon, MagicWandIcon, SpinnerIcon } from './icons';
 import BlurryButton from './Button';
 
 interface VideoAnalysisViewProps {
@@ -53,7 +54,7 @@ const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
                         Content Analysis
                     </h2>
                     <button onClick={() => handleCopy(analysisResult)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-150 tooltip-container text-gray-500 dark:text-gray-400">
-                        {isCopied ? <span className="fas fa-check text-green-500"></span> : <span className="far fa-copy"></span>}
+                        {isCopied ? <CheckIcon className="text-green-500 h-5 w-5" /> : <CopyIcon className="h-5 w-5" />}
                         <span className="tooltip-text">Copy Analysis</span>
                     </button>
                 </div>
@@ -67,8 +68,7 @@ const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
                 <div className="border-t border-gray-200 dark:border-white/10 pt-6">
                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 text-center">Ready to create? Turn this analysis into a structured generation prompt.</p>
                      <BlurryButton onClick={onGeneratePrompt} className="w-full" disabled={isGeneratingPrompt}>
-                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-                        {isGeneratingPrompt ? <><span className="fas fa-spinner fa-spin mr-2"></span>Generating Prompt...</> : <><span className="fas fa-magic mr-2"></span>Generate Prompt from Analysis</>}
+                        {isGeneratingPrompt ? <><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" />Generating Prompt...</> : <><MagicWandIcon className="w-4 h-4 mr-2" />Generate Prompt from Analysis</>}
                     </BlurryButton>
                 </div>
             </div>

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon } from './icons';
+import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon, CopyIcon, CheckIcon, SpinnerIcon } from './icons';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
 import AnimatedList from './AnimatedList.tsx';
@@ -150,9 +151,9 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                         <div className="relative">
                                             <button 
                                                 onClick={() => navigator.clipboard.writeText(result.revised_output)} 
-                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-10"
+                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-10 text-gray-500 dark:text-gray-400"
                                             >
-                                                <span className="far fa-copy"></span>
+                                                <CopyIcon className="h-5 w-5" />
                                             </button>
                                             <SyntaxHighlightedTextarea
                                                 mode={result.revised_output.trim().startsWith('{') ? 'json' : 'text'}
@@ -167,7 +168,7 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                     <div className="mt-6 border-t border-gray-200 dark:border-white/10 pt-4 text-center">
                                         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Implement these improvements?</p>
                                         <BlurryButton onClick={() => onApplyImprovements(result.revised_output)}>
-                                            <span className="fas fa-check mr-2"></span>
+                                            <CheckIcon className="mr-2 h-4 w-4"/>
                                             Apply & Close
                                         </BlurryButton>
                                     </div>
@@ -295,7 +296,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="font-semibold text-gray-700 dark:text-gray-200">Core Focus</h3>
                             <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400">
-                                {isCopied ? <span className="fas fa-check text-green-500"></span> : <span className="far fa-copy"></span>}
+                                {isCopied ? <CheckIcon className="text-green-500 h-5 w-5" /> : <CopyIcon className="h-5 w-5" />}
                             </button>
                         </div>
                         <div className="glassmorphic-input rounded-lg overflow-hidden">
@@ -379,18 +380,18 @@ const ResultsView: React.FC<ResultsViewProps> = ({
 
                   <div className="flex flex-wrap gap-3">
                       <BlurryButton onClick={() => handleRefinePrompt('refine')} disabled={isRefining || isDetailing}>
-                        {isRefining ? (<><span className="fas fa-spinner fa-spin"></span><span>Refining...</span></>) : "Refine"}
+                        {isRefining ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Refining...</span></>) : "Refine"}
                       </BlurryButton>
                        <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing}>
-                        {isDetailing ? (<><span className="fas fa-spinner fa-spin"></span><span>Detailing...</span></>) : "Add More Detail"}
+                        {isDetailing ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Detailing...</span></>) : "Add More Detail"}
                       </BlurryButton>
                       
                       <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput}>
-                        {isConvertingToJson ? (<><span className="fas fa-spinner fa-spin"></span><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
+                        {isConvertingToJson ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
                       </BlurryButton>
                       
                       <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
-                        {isTestingConsistency ? (<><span className="fas fa-spinner fa-spin"></span><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
+                        {isTestingConsistency ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
                       </BlurryButton>
                   </div>
               </div>
@@ -414,7 +415,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </div>
                     <div>
                         <BlurryButton onClick={handleRemixStyle} disabled={isRemixing || !hasOriginalFrames || !remixStyle}>
-                            {isRemixing ? (<><span className="fas fa-spinner fa-spin"></span><span>Remixing...</span></>) : "Remix Style"}
+                            {isRemixing ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Remixing...</span></>) : "Remix Style"}
                         </BlurryButton>
                     </div>
               </div>

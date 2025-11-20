@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
 import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson, analyzeVideoContent, generatePromptFromAnalysis } from './services/geminiService.ts';
-import { BrainCircuitIcon, FilmIcon, PlusCircleIcon, LibraryIcon, MenuIcon, HistoryIcon, DashboardIcon, LogoutIcon, UserIcon } from './components/icons.tsx';
+import { BrainCircuitIcon, FilmIcon, PlusCircleIcon, LibraryIcon, MenuIcon, HistoryIcon, DashboardIcon, LogoutIcon, UserIcon, MagicWandIcon, CloseIcon, ResetIcon, AlertIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
 import UploaderIcon from './components/UploaderIcon.tsx';
@@ -97,7 +98,7 @@ const Uploader: React.FC<UploaderProps> = ({
                     <p className="text-center text-sm font-medium text-gray-600 dark:text-gray-300 truncate mb-6" title={file.name}>{file.name}</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <BlurryButton onClick={onStartAnalysis} className="w-full">
-                            <span className="fas fa-magic mr-2"></span>
+                            <MagicWandIcon className="mr-2 w-5 h-5" />
                             Generate Prompt
                         </BlurryButton>
                         <BlurryButton onClick={onStartVideoAnalysis} className="w-full">
@@ -131,12 +132,12 @@ const Uploader: React.FC<UploaderProps> = ({
             {analysisState === AnalysisState.ERROR && (
                 <div className="text-center animate-fade-in-slide-up">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
-                        <span className="fas fa-exclamation-triangle text-2xl text-red-500"></span>
+                        <AlertIcon className="text-red-500 w-8 h-8" />
                     </div>
                     <h3 className="text-xl font-bold text-red-500 mb-2">Analysis Failed</h3>
                     <p className="text-center text-red-500/80 text-sm p-3 rounded-lg mb-6 max-w-md mx-auto">{error}</p>
                     <BlurryButton onClick={onResetState}>
-                        <span className="fas fa-undo mr-2"></span>
+                        <ResetIcon className="w-5 h-5 mr-2" />
                         Try Another File
                     </BlurryButton>
                 </div>
@@ -161,7 +162,7 @@ const AnalyzedFilePreview: React.FC<{file: File, videoUrl: string, onReset: () =
             </div>
         </div>
         <button onClick={onReset} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary">
-            <span className="fas fa-times text-lg"></span>
+            <CloseIcon className="w-6 h-6" />
         </button>
     </div>
 );

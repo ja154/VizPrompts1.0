@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import BlurryButton from './Button';
+import { CloseIcon, SpinnerIcon } from './icons';
 
 interface AuthProps {
   isOpen: boolean;
@@ -133,8 +134,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onAuthSuccess }) => {
     if (isLoading || successMessage) {
       return (
         <div className="flex flex-col items-center justify-center h-full min-h-[300px]">
-          {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-          {isLoading && !successMessage && <span className="fas fa-spinner fa-spin text-4xl text-primary-light dark:text-primary-dark"></span>}
+          {isLoading && !successMessage && <SpinnerIcon className="w-10 h-10 text-primary-light dark:text-primary-dark" />}
           <p className={`mt-4 text-center text-lg p-4 rounded-lg ${successMessage ? 'text-green-500 bg-green-500/10' : ''}`}>
             {successMessage || 'Processing...'}
           </p>
@@ -179,8 +179,7 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onAuthSuccess }) => {
         style={{animationDuration: '400ms'}}
       >
         <button onClick={onClose} disabled={isLoading} className="absolute top-3 right-3 text-text-secondary-light dark:text-text-secondary-dark hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center z-10 disabled:opacity-50">
-            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-            <span className="fas fa-times"></span>
+            <CloseIcon className="w-5 h-5" />
         </button>
 
         <div className="p-8">
