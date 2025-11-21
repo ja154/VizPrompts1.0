@@ -32,108 +32,75 @@ GUIDELINES:
 - **Structure is Key:** Adhere strictly to the <objective>, <core_focus>, and <constraints> tags. Do not add conversational text.
 `;
 
-// NEW: A detailed schema for video production pipelines.
+// NEW: A streamlined schema for Generative Video Prompts.
+// Removed redundant metadata (timecodes, aspect ratios) to focus on visual descriptions affecting the model.
 const VIDEO_PRODUCTION_JSON_SCHEMA = {
     type: Type.OBJECT,
     properties: {
-        video_length_seconds: {
-            type: Type.INTEGER,
-            description: "The total duration of the video in seconds."
-        },
-        aspect_ratio: {
+        main_subject: {
             type: Type.STRING,
-            description: "The aspect ratio of the video, e.g., '16:9' or '9:16'."
+            description: "The primary subject or character of the video."
         },
-        overall_style: {
+        synopsis: {
+            type: Type.STRING,
+            description: "A concise summary of the video's action and visual narrative."
+        },
+        visual_style: {
             type: Type.OBJECT,
-            description: "Describes the overarching aesthetic and mood of the entire video.",
+            description: "Detailed breakdown of the visual aesthetic.",
             properties: {
-                visual_aesthetic: {
-                    type: Type.STRING,
-                    description: "A detailed description of the visual style, including textures, realism, and unique artistic elements."
+                art_style: { 
+                    type: Type.STRING, 
+                    description: "e.g., Photorealistic, Anime, Cinematic, Claymation, 3D Render." 
                 },
-                color_palette: {
-                    type: Type.STRING,
-                    description: "A description of the primary and secondary colors used throughout the video."
+                lighting: { 
+                    type: Type.STRING, 
+                    description: "Description of lighting type, quality, and direction." 
                 },
-                film_attributes: {
-                    type: Type.STRING,
-                    description: "Details on cinematic qualities like camera work, lens effects, and transitions."
+                color_palette: { 
+                    type: Type.STRING, 
+                    description: "Primary colors and color grading details." 
                 },
-                tone_and_mood: {
-                    type: Type.STRING,
-                    description: "The emotional and atmospheric feel of the video (e.g., inspiring, mysterious, energetic)."
+                mood: { 
+                    type: Type.STRING, 
+                    description: "The emotional atmosphere of the video." 
                 }
             },
-            required: ["visual_aesthetic", "color_palette", "film_attributes", "tone_and_mood"]
+            required: ["art_style", "lighting", "color_palette", "mood"]
         },
-        keywords: {
+        camera_work: {
+            type: Type.OBJECT,
+            description: "Technical camera details.",
+            properties: {
+                angle: { type: Type.STRING, description: "e.g., Low angle, Bird's eye view, Eye level." },
+                movement: { type: Type.STRING, description: "e.g., Slow pan, Dolly zoom, Handheld shake, Static." },
+                lens_type: { type: Type.STRING, description: "e.g., Wide angle, Telephoto, Macro, Fish-eye." }
+            },
+            required: ["angle", "movement"]
+        },
+        key_elements: {
             type: Type.ARRAY,
-            description: "A list of relevant keywords for the video content and style.",
+            description: "A list of critical objects, background elements, or details visible in the scene.",
             items: { type: Type.STRING }
         },
-        scenes: {
+        sequence_of_events: {
             type: Type.ARRAY,
-            description: "A chronological breakdown of each scene in the video.",
+            description: "A chronological sequence of visual actions. Focus on 'what happens' visually.",
             items: {
                 type: Type.OBJECT,
                 properties: {
-                    scene_id: { type: Type.INTEGER, description: "A unique identifier for the scene, starting from 1." },
-                    start_time_seconds: { type: Type.INTEGER, description: "The start time of the scene in seconds." },
-                    end_time_seconds: { type: Type.INTEGER, description: "The end time of the scene in seconds." },
-                    description: { type: Type.STRING, description: "A detailed description of the action and visuals in the scene." },
-                    camera: {
-                        type: Type.OBJECT,
-                        properties: {
-                            composition: { type: Type.STRING },
-                            motion: { type: Type.STRING },
-                            angle: { type: Type.STRING },
-                            lens: { type: Type.STRING }
-                        },
-                        required: ["composition", "motion", "angle", "lens"]
-                    },
-                    environment_details: {
-                        type: Type.OBJECT,
-                        properties: {
-                            setting: { type: Type.STRING, description: "Description of the scene's environment." }
-                        },
-                        required: ["setting"]
-                    },
-                    transition_to_next_scene: { type: Type.STRING, description: "How this scene transitions to the next." },
-                    audio_design_for_scene: {
-                        type: Type.OBJECT,
-                        properties: {
-                            ambient_sounds: { type: Type.STRING },
-                            music: { type: Type.STRING },
-                            sfx: { type: Type.STRING },
-                            voiceover: { type: Type.STRING }
-                        },
-                        required: ["ambient_sounds", "music", "sfx", "voiceover"]
-                    },
-                    elements_in_scene: { type: Type.ARRAY, items: { type: Type.STRING } },
-                    motion_elements_internal: { type: Type.STRING, description: "Description of movements within the scene." },
-                    on_screen_text: { type: Type.STRING },
-                    visual_effects: { type: Type.ARRAY, items: { type: Type.STRING } }
+                    action: { type: Type.STRING, description: "Description of the movement or event." },
+                    visual_details: { type: Type.STRING, description: "Specific visual changes or details relevant to this moment." }
                 },
-                required: ["scene_id", "start_time_seconds", "end_time_seconds", "description", "camera", "environment_details", "transition_to_next_scene", "audio_design_for_scene", "elements_in_scene", "motion_elements_internal", "on_screen_text", "visual_effects"]
+                required: ["action", "visual_details"]
             }
         },
-        brand_info: {
-            type: Type.OBJECT,
-            properties: {
-                key_colors: { type: Type.ARRAY, items: { type: Type.STRING } },
-                logo_description: { type: Type.STRING },
-                name: { type: Type.STRING },
-                product: { type: Type.STRING },
-                slogan: { type: Type.STRING }
-            },
-            required: ["key_colors", "logo_description", "name", "product", "slogan"]
-        },
-        ending_visual: { type: Type.STRING, description: "A description of the final shot or visual." },
-        final_audio_cue: { type: Type.STRING, description: "The final sound or music cue." },
-        final_on_screen_text: { type: Type.STRING, description: "Any text that appears at the end." }
+        audio_suggestions: {
+            type: Type.STRING,
+            description: "Brief description of suitable sound effects or music style."
+        }
     },
-    required: ["video_length_seconds", "aspect_ratio", "overall_style", "keywords", "scenes", "brand_info", "ending_visual", "final_audio_cue", "final_on_screen_text"]
+    required: ["main_subject", "synopsis", "visual_style", "camera_work", "key_elements", "sequence_of_events"]
 };
 
 
@@ -363,10 +330,10 @@ export const generateJsonPromptFromFrames = async (
         model: 'gemini-2.5-flash',
         contents: { parts: [{ text: analysisPrompt }, ...imagePartsForAnalysis] },
         config: {
-            // MODIFIED: Updated system instruction to match the new detailed schema.
-            systemInstruction: "You are an expert video production assistant. Your task is to analyze media frames and generate a highly detailed, structured JSON shot list suitable for a video production pipeline. Populate all fields of the provided schema with meticulous detail, describing scenes, camera movements, styles, and timing. Infer details like `video_length_seconds` and scene timings based on the number of frames provided. Your output must be only the raw JSON object.",
+            // MODIFIED: Updated system instruction to be concise and focused on visual details.
+            systemInstruction: "You are an expert video production assistant. Your task is to analyze media frames and generate a highly detailed, structured JSON description suitable for AI video generation. Populate all fields of the provided schema with meticulous visual detail. Focus on 'visual_style', 'camera_work', and the 'sequence_of_events'. Do NOT include extrinsic metadata like aspect ratio or timecodes unless specifically relevant to the visual action.",
             responseMimeType: "application/json",
-            // MODIFIED: Using the new video production schema.
+            // MODIFIED: Using the new streamlined schema.
             responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
         }
     });
@@ -507,9 +474,9 @@ ${negativePrompt}
             model: 'gemini-2.5-flash',
             contents: content,
             config: {
-                systemInstruction: `You are an expert video editor and prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a detailed JSON shot list based on a user's instruction. Apply the instruction comprehensively across all relevant fields of the JSON object, including scenes, styles, and descriptions, to ensure a cohesive and improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
+                systemInstruction: `You are an expert video editor and prompt engineer. Your task is to act as a meticulous editor, rewriting and enhancing a detailed JSON prompt based on a user's instruction. Apply the instruction comprehensively across all relevant fields of the JSON object, including sequence_of_events, visual_style, and main_subject, to ensure a cohesive and improved result. Your output MUST be only the new, refined, and valid JSON object. Do not add any conversational text, explanations, or markdown formatting.`,
                 responseMimeType: "application/json",
-                // MODIFIED: Using the new video production schema for refinement.
+                // MODIFIED: Using the new streamlined schema for refinement.
                 responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
                 temperature: 0.7,
             }
@@ -717,12 +684,12 @@ export const testJsonConsistency = async (
         return { inlineData: { mimeType, data: base64 } };
     });
 
-    // MODIFIED: Updated prompt to reflect the new detailed JSON schema.
+    // MODIFIED: Updated prompt to reflect the new streamlined JSON schema.
     const consistencyCheckPrompt = `
-    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a detailed JSON shot list and a series of media frames. Your goal is to improve the JSON so it perfectly represents the provided media.
+    You are a meticulous Generative Media Forensics AI. Your task is to analyze the consistency between a structured JSON prompt and a series of media frames. Your goal is to improve the JSON so it perfectly represents the provided media.
 
     **Input:**
-    1.  **JSON Prompt:** A user-provided JSON object with a detailed video production structure.
+    1.  **JSON Prompt:** A user-provided JSON object representing the visual prompt.
     2.  **Media Frames:** A sequence of images.
 
     **Instructions:**
@@ -743,7 +710,7 @@ export const testJsonConsistency = async (
     - **\`consistency_score\` (integer):** A strict score from 0 to 100.
     - **\`explanation\` (string):** A concise summary explaining the score.
     - **\`missing_details\` (array of strings):** A list of the most critical visual details from the media that are missing from the JSON.
-    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields (e.g., scene descriptions, style elements).** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the video production shot list schema.
+    - **\`revised_output\` (object):** The improved JSON prompt as a structured object. **This MUST be constructed by taking the ORIGINAL JSON object's values and carefully integrating the \`missing_details\` into the appropriate fields (e.g., sequence_of_events, visual_style).** The goal is to enhance all fields for accuracy. The object must be a valid object conforming to the provided JSON schema.
 
     **Now, analyze the following JSON prompt and media frames:**
 
@@ -768,7 +735,7 @@ export const testJsonConsistency = async (
             consistency_score: { type: Type.INTEGER },
             explanation: { type: Type.STRING },
             missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
-            // MODIFIED: Using the new video production schema for the revised output.
+            // MODIFIED: Using the new streamlined schema for the revised output.
             revised_output: VIDEO_PRODUCTION_JSON_SCHEMA
         },
         required: ["reasoning", "consistency_score", "explanation", "missing_details", "revised_output"]
@@ -826,7 +793,7 @@ export const convertPromptToJson = async (
     ${prompt.enhancements ? `Enhancements: ${prompt.enhancements}` : ''}
     `;
 
-    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and detailed JSON shot list based on the provided schema. Analyze the text and populate all fields as accurately as possible, breaking down the description into distinct scenes where appropriate.
+    const conversionPrompt = `Convert the following structured text prompt into a single, raw, and detailed JSON prompt based on the provided schema. Analyze the text and populate all fields as accurately as possible, focusing on visual descriptions. Do not add extrinsic metadata.
 
     TEXT TO CONVERT:
     ${contentToConvert}
@@ -837,10 +804,10 @@ export const convertPromptToJson = async (
             model: 'gemini-2.5-flash',
             contents: conversionPrompt,
             config: {
-                // MODIFIED: Updated system instruction to match new detailed schema.
-                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a detailed JSON shot list based on the provided schema. Infer and populate all fields logically from the source text, breaking down the description into distinct scenes where appropriate.",
+                // MODIFIED: Updated system instruction to ensure concise conversion.
+                systemInstruction: "You are a data formatting expert. Your only task is to analyze the provided text and convert it into a structured JSON description based on the provided schema. Infer and populate all fields logically from the source text.",
                 responseMimeType: "application/json",
-                // MODIFIED: Using the new video production schema.
+                // MODIFIED: Using the new streamlined schema.
                 responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
                 temperature: 0.2, // Low temperature for deterministic conversion
             }
