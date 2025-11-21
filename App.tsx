@@ -3,28 +3,27 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
 import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson, analyzeVideoContent, generatePromptFromAnalysis } from './services/geminiService.ts';
-import { BrainCircuitIcon, FilmIcon, PlusCircleIcon, LibraryIcon, MenuIcon, HistoryIcon, DashboardIcon, LogoutIcon, UserIcon, MagicWandIcon, CloseIcon, ResetIcon, AlertIcon } from './components/icons.tsx';
+import { BrainCircuitIcon, FilmIcon, LibraryIcon, MenuIcon, HistoryIcon, DashboardIcon, LogoutIcon, UserIcon, MagicWandIcon, CloseIcon, ResetIcon, AlertIcon, ChevronLeftIcon, ChevronRightIcon, LogoIcon, SpinnerIcon, SettingsIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
 import LogoLoader from './components/LogoLoader.tsx';
 import UploaderIcon from './components/UploaderIcon.tsx';
 import ThemeSwitch from './components/ThemeSwitch.tsx';
-import AnimatedAppName from './components/AnimatedAppName.tsx';
 import Auth from './components/Auth.tsx';
+import LoginPage from './components/LoginPage.tsx';
 import { useAuth } from './hooks/useAuth';
-import GlowCard from './components/GlowCard.tsx';
 import ResultsView from './components/ResultsView.tsx';
 import VideoAnalysisView from './components/VideoAnalysisView.tsx';
 import ProfilePage from './components/ProfilePage.tsx';
+import SettingsPage from './components/SettingsPage.tsx';
 import HistoryPage from './components/HistoryPage.tsx';
 import UserMenu from './components/UserMenu.tsx';
-import PatternBackground from './components/PatternBackground.tsx';
 import PromptLibrary from './components/PromptLibrary.tsx';
 import { PromptTemplate } from './data/promptLibrary.ts';
 import FAQ from './components/FAQ.tsx';
 
 
 type Theme = 'light' | 'dark';
-export type AppView = 'main' | 'profile' | 'history';
+export type AppView = 'main' | 'profile' | 'history' | 'settings';
 type ResultType = 'prompt' | 'video_analysis';
 
 interface UploaderProps {
@@ -66,50 +65,50 @@ const Uploader: React.FC<UploaderProps> = ({
     };
 
     return (
-        <div className="glassmorphic-card rounded-xl p-8 min-h-[350px] flex flex-col justify-center">
+        <div className="w-full flex flex-col justify-center min-h-[350px]">
             {analysisState === AnalysisState.IDLE && (
                 <div
                     onClick={() => fileInputRef.current?.click()}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
-                    className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 cursor-pointer hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-all duration-300 ease-in-out flex flex-col items-center justify-center"
+                    className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 cursor-pointer hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-all duration-300 ease-in-out flex flex-col items-center justify-center"
                 >
-                    <div className="w-20 h-20 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 mb-4">
+                    <div className="w-24 h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 mb-6 bg-gray-100 dark:bg-white/5 rounded-full">
                         <UploaderIcon />
                     </div>
-                    <h3 className="text-lg font-medium transition-colors duration-300 group-hover:text-primary">Drag & drop your video or image here</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">or click to browse files</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
+                    <h3 className="text-xl font-semibold transition-colors duration-300 group-hover:text-primary text-center">Drag & drop your media here</h3>
+                    <p className="text-base text-gray-500 dark:text-gray-400 mt-2 text-center">or click to browse files</p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-4 text-center">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
                     <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} className="hidden" accept="video/*,image/*" />
                 </div>
             )}
 
             {analysisState === AnalysisState.PREVIEW && file && (
                 <div className="animate-fade-in-slide-up w-full" style={{ animationDuration: '300ms' }}>
-                    <h3 className="text-xl font-bold mb-4 text-center">Ready to Analyze?</h3>
-                    <div className="bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center aspect-video max-h-64 mx-auto">
+                    <h3 className="text-2xl font-bold mb-6 text-center">Ready to Analyze?</h3>
+                    <div className="bg-black rounded-xl mb-6 overflow-hidden flex items-center justify-center aspect-video max-h-[400px] mx-auto border border-white/10 shadow-lg">
                         {file?.type.startsWith('video/') ? (
                             <video src={videoUrl} controls className="w-full h-full object-contain"></video>
                         ) : (
                             <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
                         )}
                     </div>
-                    <p className="text-center text-sm font-medium text-gray-600 dark:text-gray-300 truncate mb-6" title={file.name}>{file.name}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <BlurryButton onClick={onStartAnalysis} className="w-full">
-                            <MagicWandIcon className="mr-2 w-5 h-5" />
+                    <p className="text-center text-lg font-medium text-gray-700 dark:text-gray-200 truncate mb-8 px-4" title={file.name}>{file.name}</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                        <BlurryButton onClick={onStartAnalysis} className="w-full !py-4 !text-base">
+                            <MagicWandIcon className="mr-3 w-6 h-6" />
                             Generate Prompt
                         </BlurryButton>
-                        <BlurryButton onClick={onStartVideoAnalysis} className="w-full">
-                            <BrainCircuitIcon className="w-5 h-5 mr-2" />
+                        <BlurryButton onClick={onStartVideoAnalysis} className="w-full !py-4 !text-base">
+                            <BrainCircuitIcon className="w-6 h-6 mr-3" />
                             Understand Video
                         </BlurryButton>
                     </div>
-                     <div className="mt-4 text-center">
+                     <div className="mt-6 text-center">
                         <button
                             onClick={onResetState}
-                            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white underline transition-colors"
+                            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline transition-colors"
                         >
                             Choose Another File
                         </button>
@@ -118,25 +117,25 @@ const Uploader: React.FC<UploaderProps> = ({
             )}
 
             {analysisState === AnalysisState.PROCESSING && (
-                <div className="animate-fade-in-slide-up w-full">
-                    <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{progressMessage || 'Processing media...'}</span>
-                        <span className="text-sm font-medium text-primary">{Math.round(progress)}%</span>
+                <div className="animate-fade-in-slide-up w-full max-w-xl mx-auto py-12">
+                    <div className="flex justify-between mb-4">
+                        <span className="text-lg font-medium text-gray-700 dark:text-gray-200">{progressMessage || 'Processing media...'}</span>
+                        <span className="text-lg font-bold text-primary">{Math.round(progress)}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                        <div className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }}></div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
+                        <div className="bg-gradient-to-r from-primary to-purple-500 h-4 rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(75,43,238,0.5)]" style={{ width: `${progress}%` }}></div>
                     </div>
                 </div>
             )}
 
             {analysisState === AnalysisState.ERROR && (
-                <div className="text-center animate-fade-in-slide-up">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
-                        <AlertIcon className="text-red-500 w-8 h-8" />
+                <div className="text-center animate-fade-in-slide-up py-8">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/20 mb-6">
+                        <AlertIcon className="text-red-500 w-10 h-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-red-500 mb-2">Analysis Failed</h3>
-                    <p className="text-center text-red-500/80 text-sm p-3 rounded-lg mb-6 max-w-md mx-auto">{error}</p>
-                    <BlurryButton onClick={onResetState}>
+                    <h3 className="text-2xl font-bold text-red-500 mb-3">Analysis Failed</h3>
+                    <p className="text-center text-red-500/80 text-base p-4 rounded-lg mb-8 max-w-lg mx-auto border border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/10">{error}</p>
+                    <BlurryButton onClick={onResetState} className="!px-8 !py-3">
                         <ResetIcon className="w-5 h-5 mr-2" />
                         Try Another File
                     </BlurryButton>
@@ -147,33 +146,35 @@ const Uploader: React.FC<UploaderProps> = ({
 };
 
 const AnalyzedFilePreview: React.FC<{file: File, videoUrl: string, onReset: () => void}> = ({ file, videoUrl, onReset }) => (
-    <div className="glassmorphic-card rounded-xl p-6 animate-fade-in-slide-up flex items-center justify-between gap-4">
+    <div className="glassmorphic-card rounded-xl p-4 sm:p-6 animate-fade-in-slide-up flex items-center justify-between gap-4 border border-white/20 dark:border-white/10 shadow-lg">
         <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-20 h-14 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+            <div className="w-24 h-16 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/10 shadow-sm group relative">
                 {file?.type.startsWith('video/') ? (
                     <video src={videoUrl} className="w-full h-full object-cover"></video>
                 ) : (
                     <img src={videoUrl} alt="Preview" className="w-full h-full object-cover" />
                 )}
+                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors"></div>
             </div>
             <div className="flex-grow overflow-hidden">
-                <p className="font-bold truncate" title={file.name}>{file.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">{file.type.split('/')[1]}</p>
+                <p className="font-bold truncate text-gray-900 dark:text-white text-lg" title={file.name}>{file.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">{file.type.split('/')[1]}</p>
             </div>
         </div>
-        <button onClick={onReset} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary">
-            <CloseIcon className="w-6 h-6" />
+        <button onClick={onReset} className="p-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-gray-400 hover:text-red-500 group" title="Close">
+            <CloseIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
         </button>
     </div>
 );
 
+
 const App: React.FC = () => {
     // Core App State
     const [theme, setTheme] = useState<Theme>('dark');
-    const { currentUser, userHistory, addToHistory, logout } = useAuth();
+    const { currentUser, userHistory, addToHistory, logout, isLoading: isAuthLoading } = useAuth();
+    const [hasEnteredAsGuest, setHasEnteredAsGuest] = useState(false);
     const [currentView, setCurrentView] = useState<AppView>('main');
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-    const [selectedHistoryItem, setSelectedHistoryItem] = useState<PromptHistoryItem | null>(null);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -210,7 +211,29 @@ const App: React.FC = () => {
     const [remixStyle, setRemixStyle] = useState('');
     const [isConvertingToJson, setIsConvertingToJson] = useState(false);
     const [isGeneratingPromptFromAnalysis, setIsGeneratingPromptFromAnalysis] = useState(false);
+
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    }, [theme]);
+
+    // Handle logout to reset guest status as well
+    const handleLogout = () => {
+        logout();
+        setHasEnteredAsGuest(false);
+    };
+
+    const handleNavigate = (view: AppView) => {
+        setCurrentView(view);
+        setIsSidebarOpen(false);
+    };
+
     const resetState = useCallback(() => {
         setFile(null);
         if (videoUrl) URL.revokeObjectURL(videoUrl);
@@ -572,21 +595,8 @@ const App: React.FC = () => {
         }
     };
     
-    useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [theme]);
-
     const handleToggleTheme = () => {
         setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-    };
-
-    const handleNavigate = (view: AppView) => {
-        setCurrentView(view);
-        setIsSidebarOpen(false); // Close sidebar on mobile nav
     };
 
     const handleSelectHistoryItem = (item: PromptHistoryItem) => {
@@ -618,204 +628,34 @@ const App: React.FC = () => {
         setCurrentView('main');
     };
 
-    return (
-        <div className="flex h-screen w-full bg-background-light dark:bg-background-dark text-gray-900 dark:text-white overflow-hidden font-sans selection:bg-primary/30">
-            <PatternBackground />
-
-            {/* Mobile Sidebar Backdrop */}
-            {isSidebarOpen && (
-                <div 
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden animate-fade-in-slide-up" 
-                    style={{animationDuration: '200ms'}}
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside className={`
-                fixed md:static z-50 h-full w-64 glassmorphic-sidebar border-r border-white/20 flex flex-col justify-between transition-transform duration-300 ease-in-out
-                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-            `}>
-                <div className="p-6">
-                     <div onClick={() => handleNavigate('main')} className="flex items-center gap-3 cursor-pointer group mb-10">
-                        <LogoLoader /> 
-                        <div className="font-display font-bold text-xl tracking-tight group-hover:text-primary transition-colors">VizPrompts</div>
-                    </div>
-                    
-                    <nav className="space-y-2">
-                        <button onClick={() => handleNavigate('main')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === 'main' ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10'}`}>
-                            <DashboardIcon className="w-6 h-6" />
-                            <span className="font-medium">Dashboard</span>
-                        </button>
-                        <button onClick={() => setIsLibraryOpen(true)} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-200 group">
-                             <LibraryIcon className="w-6 h-6 group-hover:text-primary transition-colors" />
-                            <span className="font-medium">Templates</span>
-                        </button>
-                         <button onClick={() => handleNavigate('history')} className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-200 group ${currentView === 'history' ? 'bg-primary text-white shadow-lg shadow-primary/25' : 'text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/10'}`}>
-                            <HistoryIcon className="w-6 h-6 group-hover:text-primary transition-colors" />
-                            <span className="font-medium">History</span>
-                        </button>
-                    </nav>
-                </div>
-
-                <div className="p-6 border-t border-gray-200 dark:border-white/10 space-y-2">
-                     {currentUser ? (
-                         <button onClick={logout} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-all duration-200 group">
-                             <LogoutIcon className="w-6 h-6" />
-                            <span className="font-medium">Logout</span>
-                        </button>
-                     ) : (
-                        <button onClick={() => setIsAuthModalOpen(true)} className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-primary/10 hover:text-primary transition-all duration-200 group">
-                             <UserIcon className="w-6 h-6" />
-                            <span className="font-medium">Sign In</span>
-                        </button>
-                     )}
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                {/* Header */}
-                <header className="h-20 glassmorphic flex items-center justify-between px-6 sm:px-10 shrink-0 z-30">
-                     <div className="flex items-center gap-4">
-                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors">
-                            <MenuIcon className="w-6 h-6 text-gray-700 dark:text-white" />
-                        </button>
-                        <h1 className="text-xl font-display font-bold hidden sm:block">
-                            {currentView === 'main' && 'Dashboard'}
-                            {currentView === 'history' && 'History'}
-                            {currentView === 'profile' && 'Profile'}
-                        </h1>
-                     </div>
-
-                     <div className="flex items-center gap-4 sm:gap-6">
-                        <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
-                        {currentUser && (
-                            <div className="h-8 w-[1px] bg-gray-300 dark:bg-white/20"></div>
-                        )}
-                        {currentUser ? (
-                            <UserMenu currentUser={currentUser} onNavigate={handleNavigate} onLogout={logout} />
-                        ) : null}
-                     </div>
-                </header>
-
-                {/* Scrollable Content Area */}
-                <main className="flex-1 overflow-y-auto p-4 sm:p-8 md:p-10">
-                    <div className="max-w-7xl mx-auto space-y-8">
-                        {/* View Routing */}
-                        {currentView === 'main' && (
-                             <>
-                                {analysisState === AnalysisState.IDLE && (
-                                    <div className="text-center mb-10 animate-fade-in-slide-up">
-                                        <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight mb-4">
-                                            What will you create today?
-                                        </h2>
-                                        <p className="text-gray-500 dark:text-gray-400 max-w-2xl mx-auto text-lg">
-                                            Upload an image or video to generate production-ready prompts or get deep insights with AI analysis.
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className={`grid grid-cols-1 ${analysisState === AnalysisState.SUCCESS ? 'lg:grid-cols-1 xl:grid-cols-2' : 'lg:grid-cols-1 max-w-4xl mx-auto'} gap-8`}>
-                                     {analysisState === AnalysisState.SUCCESS ? (
-                                        <div className="space-y-8 animate-fade-in-slide-up">
-                                            <AnalyzedFilePreview file={file!} videoUrl={videoUrl} onReset={resetState} />
-                                            <div className="glassmorphic-card rounded-xl p-6">
-                                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                                                    <LibraryIcon className="w-5 h-5 text-primary" />
-                                                    Need Inspiration?
-                                                </h3>
-                                                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                                                    Explore our curated library of high-quality prompts to kickstart your creative process.
-                                                </p>
-                                                <BlurryButton onClick={() => setIsLibraryOpen(true)} className="w-full">
-                                                    Explore Library
-                                                </BlurryButton>
-                                            </div>
-                                        </div>
-                                     ) : (
-                                        <Uploader 
-                                            analysisState={analysisState}
-                                            file={file}
-                                            videoUrl={videoUrl}
-                                            error={error}
-                                            progress={progress}
-                                            progressMessage={progressMessage}
-                                            onFileSelect={handleFileSelect}
-                                            onStartAnalysis={handleStartAnalysis}
-                                            onStartVideoAnalysis={handleStartVideoAnalysis}
-                                            onResetState={resetState}
-                                        />
-                                     )}
-
-                                     {/* Result Column */}
-                                     {analysisState === AnalysisState.SUCCESS && (
-                                        <div className="space-y-8">
-                                            {resultType === 'prompt' && structuredPrompt ? (
-                                                <ResultsView 
-                                                    file={file}
-                                                    videoUrl={videoUrl}
-                                                    videoMeta={videoMeta}
-                                                    generatedPrompt={generatedPrompt}
-                                                    structuredPrompt={structuredPrompt}
-                                                    isCopied={isCopied}
-                                                    isRefining={isRefining}
-                                                    isDetailing={isDetailing}
-                                                    refineTone={refineTone}
-                                                    refineStyle={refineStyle}
-                                                    refineCamera={refineCamera}
-                                                    refineLighting={refineLighting}
-                                                    refineInstruction={refineInstruction}
-                                                    negativePrompt={negativePrompt}
-                                                    setNegativePrompt={setNegativePrompt}
-                                                    handlePromptChange={(e) => setGeneratedPrompt(e.target.value)}
-                                                    handleCopy={handleCopy}
-                                                    handleRefinePrompt={handleRefinePrompt}
-                                                    setRefineTone={setRefineTone}
-                                                    setRefineStyle={setRefineStyle}
-                                                    setRefineCamera={setRefineCamera}
-                                                    setRefineLighting={setRefineLighting}
-                                                    setRefineInstruction={setRefineInstruction}
-                                                    isTestingConsistency={isTestingConsistency}
-                                                    consistencyResult={consistencyResult}
-                                                    showConsistencyModal={showConsistencyModal}
-                                                    onTestConsistency={handleTestConsistency}
-                                                    onCloseConsistencyModal={() => setShowConsistencyModal(false)}
-                                                    onApplyImprovements={handleApplyImprovements}
-                                                    hasOriginalFrames={extractedFrames.length > 0}
-                                                    error={error}
-                                                    isRemixing={isRemixing}
-                                                    remixStyle={remixStyle}
-                                                    setRemixStyle={setRemixStyle}
-                                                    handleRemixStyle={handleRemixStyle}
-                                                    isConvertingToJson={isConvertingToJson}
-                                                    onConvertToJason={handleConvertToJason}
-                                                />
-                                            ) : resultType === 'video_analysis' && videoAnalysisResult ? (
-                                                <VideoAnalysisView
-                                                    file={file}
-                                                    videoUrl={videoUrl}
-                                                    videoMeta={videoMeta}
-                                                    analysisResult={videoAnalysisResult}
-                                                    isCopied={isCopied}
-                                                    handleCopy={handleCopy}
-                                                    isGeneratingPrompt={isGeneratingPromptFromAnalysis}
-                                                    onGeneratePrompt={handleGeneratePromptFromAnalysis}
-                                                />
-                                            ) : null}
-                                        </div>
-                                     )}
-                                </div>
-                                {analysisState === AnalysisState.IDLE && <FAQ />}
-                            </>
-                        )}
-
-                        {currentView === 'profile' && <ProfilePage />}
-                        {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={handleSelectHistoryItem} />}
-                    </div>
-                </main>
+    // -----------------------------------------------------------------------
+    // Gated Rendering Logic
+    // -----------------------------------------------------------------------
+    
+    if (isAuthLoading) {
+        return (
+            <div className="flex h-screen w-full bg-background-light dark:bg-background-dark items-center justify-center">
+                 <SpinnerIcon className="w-10 h-10 text-primary-light dark:text-primary-dark animate-spin" />
             </div>
+        );
+    }
 
+    if (!currentUser && !hasEnteredAsGuest) {
+        return (
+            <>
+                <div className="fixed top-4 right-4 z-50">
+                    <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
+                </div>
+                <LoginPage onGuestAccess={() => setHasEnteredAsGuest(true)} />
+            </>
+        );
+    }
+
+    return (
+        <div className="relative flex h-screen w-full overflow-hidden group/design-root dark:bg-background-dark bg-background-light" style={{backgroundImage: 'radial-gradient(circle at top left, rgba(75, 43, 238, 0.2), transparent 40%), radial-gradient(circle at bottom right, rgba(0, 123, 255, 0.2), transparent 40%)'}}>
+            <video ref={videoRef} src={videoUrl} className="hidden" crossOrigin="anonymous" playsInline onLoadedData={() => { if (analysisState === AnalysisState.PROCESSING && file?.type.startsWith('video/')) { /* loaded */ } }} onError={() => { /* handle error */ }} />
+            <canvas ref={canvasRef} className="hidden" />
+            
             {/* Modals */}
             {isAuthModalOpen && (
                 <Auth 
@@ -830,6 +670,242 @@ const App: React.FC = () => {
                 onClose={() => setIsLibraryOpen(false)}
                 onSelectPrompt={handleSelectPromptFromLibrary}
             />
+            
+            {/* Mobile Sidebar Backdrop */}
+            {isSidebarOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 sm:hidden" 
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside className={`group/sidebar fixed sm:relative z-30 h-full flex flex-col justify-between p-3 glassmorphic-sidebar transition-all duration-300 ease-in-out w-60 sm:w-20 sm:hover:w-60 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'} flex-shrink-0 overflow-hidden hover:shadow-2xl hover:shadow-black/20`}>
+                <div>
+                    {/* Sidebar Header / Logo */}
+                    <div className="mb-6 flex h-14 items-center gap-4 px-2 cursor-pointer overflow-hidden" onClick={() => handleNavigate('main')}>
+                        <div className="size-8 text-primary shrink-0">
+                            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path clipRule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fillRule="evenodd"></path></svg>
+                        </div>
+                        <h2 className="text-xl font-bold leading-tight tracking-[-0.015em] transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100 whitespace-nowrap text-gray-900 dark:text-white">VizPrompts</h2>
+                    </div>
+
+                    {/* Navigation */}
+                    <nav className="flex flex-col gap-2">
+                        <button onClick={() => handleNavigate('main')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'main' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                            <span className="material-symbols-outlined shrink-0">dashboard</span>
+                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Dashboard</span>
+                        </button>
+                        
+                        <button onClick={() => setIsLibraryOpen(true)} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white`}>
+                                <span className="material-symbols-outlined shrink-0">library_books</span>
+                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Templates</span>
+                        </button>
+
+                        <button onClick={() => handleNavigate('history')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'history' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                            <span className="material-symbols-outlined shrink-0">history</span>
+                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">History</span>
+                        </button>
+
+                        <button onClick={() => handleNavigate('profile')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'profile' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                            <span className="material-symbols-outlined shrink-0">person</span>
+                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Profile</span>
+                        </button>
+
+                        <button onClick={() => handleNavigate('settings')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'settings' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
+                            <SettingsIcon className="shrink-0 h-6 w-6" />
+                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Settings</span>
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Footer Actions (Logout) */}
+                <div>
+                    <button onClick={currentUser ? handleLogout : () => setIsAuthModalOpen(true)} className="relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white w-full overflow-hidden">
+                        <span className="material-symbols-outlined shrink-0">{currentUser ? 'logout' : 'login'}</span>
+                        <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">{currentUser ? 'Logout' : 'Sign In'}</span>
+                    </button>
+                </div>
+            </aside>
+
+            {/* MAIN CONTENT LAYOUT */}
+            <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+                
+                {/* HEADER */}
+                <header className="flex-shrink-0 flex items-center justify-between whitespace-nowrap px-4 sm:px-6 py-4 mb-2 z-10">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 sm:hidden text-gray-500 dark:text-gray-300">
+                            <MenuIcon className="h-6 w-6" />
+                        </button>
+                        <h1 className="text-xl font-bold leading-tight tracking-[-0.015em] hidden sm:block text-gray-900 dark:text-white">
+                            {currentView === 'main' && 'Dashboard'}
+                            {currentView === 'history' && 'History'}
+                            {currentView === 'profile' && 'Profile'}
+                            {currentView === 'settings' && 'Settings'}
+                        </h1>
+                    </div>
+                    
+                    {/* Search Bar (Visual Only) */}
+                    <div className="flex flex-1 justify-center items-center gap-6 px-8 hidden md:flex">
+                        <div className="relative w-full max-w-xl">
+                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                            <input className="form-input w-full rounded-full border-0 bg-gray-100 dark:bg-white/5 py-2.5 pl-12 pr-4 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary/80 transition-all duration-300 ease-in-out focus:scale-[1.02] text-gray-800 dark:text-gray-200" placeholder="Search prompts or media..." type="text"/>
+                        </div>
+                    </div>
+
+                    {/* Right Actions */}
+                    <div className="flex justify-end items-center gap-4">
+                        <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
+                        {currentUser && (
+                            <div 
+                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ring-2 ring-primary/20 cursor-pointer hover:ring-primary/50 transition-all" 
+                                onClick={() => handleNavigate('profile')} 
+                                style={{backgroundImage: `url("${currentUser.profilePicture || ''}")`}}
+                                title="View Profile"
+                            ></div>
+                        )}
+                    </div>
+                </header>
+
+                {/* MAIN VIEW CONTENT (Scrollable) */}
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth custom-scrollbar">
+                    <div className="max-w-7xl mx-auto w-full flex flex-col gap-8 pb-20">
+                        {currentView === 'main' && (
+                            <>
+                                {/* Dashboard Welcome */}
+                                {analysisState === AnalysisState.IDLE && (
+                                    <div className="flex flex-wrap justify-between gap-4 px-4 sm:px-0 mb-4 animate-fade-in-slide-up">
+                                        <p className="text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em] min-w-72 text-gray-900 dark:text-white">
+                                            Welcome, {currentUser?.fullName ? currentUser.fullName.split(' ')[0] : 'Creator'}!
+                                        </p>
+                                        <p className="text-gray-500 dark:text-gray-400 max-w-2xl text-lg mt-2">
+                                            Upload an image or video to generate production-ready prompts or get deep insights with AI analysis.
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                {/* Main Content Wrapper */}
+                                <div className={`w-full ${analysisState === AnalysisState.IDLE ? 'max-w-4xl mx-auto bg-white/60 dark:bg-[#221933]/80 rounded-2xl shadow-2xl shadow-black/30 backdrop-blur-sm border border-black/10 dark:border-[#2f2348] p-6 sm:p-8' : ''}`}>
+                                    {analysisState === AnalysisState.IDLE ? (
+                                        <Uploader 
+                                            analysisState={analysisState}
+                                            file={file}
+                                            videoUrl={videoUrl}
+                                            error={error}
+                                            progress={progress}
+                                            progressMessage={progressMessage}
+                                            onFileSelect={handleFileSelect}
+                                            onStartAnalysis={handleStartAnalysis}
+                                            onStartVideoAnalysis={handleStartVideoAnalysis}
+                                            onResetState={resetState}
+                                        />
+                                    ) : (
+                                        <div className={`grid grid-cols-1 ${analysisState === AnalysisState.SUCCESS ? 'lg:grid-cols-1 xl:grid-cols-2' : 'lg:grid-cols-1 max-w-4xl mx-auto'} gap-8`}>
+                                            {analysisState === AnalysisState.SUCCESS ? (
+                                                <div className="space-y-8 animate-fade-in-slide-up">
+                                                    <AnalyzedFilePreview file={file!} videoUrl={videoUrl} onReset={resetState} />
+                                                    <div className="glassmorphic-card rounded-xl p-6">
+                                                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+                                                            <LibraryIcon className="w-5 h-5 text-primary" />
+                                                            Need Inspiration?
+                                                        </h3>
+                                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                                                            Explore our curated library of high-quality prompts to kickstart your creative process.
+                                                        </p>
+                                                        <BlurryButton onClick={() => setIsLibraryOpen(true)} className="w-full">
+                                                            Explore Library
+                                                        </BlurryButton>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full bg-white/60 dark:bg-[#221933]/80 rounded-2xl shadow-2xl shadow-black/30 backdrop-blur-sm border border-black/10 dark:border-[#2f2348] p-6 sm:p-8">
+                                                    <Uploader 
+                                                        analysisState={analysisState}
+                                                        file={file}
+                                                        videoUrl={videoUrl}
+                                                        error={error}
+                                                        progress={progress}
+                                                        progressMessage={progressMessage}
+                                                        onFileSelect={handleFileSelect}
+                                                        onStartAnalysis={handleStartAnalysis}
+                                                        onStartVideoAnalysis={handleStartVideoAnalysis}
+                                                        onResetState={resetState}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Result Column */}
+                                            {analysisState === AnalysisState.SUCCESS && (
+                                                <div className="space-y-8">
+                                                    {resultType === 'prompt' && structuredPrompt ? (
+                                                        <ResultsView 
+                                                            file={file}
+                                                            videoUrl={videoUrl}
+                                                            videoMeta={videoMeta}
+                                                            generatedPrompt={generatedPrompt}
+                                                            structuredPrompt={structuredPrompt}
+                                                            isCopied={isCopied}
+                                                            isRefining={isRefining}
+                                                            isDetailing={isDetailing}
+                                                            refineTone={refineTone}
+                                                            refineStyle={refineStyle}
+                                                            refineCamera={refineCamera}
+                                                            refineLighting={refineLighting}
+                                                            refineInstruction={refineInstruction}
+                                                            negativePrompt={negativePrompt}
+                                                            setNegativePrompt={setNegativePrompt}
+                                                            handlePromptChange={(e) => setGeneratedPrompt(e.target.value)}
+                                                            handleCopy={handleCopy}
+                                                            handleRefinePrompt={handleRefinePrompt}
+                                                            setRefineTone={setRefineTone}
+                                                            setRefineStyle={setRefineStyle}
+                                                            setRefineCamera={setRefineCamera}
+                                                            setRefineLighting={setRefineLighting}
+                                                            setRefineInstruction={setRefineInstruction}
+                                                            isTestingConsistency={isTestingConsistency}
+                                                            consistencyResult={consistencyResult}
+                                                            showConsistencyModal={showConsistencyModal}
+                                                            onTestConsistency={handleTestConsistency}
+                                                            onCloseConsistencyModal={() => setShowConsistencyModal(false)}
+                                                            onApplyImprovements={handleApplyImprovements}
+                                                            hasOriginalFrames={extractedFrames.length > 0}
+                                                            error={error}
+                                                            isRemixing={isRemixing}
+                                                            remixStyle={remixStyle}
+                                                            setRemixStyle={setRemixStyle}
+                                                            handleRemixStyle={handleRemixStyle}
+                                                            isConvertingToJson={isConvertingToJson}
+                                                            onConvertToJason={handleConvertToJason}
+                                                        />
+                                                    ) : resultType === 'video_analysis' && videoAnalysisResult ? (
+                                                        <VideoAnalysisView
+                                                            file={file}
+                                                            videoUrl={videoUrl}
+                                                            videoMeta={videoMeta}
+                                                            analysisResult={videoAnalysisResult}
+                                                            isCopied={isCopied}
+                                                            handleCopy={handleCopy}
+                                                            isGeneratingPrompt={isGeneratingPromptFromAnalysis}
+                                                            onGeneratePrompt={handleGeneratePromptFromAnalysis}
+                                                        />
+                                                    ) : null}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                {/* FAQ if idle */}
+                                {analysisState === AnalysisState.IDLE && <FAQ />}
+                            </>
+                        )}
+
+                        {currentView === 'profile' && <ProfilePage />}
+                        {currentView === 'settings' && <SettingsPage theme={theme} onToggleTheme={handleToggleTheme} />}
+                        {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={handleSelectHistoryItem} />}
+                    </div>
+                </main>
+            </div>
         </div>
     );
 };

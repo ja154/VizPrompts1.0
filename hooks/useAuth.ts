@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { User, PromptHistoryItem } from '../types';
 
@@ -54,6 +55,7 @@ export const useAuth = () => {
     const [users, setUsers] = useState<Record<string, User>>({});
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [userHistory, setUserHistory] = useState<PromptHistoryItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const loadHistoryForUser = useCallback((username: string) => {
         try {
@@ -69,23 +71,29 @@ export const useAuth = () => {
 
     // On initial app load, restore the session and user database from localStorage.
     useEffect(() => {
-        try {
-            const storedUsersStr = localStorage.getItem(USERS_KEY);
-            // FIX: Explicitly type the parsed JSON to ensure type safety.
-            const storedUsers: Record<string, User> = storedUsersStr ? JSON.parse(storedUsersStr) as Record<string, User> : {};
-            setUsers(storedUsers);
-
-            const activeUsername = localStorage.getItem(ACTIVE_USER_KEY);
-            // If there's an active user session, log them in automatically.
-            if (activeUsername && storedUsers[activeUsername]) {
-                const user = storedUsers[activeUsername];
-                setCurrentUser(user);
-                loadHistoryForUser(user.username);
+        const initAuth = () => {
+            try {
+                const storedUsersStr = localStorage.getItem(USERS_KEY);
+                // FIX: Explicitly type the parsed JSON to ensure type safety.
+                const storedUsers: Record<string, User> = storedUsersStr ? JSON.parse(storedUsersStr) as Record<string, User> : {};
+                setUsers(storedUsers);
+    
+                const activeUsername = localStorage.getItem(ACTIVE_USER_KEY);
+                // If there's an active user session, log them in automatically.
+                if (activeUsername && storedUsers[activeUsername]) {
+                    const user = storedUsers[activeUsername];
+                    setCurrentUser(user);
+                    loadHistoryForUser(user.username);
+                }
+            } catch (error) {
+                console.error("Failed to initialize auth state from localStorage:", error);
+                localStorage.clear(); // Clear potentially corrupt data.
+            } finally {
+                setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Failed to initialize auth state from localStorage:", error);
-            localStorage.clear(); // Clear potentially corrupt data.
-        }
+        };
+
+        initAuth();
     }, [loadHistoryForUser]);
 
     const persistUsers = (updatedUsers: Record<string, User>) => {
@@ -234,6 +242,7 @@ export const useAuth = () => {
     return {
         currentUser,
         userHistory,
+        isLoading,
         login,
         signup,
         loginWithGoogle,
