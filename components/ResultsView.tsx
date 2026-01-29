@@ -84,7 +84,7 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                 onClick={(e) => e.stopPropagation()}
             >
                 <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center z-10">
-                    <span className="fas fa-times"></span>
+                    <span className="material-symbols-outlined">close</span>
                 </button>
                 <div className="p-8 overflow-y-auto">
                     <h2 className="text-xl font-bold text-center mb-6">Prompt Consistency Test</h2>
@@ -107,7 +107,7 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                 
                                 {result.missing_details && result.missing_details.length > 0 && (
                                     <div className="text-left mt-4 bg-gray-100 dark:bg-white/5 p-4 rounded-lg border border-gray-200 dark:border-white/10">
-                                        <h4 className="font-semibold mb-2">Missing Details:</h4>
+                                        <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">Missing Details:</h4>
                                         <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
                                             {result.missing_details.map((detail, index) => (
                                                 <li key={index}>{detail}</li>
@@ -186,7 +186,7 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
 interface ResultsViewProps {
     file: File | null;
     videoUrl: string;
-    videoMeta: { duration: string; resolution: string } | null;
+    videoMeta: { duration: string; resolution: string, isVideo: boolean } | null;
     generatedPrompt: string;
     structuredPrompt: StructuredPrompt | null;
     isCopied: boolean;
@@ -235,7 +235,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
     isConvertingToJson, onConvertToJason
 }) => {
-    const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
+    const isVideo = videoMeta?.isVideo;
     const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
 
     return (
@@ -264,11 +264,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="glassmorphic-input p-3 rounded-lg">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Duration</p>
-                      <p className="font-medium">{videoMeta?.duration}</p>
-                    </div>
-                    <div className="glassmorphic-input p-3 rounded-lg">
+                    {isVideo && (
+                        <div className="glassmorphic-input p-3 rounded-lg">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Duration</p>
+                        <p className="font-medium">{videoMeta?.duration}</p>
+                        </div>
+                    )}
+                    <div className={`${isVideo ? 'col-span-1' : 'col-span-2'} glassmorphic-input p-3 rounded-lg`}>
                       <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Resolution</p>
                       <p className="font-medium">{videoMeta?.resolution}</p>
                     </div>
@@ -400,7 +402,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               <div className="glassmorphic-card rounded-xl p-6 relative">
                     <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 dark:text-white">
                         <PaintBrushIcon className="w-6 h-6 text-primary" />
-                        Video Style Remix
+                        Media Style Remix
                     </h2>
                     <div className="grid grid-cols-1 gap-4 mb-6">
                         <div>

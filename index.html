@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>VizPrompts Studio Pro Dashboard</title>
+<title>VizPrompts Studio Pro</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
 <!-- Google Sign-In -->
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <meta name="google-client-id" content="537242218704-ah7b13unuri7tiv17qv1lg1vitbntnf8.apps.googleusercontent.com">
@@ -20,118 +20,99 @@
         theme: {
             extend: {
                 colors: {
-                    "primary": "#4b2bee",
-                    "background-light": "#f6f6f8",
-                    "background-dark": "#131022",
+                    "primary": "#6366f1",
+                    "accent": "#8b5cf6",
+                    "background-light": "#f8fafc",
+                    "background-dark": "#020617",
                 },
                 fontFamily: {
                     "display": ["Space Grotesk", "sans-serif"],
                     "sans": ["Inter", "sans-serif"]
-                },
-                borderRadius: {
-                    "DEFAULT": "0.25rem",
-                    "lg": "0.5rem",
-                    "xl": "0.75rem",
-                    "full": "9999px"
                 },
             },
         },
     }
 </script>
 <style>
-    /* Light mode defaults */
-    .glassmorphic-card {
-        background-color: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.6);
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.4);
+        --glass-border: rgba(255, 255, 255, 0.6);
+        --glow-color: rgba(99, 102, 241, 0.15);
     }
-    .glassmorphic-sidebar {
-        background-color: rgba(246, 246, 248, 0.7);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-right: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    .glassmorphic-input {
-        background-color: rgba(255, 255, 255, 0.5);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    .glassmorphic {
-      background-color: rgba(250, 250, 250, 0.5);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-    
-    /* Dark mode overrides */
-    .dark .glassmorphic-card {
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .dark .glassmorphic-sidebar {
-        background-color: rgba(28, 25, 44, 0.5);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .dark .glassmorphic-input {
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .dark .glassmorphic {
-      background-color: rgba(26, 26, 34, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    .dark {
+        --glass-bg: rgba(15, 23, 42, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.05);
+        --glow-color: rgba(99, 102, 241, 0.1);
     }
 
-    .material-symbols-outlined {
-      font-variation-settings:
-      'FILL' 0,
-      'wght' 400,
-      'GRAD' 0,
-      'opsz' 24
+    .glassmorphic-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--glass-border);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
     }
-    .material-symbols-outlined.fill {
-      font-variation-settings:
-      'FILL' 1,
-      'wght' 400,
-      'GRAD' 0,
-      'opsz' 24
+
+    .glassmorphic-sidebar {
+        background: var(--glass-bg);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border-right: 1px solid var(--glass-border);
+    }
+
+    .glassmorphic-input {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glassmorphic-input:focus {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    /* Aurora Background */
+    .aurora-bg {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background: radial-gradient(circle at 0% 0%, #1e1b4b 0%, transparent 50%),
+                    radial-gradient(circle at 100% 0%, #312e81 0%, transparent 50%),
+                    radial-gradient(circle at 100% 100%, #1e1b4b 0%, transparent 50%),
+                    radial-gradient(circle at 0% 100%, #312e81 0%, transparent 50%),
+                    #020617;
+        overflow: hidden;
+    }
+    .aurora-bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("https://grainy-gradients.vercel.app/noise.svg");
+        opacity: 0.15;
+        pointer-events: none;
     }
 
     /* Animations */
-    @keyframes fade-in-slide-up {
-        from { opacity: 0; filter: blur(5px); transform: translateY(20px); }
-        to { opacity: 1; filter: blur(0); transform: translateY(0); }
+    @keyframes slide-up {
+        from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
+        to { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
-    @keyframes scale-in {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
-    .animate-fade-in-slide-up { 
-        animation: fade-in-slide-up 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        opacity: 0;
-    }
-    .animate-scale-in { 
-        animation: scale-in 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        opacity: 0;
-    }
-    .animation-delay-100 { animation-delay: 100ms; }
-    .animation-delay-200 { animation-delay: 200ms; }
-    .animation-delay-300 { animation-delay: 300ms; }
+    .animate-slide-up { animation: slide-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
-    /* Scrollbars */
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 20px var(--glow-color); }
+        50% { box-shadow: 0 0 40px var(--glow-color); }
     }
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    ::-webkit-scrollbar-thumb {
-        background: rgba(156, 163, 175, 0.5);
-        border-radius: 3px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(156, 163, 175, 0.8);
+    .glow-pulse { animation: pulse-glow 4s infinite ease-in-out; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.6); }
+
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
     }
 </style>
 <script type="importmap">
@@ -145,7 +126,8 @@
 }
 </script>
 </head>
-<body class="font-sans bg-background-light dark:bg-background-dark text-gray-800 dark:text-white overflow-hidden">
+<body class="font-sans bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 overflow-hidden">
+  <div class="aurora-bg"></div>
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>

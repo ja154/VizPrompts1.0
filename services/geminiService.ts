@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { StructuredPrompt, ConsistencyResult } from '../types.ts';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -83,14 +83,14 @@ const parseStructuredPrompt = (responseText: string): StructuredPrompt => {
 };
 
 export const generateStructuredPromptFromFrames = async (frameDataUrls: string[], onProgress: (msg: string) => void): Promise<StructuredPrompt> => {
-    onProgress('Thinking with Gemini 3 Pro...');
+    onProgress('Engineering Prompt with Gemini 3 Pro...');
     const imageParts = frameDataUrls.map(url => {
         const { base64, mimeType } = parseDataUrl(url);
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: "Analyze these frames and generate a structured prompt." }, ...imageParts] },
+        contents: { parts: [{ text: "Analyze this media and generate a structured production prompt." }, ...imageParts] },
         config: { 
             systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
             thinkingConfig: { thinkingBudget: 4000 }
@@ -100,17 +100,17 @@ export const generateStructuredPromptFromFrames = async (frameDataUrls: string[]
 };
 
 export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (msg: string) => void): Promise<string> => {
-    onProgress('Deep analysis with Gemini 3 Pro...');
+    onProgress('Performing Deep Scene Analysis...');
     const imageParts = frameDataUrls.map(url => {
         const { base64, mimeType } = parseDataUrl(url);
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: "Provide a comprehensive video analysis." }, ...imageParts] },
+        contents: { parts: [{ text: "Provide a comprehensive scene analysis covering subject, motion, style, and lighting." }, ...imageParts] },
         config: { 
-            systemInstruction: "You are an expert video analyst.",
-            thinkingConfig: { thinkingBudget: 8000 }
+            systemInstruction: "You are an expert visual director and cinematographer.",
+            thinkingConfig: { thinkingBudget: 6000 }
         }
     });
     return response.text || "";
@@ -119,8 +119,8 @@ export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (
 export const refinePrompt = async (currentPrompt: string, userInstruction: string, negativePrompt: string): Promise<string> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Refine: ${currentPrompt}\nInstruction: ${userInstruction}\nExclude: ${negativePrompt}`,
-        config: { systemInstruction: "Refine the prompt. Return ONLY the new text." }
+        contents: `Original: ${currentPrompt}\nInstructions: ${userInstruction}\nNegative: ${negativePrompt}`,
+        config: { systemInstruction: "Refine the provided prompt based on instructions. Output ONLY the refined prompt text." }
     });
     return response.text?.trim() || currentPrompt;
 };
@@ -128,9 +128,9 @@ export const refinePrompt = async (currentPrompt: string, userInstruction: strin
 export const refineJsonPrompt = async (currentJson: string, instruction: string, negative: string): Promise<string> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `JSON: ${currentJson}\nInstruction: ${instruction}\nNegative: ${negative}`,
+        contents: `JSON: ${currentJson}\nInstructions: ${instruction}\nNegative: ${negative}`,
         config: {
-            systemInstruction: "Edit this JSON visually based on instructions. Return valid JSON.",
+            systemInstruction: "Refine the visual parameters in this JSON production spec.",
             responseMimeType: "application/json",
             responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA
         }
@@ -143,7 +143,7 @@ export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<str
         model: 'gemini-3-flash-preview',
         contents: JSON.stringify(prompt),
         config: {
-            systemInstruction: "Convert text prompt to visual JSON schema.",
+            systemInstruction: "Convert the unstructured prompt details into a formal visual production JSON.",
             responseMimeType: "application/json",
             responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA
         }
@@ -154,9 +154,9 @@ export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<str
 export const remixPrompt = async (prompt: string): Promise<string[]> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Remix this: ${prompt}`,
+        contents: `Remix: ${prompt}`,
         config: {
-            systemInstruction: "Generate 3 variations. Return JSON array of strings.",
+            systemInstruction: "Generate 3 stylistically distinct remixes of this prompt. Return as a JSON array of strings.",
             responseMimeType: "application/json",
             responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
         }
@@ -171,8 +171,8 @@ export const remixVideoStyle = async (frames: string[], style: string): Promise<
     });
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: `Remix this motion in ${style} style.` }, ...parts] },
-        config: { thinkingConfig: { thinkingBudget: 2000 } }
+        contents: { parts: [{ text: `Re-imagine this scene in the style of: ${style}` }, ...parts] },
+        config: { thinkingConfig: { thinkingBudget: 3000 } }
     });
     return response.text || "";
 };
@@ -184,13 +184,21 @@ export const testPromptConsistency = async (prompt: string, frames: string[]): P
     });
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: `Test consistency for: ${prompt}` }, ...parts] },
+        contents: { parts: [{ text: `Compare this prompt with the provided media: ${prompt}` }, ...parts] },
         config: {
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
-                    reasoning: { type: Type.OBJECT, properties: { analysis_of_prompt: { type: Type.STRING }, analysis_of_media: { type: Type.STRING }, comparison: { type: Type.STRING } }, required: ["analysis_of_prompt", "analysis_of_media", "comparison"] },
+                    reasoning: { 
+                        type: Type.OBJECT, 
+                        properties: { 
+                            analysis_of_prompt: { type: Type.STRING }, 
+                            analysis_of_media: { type: Type.STRING }, 
+                            comparison: { type: Type.STRING } 
+                        }, 
+                        required: ["analysis_of_prompt", "analysis_of_media", "comparison"] 
+                    },
                     consistency_score: { type: Type.INTEGER },
                     explanation: { type: Type.STRING },
                     missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -216,7 +224,15 @@ export const testJsonConsistency = async (json: string, frames: string[]): Promi
             responseSchema: {
                 type: Type.OBJECT,
                 properties: {
-                    reasoning: { type: Type.OBJECT, properties: { analysis_of_prompt: { type: Type.STRING }, analysis_of_media: { type: Type.STRING }, comparison: { type: Type.STRING } }, required: ["analysis_of_prompt", "analysis_of_media", "comparison"] },
+                    reasoning: { 
+                        type: Type.OBJECT, 
+                        properties: { 
+                            analysis_of_prompt: { type: Type.STRING }, 
+                            analysis_of_media: { type: Type.STRING }, 
+                            comparison: { type: Type.STRING } 
+                        }, 
+                        required: ["analysis_of_prompt", "analysis_of_media", "comparison"] 
+                    },
                     consistency_score: { type: Type.INTEGER },
                     explanation: { type: Type.STRING },
                     missing_details: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -233,7 +249,7 @@ export const testJsonConsistency = async (json: string, frames: string[]): Promi
 export const generatePromptFromAnalysis = async (text: string): Promise<StructuredPrompt> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Turn this analysis into a prompt: ${text}`,
+        contents: `Synthesize this analysis into a generation prompt: ${text}`,
         config: { systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT }
     });
     return parseStructuredPrompt(response.text || "");
