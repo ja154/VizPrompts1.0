@@ -1,14 +1,10 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnalysisState, PromptHistoryItem, User, ConsistencyResult, StructuredPrompt } from './types.ts';
 import { extractFramesFromVideo, imageToDataUrl, getVideoMetadata } from './utils/video.ts';
 import { generateStructuredPromptFromFrames, refinePrompt, testPromptConsistency, refineJsonPrompt, testJsonConsistency, remixVideoStyle, convertPromptToJson, analyzeVideoContent, generatePromptFromAnalysis } from './services/geminiService.ts';
-import { BrainCircuitIcon, FilmIcon, LibraryIcon, MenuIcon, HistoryIcon, DashboardIcon, LogoutIcon, UserIcon, MagicWandIcon, CloseIcon, ResetIcon, AlertIcon, ChevronLeftIcon, ChevronRightIcon, LogoIcon, SpinnerIcon, SettingsIcon } from './components/icons.tsx';
+import { BrainCircuitIcon, FilmIcon, MenuIcon, HistoryIcon, LogoutIcon, UserIcon, MagicWandIcon, CloseIcon, ResetIcon, SpinnerIcon, SettingsIcon, LayoutIcon } from './components/icons.tsx';
 import BlurryButton from './components/Button.tsx';
-import LogoLoader from './components/LogoLoader.tsx';
-import UploaderIcon from './components/UploaderIcon.tsx';
 import ThemeSwitch from './components/ThemeSwitch.tsx';
-import Auth from './components/Auth.tsx';
 import LoginPage from './components/LoginPage.tsx';
 import { useAuth } from './hooks/useAuth';
 import ResultsView from './components/ResultsView.tsx';
@@ -16,169 +12,22 @@ import VideoAnalysisView from './components/VideoAnalysisView.tsx';
 import ProfilePage from './components/ProfilePage.tsx';
 import SettingsPage from './components/SettingsPage.tsx';
 import HistoryPage from './components/HistoryPage.tsx';
-import UserMenu from './components/UserMenu.tsx';
 import PromptLibrary from './components/PromptLibrary.tsx';
 import { PromptTemplate } from './data/promptLibrary.ts';
 import FAQ from './components/FAQ.tsx';
-
 
 type Theme = 'light' | 'dark';
 export type AppView = 'main' | 'profile' | 'history' | 'settings';
 type ResultType = 'prompt' | 'video_analysis';
 
-interface UploaderProps {
-    analysisState: AnalysisState;
-    file: File | null;
-    videoUrl: string;
-    error: string;
-    progress: number;
-    progressMessage: string;
-    onFileSelect: (file: File) => void;
-    onStartAnalysis: () => void;
-    onStartVideoAnalysis: () => void;
-    onResetState: () => void;
-}
-
-const Uploader: React.FC<UploaderProps> = ({
-    analysisState, file, videoUrl, error, progress, progressMessage,
-    onFileSelect, onStartAnalysis, onStartVideoAnalysis, onResetState
-}) => {
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.currentTarget.classList.add('border-primary', 'bg-primary/5');
-    };
-
-    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
-    };
-
-    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            onFileSelect(e.dataTransfer.files[0]);
-            e.dataTransfer.clearData();
-        }
-    };
-
-    return (
-        <div className="w-full flex flex-col justify-center min-h-[350px]">
-            {analysisState === AnalysisState.IDLE && (
-                <div
-                    onClick={() => fileInputRef.current?.click()}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className="w-full group border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 cursor-pointer hover:border-primary dark:hover:border-primary hover:bg-primary/5 transition-all duration-300 ease-in-out flex flex-col items-center justify-center"
-                >
-                    <div className="w-24 h-24 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 mb-6 bg-gray-100 dark:bg-white/5 rounded-full">
-                        <UploaderIcon />
-                    </div>
-                    <h3 className="text-xl font-semibold transition-colors duration-300 group-hover:text-primary text-center">Drag & drop your media here</h3>
-                    <p className="text-base text-gray-500 dark:text-gray-400 mt-2 text-center">or click to browse files</p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500 mt-4 text-center">Supports MP4, MOV, WEBM, JPG, PNG (Max 200MB)</p>
-                    <input type="file" ref={fileInputRef} onChange={(e) => e.target.files && onFileSelect(e.target.files[0])} className="hidden" accept="video/*,image/*" />
-                </div>
-            )}
-
-            {analysisState === AnalysisState.PREVIEW && file && (
-                <div className="animate-fade-in-slide-up w-full" style={{ animationDuration: '300ms' }}>
-                    <h3 className="text-2xl font-bold mb-6 text-center">Ready to Analyze?</h3>
-                    <div className="bg-black rounded-xl mb-6 overflow-hidden flex items-center justify-center aspect-video max-h-[400px] mx-auto border border-white/10 shadow-lg">
-                        {file?.type.startsWith('video/') ? (
-                            <video src={videoUrl} controls className="w-full h-full object-contain"></video>
-                        ) : (
-                            <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
-                        )}
-                    </div>
-                    <p className="text-center text-lg font-medium text-gray-700 dark:text-gray-200 truncate mb-8 px-4" title={file.name}>{file.name}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                        <BlurryButton onClick={onStartAnalysis} className="w-full !py-4 !text-base">
-                            <MagicWandIcon className="mr-3 w-6 h-6" />
-                            Generate Prompt
-                        </BlurryButton>
-                        <BlurryButton onClick={onStartVideoAnalysis} className="w-full !py-4 !text-base">
-                            <BrainCircuitIcon className="w-6 h-6 mr-3" />
-                            Understand Video
-                        </BlurryButton>
-                    </div>
-                     <div className="mt-6 text-center">
-                        <button
-                            onClick={onResetState}
-                            className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline transition-colors"
-                        >
-                            Choose Another File
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {analysisState === AnalysisState.PROCESSING && (
-                <div className="animate-fade-in-slide-up w-full max-w-xl mx-auto py-12">
-                    <div className="flex justify-between mb-4">
-                        <span className="text-lg font-medium text-gray-700 dark:text-gray-200">{progressMessage || 'Processing media...'}</span>
-                        <span className="text-lg font-bold text-primary">{Math.round(progress)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4 overflow-hidden shadow-inner">
-                        <div className="bg-gradient-to-r from-primary to-purple-500 h-4 rounded-full transition-all duration-300 ease-out shadow-[0_0_10px_rgba(75,43,238,0.5)]" style={{ width: `${progress}%` }}></div>
-                    </div>
-                </div>
-            )}
-
-            {analysisState === AnalysisState.ERROR && (
-                <div className="text-center animate-fade-in-slide-up py-8">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100 dark:bg-red-900/20 mb-6">
-                        <AlertIcon className="text-red-500 w-10 h-10" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-red-500 mb-3">Analysis Failed</h3>
-                    <p className="text-center text-red-500/80 text-base p-4 rounded-lg mb-8 max-w-lg mx-auto border border-red-200 dark:border-red-800/30 bg-red-50 dark:bg-red-900/10">{error}</p>
-                    <BlurryButton onClick={onResetState} className="!px-8 !py-3">
-                        <ResetIcon className="w-5 h-5 mr-2" />
-                        Try Another File
-                    </BlurryButton>
-                </div>
-            )}
-        </div>
-    );
-};
-
-const AnalyzedFilePreview: React.FC<{file: File, videoUrl: string, onReset: () => void}> = ({ file, videoUrl, onReset }) => (
-    <div className="glassmorphic-card rounded-xl p-4 sm:p-6 animate-fade-in-slide-up flex items-center justify-between gap-4 border border-white/20 dark:border-white/10 shadow-lg">
-        <div className="flex items-center gap-4 overflow-hidden">
-            <div className="w-24 h-16 bg-black rounded-lg overflow-hidden flex-shrink-0 border border-white/10 shadow-sm group relative">
-                {file?.type.startsWith('video/') ? (
-                    <video src={videoUrl} className="w-full h-full object-cover"></video>
-                ) : (
-                    <img src={videoUrl} alt="Preview" className="w-full h-full object-cover" />
-                )}
-                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors"></div>
-            </div>
-            <div className="flex-grow overflow-hidden">
-                <p className="font-bold truncate text-gray-900 dark:text-white text-lg" title={file.name}>{file.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">{file.type.split('/')[1]}</p>
-            </div>
-        </div>
-        <button onClick={onReset} className="p-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-gray-400 hover:text-red-500 group" title="Close">
-            <CloseIcon className="w-6 h-6 transition-transform group-hover:scale-110" />
-        </button>
-    </div>
-);
-
-
 const App: React.FC = () => {
-    // Core App State
     const [theme, setTheme] = useState<Theme>('dark');
     const { currentUser, userHistory, addToHistory, logout, isLoading: isAuthLoading } = useAuth();
     const [hasEnteredAsGuest, setHasEnteredAsGuest] = useState(false);
     const [currentView, setCurrentView] = useState<AppView>('main');
-    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // State lifted from Uploader
     const [file, setFile] = useState<File | null>(null);
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [videoMeta, setVideoMeta] = useState<{ duration: string, resolution: string } | null>(null);
@@ -187,13 +36,11 @@ const App: React.FC = () => {
     const [progressMessage, setProgressMessage] = useState('');
     const [error, setError] = useState('');
     
-    // Results State
     const [resultType, setResultType] = useState<ResultType | null>(null);
     const [generatedPrompt, setGeneratedPrompt] = useState('');
     const [structuredPrompt, setStructuredPrompt] = useState<StructuredPrompt | null>(null);
     const [videoAnalysisResult, setVideoAnalysisResult] = useState<string | null>(null);
     
-    // UI Interaction State
     const [isCopied, setIsCopied] = useState(false);
     const [isRefining, setIsRefining] = useState(false);
     const [isDetailing, setIsDetailing] = useState(false);
@@ -212,27 +59,9 @@ const App: React.FC = () => {
     const [isConvertingToJson, setIsConvertingToJson] = useState(false);
     const [isGeneratingPromptFromAnalysis, setIsGeneratingPromptFromAnalysis] = useState(false);
 
-    const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    
     useEffect(() => {
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        document.documentElement.classList.toggle('dark', theme === 'dark');
     }, [theme]);
-
-    // Handle logout to reset guest status as well
-    const handleLogout = () => {
-        logout();
-        setHasEnteredAsGuest(false);
-    };
-
-    const handleNavigate = (view: AppView) => {
-        setCurrentView(view);
-        setIsSidebarOpen(false);
-    };
 
     const resetState = useCallback(() => {
         setFile(null);
@@ -241,671 +70,210 @@ const App: React.FC = () => {
         setVideoMeta(null);
         setAnalysisState(AnalysisState.IDLE);
         setProgress(0);
-        setProgressMessage('');
-        setError('');
-        setResultType(null);
         setGeneratedPrompt('');
         setStructuredPrompt(null);
         setVideoAnalysisResult(null);
-        setIsCopied(false);
-        setIsRefining(false);
-        setIsDetailing(false);
-        setRefineInstruction('');
-        setRefineTone('');
-        setRefineStyle('');
-        setRefineCamera('');
-        setRefineLighting('');
-        setNegativePrompt('');
         setExtractedFrames([]);
-        setIsTestingConsistency(false);
-        setConsistencyResult(null);
-        setShowConsistencyModal(false);
-        setIsRemixing(false);
-        setRemixStyle('');
-        setIsConvertingToJson(false);
-        setIsGeneratingPromptFromAnalysis(false);
     }, [videoUrl]);
-
-    const populateStateFromAnalysis = (analysis: StructuredPrompt) => {
-        setGeneratedPrompt(analysis.core_focus);
-        setStructuredPrompt(analysis);
-    };
 
     const handleFileSelect = async (selectedFile: File) => {
         resetState();
-        const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/webm', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-        if (!validTypes.includes(selectedFile.type)) {
-            setError('Please upload a valid video (MP4, MOV, WEBM) or image (JPG, PNG, GIF) file.');
-            return;
-        }
-        if (selectedFile.size > 200 * 1024 * 1024) {
-            setError('File size exceeds 200MB limit.');
-            return;
-        }
         setFile(selectedFile);
         try {
             if (selectedFile.type.startsWith('video/')) {
                 setVideoUrl(URL.createObjectURL(selectedFile));
                 const meta = await getVideoMetadata(selectedFile);
-                const minutes = Math.floor(meta.duration / 60);
-                const seconds = Math.floor(meta.duration % 60).toString().padStart(2, '0');
-                setVideoMeta({ duration: `${minutes}:${seconds}`, resolution: `${meta.width}x${meta.height}` });
-            } else if (selectedFile.type.startsWith('image/')) {
+                setVideoMeta({ duration: `${Math.floor(meta.duration/60)}:${Math.floor(meta.duration%60).toString().padStart(2,'0')}`, resolution: `${meta.width}x${meta.height}` });
+            } else {
                 const dataUrl = await imageToDataUrl(selectedFile);
-                const img = new Image();
-                img.onload = () => setVideoMeta({ duration: 'N/A', resolution: `${img.width}x${img.height}` });
-                img.src = dataUrl;
                 setVideoUrl(dataUrl);
             }
             setAnalysisState(AnalysisState.PREVIEW);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Could not read file preview.');
-            setAnalysisState(AnalysisState.IDLE);
-            setFile(null);
-        }
+        } catch (err) { setError('Failed to load file.'); }
     };
 
     const handleStartAnalysis = async () => {
-        if (!file) return;
-
-        let progressInterval: ReturnType<typeof setInterval> | undefined;
         setAnalysisState(AnalysisState.PROCESSING);
-        setProgress(0);
-        setProgressMessage('Preparing media...');
-        setError('');
         setResultType('prompt');
-
         try {
-            let frameDataUrls: string[] = [];
-            
-            if (file.type.startsWith('video/')) {
-                setProgressMessage('Extracting video frames...');
-                frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => {
-                    setProgress(prog * 0.5);
-                });
-            } else if (file.type.startsWith('image/')) {
-                setProgressMessage('Processing image...');
-                frameDataUrls = [videoUrl];
-                await new Promise(res => setTimeout(res, 500));
-                setProgress(50);
-            }
-            
-            if (frameDataUrls.length === 0) {
-                throw new Error("Could not extract frames or process the media.");
-            }
-            setExtractedFrames(frameDataUrls);
-            
-            setProgressMessage('Analyzing with Gemini AI...');
-            
-            progressInterval = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 95) {
-                        if (progressInterval) clearInterval(progressInterval);
-                        return prev;
-                    }
-                    return prev + 1;
-                });
-            }, 150);
-
-            const finalAnalysis = await generateStructuredPromptFromFrames(frameDataUrls, (msg) => {
-                 setProgressMessage(msg);
-            });
-
-            if (progressInterval) clearInterval(progressInterval);
-            setProgress(100);
-            
-            populateStateFromAnalysis(finalAnalysis);
-            addToHistory({
-                id: Date.now().toString(),
-                prompt: finalAnalysis.core_focus,
-                structuredPrompt: finalAnalysis,
-                thumbnail: frameDataUrls[0],
-                timestamp: new Date().toISOString(),
-            });
-
-            setTimeout(() => {
-                setAnalysisState(AnalysisState.SUCCESS);
-            }, 300);
-
-        } catch (err) {
-            if (progressInterval) clearInterval(progressInterval);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            setAnalysisState(AnalysisState.ERROR);
-        }
+            const frames = file?.type.startsWith('video/') ? await extractFramesFromVideo(file, 8, p => setProgress(p*0.5)) : [videoUrl];
+            setExtractedFrames(frames);
+            const result = await generateStructuredPromptFromFrames(frames, setProgressMessage);
+            setGeneratedPrompt(result.core_focus);
+            setStructuredPrompt(result);
+            addToHistory({ id: Date.now().toString(), prompt: result.core_focus, structuredPrompt: result, thumbnail: frames[0], timestamp: new Date().toISOString() });
+            setAnalysisState(AnalysisState.SUCCESS);
+        } catch (err) { setAnalysisState(AnalysisState.ERROR); setError('API Error.'); }
     };
 
     const handleStartVideoAnalysis = async () => {
-        if (!file) return;
-
-        let progressInterval: ReturnType<typeof setInterval> | undefined;
         setAnalysisState(AnalysisState.PROCESSING);
-        setProgress(0);
-        setProgressMessage('Preparing media...');
-        setError('');
         setResultType('video_analysis');
-
         try {
-            let frameDataUrls: string[] = [];
-            
-            if (file.type.startsWith('video/')) {
-                setProgressMessage('Extracting video frames...');
-                frameDataUrls = await extractFramesFromVideo(file, 10, (prog) => {
-                    setProgress(prog * 0.5);
-                });
-            } else if (file.type.startsWith('image/')) {
-                setProgressMessage('Processing image...');
-                frameDataUrls = [videoUrl];
-                await new Promise(res => setTimeout(res, 500));
-                setProgress(50);
-            }
-            
-            if (frameDataUrls.length === 0) {
-                throw new Error("Could not extract frames or process the media.");
-            }
-            setExtractedFrames(frameDataUrls); 
-            
-            setProgressMessage('Analyzing with Gemini Pro...');
-            
-            progressInterval = setInterval(() => {
-                setProgress(prev => {
-                    if (prev >= 95) {
-                        if (progressInterval) clearInterval(progressInterval);
-                        return prev;
-                    }
-                    return prev + 1;
-                });
-            }, 200);
-
-            const analysisResultText = await analyzeVideoContent(frameDataUrls, (msg) => {
-                 setProgressMessage(msg);
-            });
-
-            if (progressInterval) clearInterval(progressInterval);
-            setProgress(100);
-            
-            setVideoAnalysisResult(analysisResultText);
-
-            setTimeout(() => {
-                setAnalysisState(AnalysisState.SUCCESS);
-            }, 300);
-
-        } catch (err) {
-            if (progressInterval) clearInterval(progressInterval);
-            setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-            setAnalysisState(AnalysisState.ERROR);
-        }
+            const frames = file?.type.startsWith('video/') ? await extractFramesFromVideo(file, 8, p => setProgress(p*0.5)) : [videoUrl];
+            setExtractedFrames(frames);
+            const result = await analyzeVideoContent(frames, setProgressMessage);
+            setVideoAnalysisResult(result);
+            setAnalysisState(AnalysisState.SUCCESS);
+        } catch (err) { setAnalysisState(AnalysisState.ERROR); setError('API Error.'); }
     };
 
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-    };
-
-    const handleRefinePrompt = async (mode: 'refine' | 'detail') => {
-        if (!generatedPrompt) return;
-        if (mode === 'refine') setIsRefining(true);
-        if (mode === 'detail') setIsDetailing(true);
-        setError('');
-        let instruction = '';
-        if (mode === 'detail') {
-            instruction = 'Add significantly more detail to the prompt. Make it richer, more descriptive, and include more sensory information and intricate visual elements. If the input is JSON, apply these details across all relevant fields like core_focus, constraints, and objective.';
-        } else {
-            instruction = 'Refine the following prompt. ';
-            if (refineTone) instruction += `Give it a ${refineTone} tone. `;
-            if (refineStyle) instruction += `Make the style ${refineStyle}. `;
-            if (refineCamera) instruction += `Use ${refineCamera} camera work. `;
-            if (refineLighting) instruction += `Incorporate ${refineLighting} lighting. `;
-            if (refineInstruction) instruction += `Specifically: ${refineInstruction}.`;
-            if (instruction.trim() === 'Refine the following prompt.') {
-                instruction = 'Slightly rephrase and improve the prompt for clarity and impact.';
-            }
-        }
-        try {
-            const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
-            const newPrompt = isJsonOutput
-                ? await refineJsonPrompt(generatedPrompt, instruction, negativePrompt)
-                : await refinePrompt(generatedPrompt, instruction, negativePrompt);
-            
-            setGeneratedPrompt(newPrompt);
-            if (structuredPrompt) {
-                const newCoreFocus = isJsonOutput ? newPrompt : newPrompt;
-                setStructuredPrompt(prev => prev ? { ...prev, core_focus: newCoreFocus } : null);
-            }
-        } catch (err) {
-            setError(err instanceof Error ? `Failed to refine prompt: ${err.message}` : 'An unknown error occurred during refinement.');
-        } finally {
-            if (mode === 'refine') setIsRefining(false);
-            if (mode === 'detail') setIsDetailing(false);
-        }
-    };
-
-    const handleTestConsistency = async () => {
-        if (!generatedPrompt || extractedFrames.length === 0) {
-            setError("Cannot test consistency without a prompt and original media frames.");
-            return;
-        }
-
-        setIsTestingConsistency(true);
-        setConsistencyResult(null);
-        setShowConsistencyModal(true);
-        setError('');
-        try {
-            let result: ConsistencyResult;
-            const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
-
-            if (isJsonOutput) {
-                try {
-                    JSON.parse(generatedPrompt); 
-                    result = await testJsonConsistency(generatedPrompt, extractedFrames);
-                } catch (e) {
-                     setError("The current text is not valid JSON and cannot be tested.");
-                     setIsTestingConsistency(false);
-                     return;
-                }
-            } else {
-                result = await testPromptConsistency(generatedPrompt, extractedFrames);
-            }
-            setConsistencyResult(result);
-        } catch (err) {
-            setError(err instanceof Error ? `${err.message}` : 'An unknown error occurred during the consistency test.');
-        } finally {
-            setIsTestingConsistency(false);
-        }
-    };
-
-    const handleApplyImprovements = (newOutput: string) => {
-        setShowConsistencyModal(false);
-        setConsistencyResult(null);
-        setError('');
-        setGeneratedPrompt(newOutput);
-        if (structuredPrompt) {
-            setStructuredPrompt(prev => prev ? { ...prev, core_focus: newOutput } : null);
-        }
-    };
-
-    const handleRemixStyle = async () => {
-        if (!remixStyle || extractedFrames.length === 0) {
-            setError("Please select a style and ensure media is uploaded to remix.");
-            return;
-        }
-        setIsRemixing(true);
-        setError('');
-        try {
-            const newPrompt = await remixVideoStyle(extractedFrames, remixStyle);
-            setGeneratedPrompt(newPrompt);
-            setStructuredPrompt({
-                objective: `A video in the style of ${remixStyle}, based on the original media.`,
-                core_focus: newPrompt,
-                constraints: `The aesthetic must be strictly '${remixStyle}'. All motion and subjects should be adapted to this style.`,
-                enhancements: "The original motion has been re-interpreted in a new artistic style."
-            });
-        } catch (err) {
-            setError(err instanceof Error ? `Failed to remix style: ${err.message}` : 'An unknown error occurred during remixing.');
-        } finally {
-            setIsRemixing(false);
-        }
-    };
-
-    const handleConvertToJason = async () => {
-        if (!structuredPrompt) return;
-        try {
-            JSON.parse(generatedPrompt);
-            return;
-        } catch (e) {
-        }
-    
-        setIsConvertingToJson(true);
-        setError('');
-        try {
-            const jsonString = await convertPromptToJson(structuredPrompt);
-            setGeneratedPrompt(jsonString);
-            setStructuredPrompt({
-                objective: "JSON Format Output",
-                core_focus: jsonString,
-                constraints: "All details are contained within the JSON in the Core Focus section."
-            });
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to convert to JSON.');
-        } finally {
-            setIsConvertingToJson(false);
-        }
-    };
-
-    const handleGeneratePromptFromAnalysis = async () => {
-        if (!videoAnalysisResult) return;
-        setIsGeneratingPromptFromAnalysis(true);
-        setError('');
-        try {
-            const result = await generatePromptFromAnalysis(videoAnalysisResult);
-            populateStateFromAnalysis(result);
-            setResultType('prompt'); 
-            
-            addToHistory({
-                id: Date.now().toString(),
-                prompt: result.core_focus,
-                structuredPrompt: result,
-                thumbnail: extractedFrames[0] || videoUrl, 
-                timestamp: new Date().toISOString(),
-            });
-        } catch (err) {
-             setError(err instanceof Error ? err.message : 'Failed to generate prompt from analysis.');
-        } finally {
-            setIsGeneratingPromptFromAnalysis(false);
-        }
-    };
-    
-    const handleToggleTheme = () => {
-        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
-    };
-
-    const handleSelectHistoryItem = (item: PromptHistoryItem) => {
-        resetState();
-        setAnalysisState(AnalysisState.SUCCESS);
-        setResultType('prompt');
-        setStructuredPrompt(item.structuredPrompt);
-        setGeneratedPrompt(item.prompt);
-        setVideoUrl(item.thumbnail);
-        setVideoMeta({ duration: 'From History', resolution: 'N/A' });
-        setFile(new File([], `${item.prompt.substring(0, 20)}.history`, { type: 'text/plain' }));
-        setCurrentView('main');
-    };
-    
-    const handleSelectPromptFromLibrary = (item: PromptTemplate) => {
-        resetState();
-        setAnalysisState(AnalysisState.SUCCESS);
-        setResultType('prompt');
-        setStructuredPrompt(item.structuredPrompt);
-        setGeneratedPrompt(item.prompt);
-
-        const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="w-full h-full p-8 text-gray-400 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>`;
-        const placeholderDataUrl = `data:image/svg+xml;base64,${btoa(placeholderSvg)}`;
-        setVideoUrl(placeholderDataUrl);
-
-        setVideoMeta({ duration: 'N/A', resolution: 'From Library' });
-        setFile(new File([], item.title, { type: 'text/plain' }));
-        setExtractedFrames([]);
-        setCurrentView('main');
-    };
-
-    // -----------------------------------------------------------------------
-    // Gated Rendering Logic
-    // -----------------------------------------------------------------------
-    
-    if (isAuthLoading) {
-        return (
-            <div className="flex h-screen w-full bg-background-light dark:bg-background-dark items-center justify-center">
-                 <SpinnerIcon className="w-10 h-10 text-primary-light dark:text-primary-dark animate-spin" />
-            </div>
-        );
-    }
-
-    if (!currentUser && !hasEnteredAsGuest) {
-        return (
-            <>
-                <div className="fixed top-4 right-4 z-50">
-                    <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
-                </div>
-                <LoginPage onGuestAccess={() => setHasEnteredAsGuest(true)} />
-            </>
-        );
-    }
+    if (isAuthLoading) return <div className="h-screen flex items-center justify-center bg-black"><SpinnerIcon className="size-10 text-primary" /></div>;
+    if (!currentUser && !hasEnteredAsGuest) return <LoginPage onGuestAccess={() => setHasEnteredAsGuest(true)} />;
 
     return (
-        <div className="relative flex h-screen w-full overflow-hidden group/design-root dark:bg-background-dark bg-background-light" style={{backgroundImage: 'radial-gradient(circle at top left, rgba(75, 43, 238, 0.2), transparent 40%), radial-gradient(circle at bottom right, rgba(0, 123, 255, 0.2), transparent 40%)'}}>
-            <video ref={videoRef} src={videoUrl} className="hidden" crossOrigin="anonymous" playsInline onLoadedData={() => { if (analysisState === AnalysisState.PROCESSING && file?.type.startsWith('video/')) { /* loaded */ } }} onError={() => { /* handle error */ }} />
-            <canvas ref={canvasRef} className="hidden" />
-            
-            {/* Modals */}
-            {isAuthModalOpen && (
-                <Auth 
-                    isOpen={isAuthModalOpen} 
-                    onClose={() => setIsAuthModalOpen(false)}
-                    onAuthSuccess={() => setIsAuthModalOpen(false)}
-                />
-            )}
-
-            <PromptLibrary 
-                isOpen={isLibraryOpen}
-                onClose={() => setIsLibraryOpen(false)}
-                onSelectPrompt={handleSelectPromptFromLibrary}
-            />
-            
-            {/* Mobile Sidebar Backdrop */}
-            {isSidebarOpen && (
-                <div 
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 sm:hidden" 
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
-
+        <div className="flex h-screen w-full bg-background-light dark:bg-background-dark font-sans text-gray-900 dark:text-white transition-colors duration-300">
             {/* Sidebar */}
-            <aside className={`group/sidebar fixed sm:relative z-30 h-full flex flex-col justify-between p-3 glassmorphic-sidebar transition-all duration-300 ease-in-out w-60 sm:w-20 sm:hover:w-60 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'} flex-shrink-0 overflow-hidden hover:shadow-2xl hover:shadow-black/20`}>
-                <div>
-                    {/* Sidebar Header / Logo */}
-                    <div className="mb-6 flex h-14 items-center gap-4 px-2 cursor-pointer overflow-hidden" onClick={() => handleNavigate('main')}>
-                        <div className="size-8 text-primary shrink-0">
-                            <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path clipRule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fillRule="evenodd"></path></svg>
-                        </div>
-                        <h2 className="text-xl font-bold leading-tight tracking-[-0.015em] transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100 whitespace-nowrap text-gray-900 dark:text-white">VizPrompts</h2>
+            <aside className={`fixed sm:relative z-50 h-full flex flex-col p-4 glassmorphic-sidebar transition-all duration-300 ${isSidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full sm:translate-x-0 sm:w-20 hover:w-64'} group/sidebar`}>
+                <div className="flex items-center gap-4 mb-10 px-2 overflow-hidden cursor-pointer" onClick={() => setCurrentView('main')}>
+                    <div className="size-10 bg-primary rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary/40">
+                        <span className="material-symbols-outlined">bolt</span>
                     </div>
-
-                    {/* Navigation */}
-                    <nav className="flex flex-col gap-2">
-                        <button onClick={() => handleNavigate('main')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'main' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
-                            <span className="material-symbols-outlined shrink-0">dashboard</span>
-                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Dashboard</span>
-                        </button>
-                        
-                        <button onClick={() => setIsLibraryOpen(true)} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white`}>
-                                <span className="material-symbols-outlined shrink-0">library_books</span>
-                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Templates</span>
-                        </button>
-
-                        <button onClick={() => handleNavigate('history')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'history' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
-                            <span className="material-symbols-outlined shrink-0">history</span>
-                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">History</span>
-                        </button>
-
-                        <button onClick={() => handleNavigate('profile')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'profile' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
-                            <span className="material-symbols-outlined shrink-0">person</span>
-                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Profile</span>
-                        </button>
-
-                        <button onClick={() => handleNavigate('settings')} className={`relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 overflow-hidden ${currentView === 'settings' ? 'text-white bg-primary shadow-lg shadow-primary/30' : 'text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white'}`}>
-                            <SettingsIcon className="shrink-0 h-6 w-6" />
-                            <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">Settings</span>
-                        </button>
-                    </nav>
+                    <span className="text-xl font-black transition-opacity opacity-0 group-hover/sidebar:opacity-100 sm:group-hover/sidebar:opacity-100">VizPrompts</span>
                 </div>
 
-                {/* Footer Actions (Logout) */}
-                <div>
-                    <button onClick={currentUser ? handleLogout : () => setIsAuthModalOpen(true)} className="relative flex h-12 items-center gap-4 whitespace-nowrap rounded-lg px-4 text-gray-500 dark:text-gray-300 transition-colors hover:bg-black/5 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white w-full overflow-hidden">
-                        <span className="material-symbols-outlined shrink-0">{currentUser ? 'logout' : 'login'}</span>
-                        <span className="font-medium transition-opacity duration-200 opacity-100 sm:opacity-0 sm:group-hover/sidebar:opacity-100">{currentUser ? 'Logout' : 'Sign In'}</span>
-                    </button>
-                </div>
+                <nav className="flex-1 space-y-2">
+                    {[
+                        { id: 'main', icon: 'dashboard', label: 'Dashboard' },
+                        { id: 'library', icon: 'auto_awesome_motion', label: 'Library', action: () => setIsLibraryOpen(true) },
+                        { id: 'history', icon: 'history', label: 'History' },
+                        { id: 'profile', icon: 'person', label: 'Profile' },
+                        { id: 'settings', icon: 'settings', label: 'Settings' }
+                    ].map(item => (
+                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${currentView === item.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-gray-400 hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                            <span className="material-symbols-outlined shrink-0">{item.icon}</span>
+                            <span className="font-bold whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100">{item.label}</span>
+                        </button>
+                    ))}
+                </nav>
+
+                <button onClick={logout} className="flex items-center gap-4 p-3 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all mt-auto">
+                    <span className="material-symbols-outlined shrink-0">logout</span>
+                    <span className="font-bold opacity-0 group-hover/sidebar:opacity-100">Logout</span>
+                </button>
             </aside>
 
-            {/* MAIN CONTENT LAYOUT */}
-            <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-                
-                {/* HEADER */}
-                <header className="flex-shrink-0 flex items-center justify-between whitespace-nowrap px-4 sm:px-6 py-4 mb-2 z-10">
+            {/* Main Content */}
+            <main className="flex-1 overflow-y-auto scroll-smooth">
+                <header className="flex items-center justify-between p-6 sticky top-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md z-40">
+                    <button onClick={() => setIsSidebarOpen(true)} className="sm:hidden material-symbols-outlined">menu</button>
+                    <div className="hidden sm:block">
+                        <h2 className="text-sm font-black uppercase tracking-widest text-gray-400">VizPrompts Pro Studio</h2>
+                    </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 sm:hidden text-gray-500 dark:text-gray-300">
-                            <MenuIcon className="h-6 w-6" />
-                        </button>
-                        <h1 className="text-xl font-bold leading-tight tracking-[-0.015em] hidden sm:block text-gray-900 dark:text-white">
-                            {currentView === 'main' && 'Dashboard'}
-                            {currentView === 'history' && 'History'}
-                            {currentView === 'profile' && 'Profile'}
-                            {currentView === 'settings' && 'Settings'}
-                        </h1>
-                    </div>
-                    
-                    {/* Search Bar (Visual Only) */}
-                    <div className="flex flex-1 justify-center items-center gap-6 px-8 hidden md:flex">
-                        <div className="relative w-full max-w-xl">
-                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-                            <input className="form-input w-full rounded-full border-0 bg-gray-100 dark:bg-white/5 py-2.5 pl-12 pr-4 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary/80 transition-all duration-300 ease-in-out focus:scale-[1.02] text-gray-800 dark:text-gray-200" placeholder="Search prompts or media..." type="text"/>
-                        </div>
-                    </div>
-
-                    {/* Right Actions */}
-                    <div className="flex justify-end items-center gap-4">
-                        <ThemeSwitch theme={theme} onToggleTheme={handleToggleTheme} />
-                        {currentUser && (
-                            <div 
-                                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 ring-2 ring-primary/20 cursor-pointer hover:ring-primary/50 transition-all" 
-                                onClick={() => handleNavigate('profile')} 
-                                style={{backgroundImage: `url("${currentUser.profilePicture || ''}")`}}
-                                title="View Profile"
-                            ></div>
-                        )}
+                        <ThemeSwitch theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
+                        <div className="size-10 rounded-full border-2 border-primary/20 p-0.5"><UserIcon imgSrc={currentUser?.profilePicture} className="size-full rounded-full" /></div>
                     </div>
                 </header>
 
-                {/* MAIN VIEW CONTENT (Scrollable) */}
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 scroll-smooth custom-scrollbar">
-                    <div className="max-w-7xl mx-auto w-full flex flex-col gap-8 pb-20">
-                        {currentView === 'main' && (
-                            <>
-                                {/* Dashboard Welcome */}
-                                {analysisState === AnalysisState.IDLE && (
-                                    <div className="flex flex-wrap justify-between gap-4 px-4 sm:px-0 mb-4 animate-fade-in-slide-up">
-                                        <p className="text-3xl sm:text-4xl font-black leading-tight tracking-[-0.033em] min-w-72 text-gray-900 dark:text-white">
-                                            Welcome, {currentUser?.fullName ? currentUser.fullName.split(' ')[0] : 'Creator'}!
-                                        </p>
-                                        <p className="text-gray-500 dark:text-gray-400 max-w-2xl text-lg mt-2">
-                                            Upload an image or video to generate production-ready prompts or get deep insights with AI analysis.
-                                        </p>
+                <div className="max-w-7xl mx-auto p-6 space-y-8 pb-20">
+                    {currentView === 'main' && (
+                        <>
+                            {analysisState === AnalysisState.IDLE ? (
+                                <div className="space-y-12 py-10">
+                                    <div className="text-center space-y-4 max-w-2xl mx-auto animate-fade-in-slide-up">
+                                        <h1 className="text-5xl font-black tracking-tight leading-tight">Video-to-Prompt Intelligence</h1>
+                                        <p className="text-lg text-gray-400">Turn cinematic motion into production-ready prompts for MJ, Sora, and Kling.</p>
                                     </div>
-                                )}
-                                
-                                {/* Main Content Wrapper */}
-                                <div className={`w-full ${analysisState === AnalysisState.IDLE ? 'max-w-4xl mx-auto bg-white/60 dark:bg-[#221933]/80 rounded-2xl shadow-2xl shadow-black/30 backdrop-blur-sm border border-black/10 dark:border-[#2f2348] p-6 sm:p-8' : ''}`}>
-                                    {analysisState === AnalysisState.IDLE ? (
-                                        <Uploader 
-                                            analysisState={analysisState}
-                                            file={file}
-                                            videoUrl={videoUrl}
-                                            error={error}
-                                            progress={progress}
-                                            progressMessage={progressMessage}
-                                            onFileSelect={handleFileSelect}
-                                            onStartAnalysis={handleStartAnalysis}
-                                            onStartVideoAnalysis={handleStartVideoAnalysis}
-                                            onResetState={resetState}
-                                        />
-                                    ) : (
-                                        <div className={`grid grid-cols-1 ${analysisState === AnalysisState.SUCCESS ? 'lg:grid-cols-1 xl:grid-cols-2' : 'lg:grid-cols-1 max-w-4xl mx-auto'} gap-8`}>
-                                            {analysisState === AnalysisState.SUCCESS ? (
-                                                <div className="space-y-8 animate-fade-in-slide-up">
-                                                    <AnalyzedFilePreview file={file!} videoUrl={videoUrl} onReset={resetState} />
-                                                    <div className="glassmorphic-card rounded-xl p-6">
-                                                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-                                                            <LibraryIcon className="w-5 h-5 text-primary" />
-                                                            Need Inspiration?
-                                                        </h3>
-                                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                                                            Explore our curated library of high-quality prompts to kickstart your creative process.
-                                                        </p>
-                                                        <BlurryButton onClick={() => setIsLibraryOpen(true)} className="w-full">
-                                                            Explore Library
-                                                        </BlurryButton>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-slide-up animation-delay-100">
+                                        <div onClick={() => setIsLibraryOpen(true)} className="p-8 rounded-3xl bg-white/60 dark:bg-black/20 border border-black/5 dark:border-white/5 shadow-xl hover:scale-[1.02] cursor-pointer transition-all group">
+                                            <div className="size-12 bg-purple-500/10 rounded-2xl flex items-center justify-center text-purple-500 mb-6 group-hover:bg-purple-500 group-hover:text-white transition-colors">
+                                                <LayoutIcon />
+                                            </div>
+                                            <h3 className="text-xl font-bold mb-2">Prompt Library</h3>
+                                            <p className="text-sm text-gray-400">Browse curated templates for cinematic consistency.</p>
+                                        </div>
+                                        <div className="col-span-1 md:col-span-2 relative group p-1 bg-gradient-to-br from-primary via-purple-500 to-pink-500 rounded-3xl shadow-2xl overflow-hidden shadow-primary/20">
+                                            <label className="block bg-white dark:bg-[#0a0a0a] rounded-[1.35rem] p-8 h-full cursor-pointer hover:bg-transparent transition-colors">
+                                                <input type="file" className="hidden" onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
+                                                <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                                                    <div className="size-16 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform"><span className="material-symbols-outlined text-4xl text-primary">upload_file</span></div>
+                                                    <div>
+                                                        <h3 className="text-2xl font-black group-hover:text-white transition-colors">Drop your creative here</h3>
+                                                        <p className="text-gray-400">Supports 4K MP4, MOV, and high-res stills</p>
                                                     </div>
                                                 </div>
-                                            ) : (
-                                                <div className="w-full bg-white/60 dark:bg-[#221933]/80 rounded-2xl shadow-2xl shadow-black/30 backdrop-blur-sm border border-black/10 dark:border-[#2f2348] p-6 sm:p-8">
-                                                    <Uploader 
-                                                        analysisState={analysisState}
-                                                        file={file}
-                                                        videoUrl={videoUrl}
-                                                        error={error}
-                                                        progress={progress}
-                                                        progressMessage={progressMessage}
-                                                        onFileSelect={handleFileSelect}
-                                                        onStartAnalysis={handleStartAnalysis}
-                                                        onStartVideoAnalysis={handleStartVideoAnalysis}
-                                                        onResetState={resetState}
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* Result Column */}
-                                            {analysisState === AnalysisState.SUCCESS && (
-                                                <div className="space-y-8">
-                                                    {resultType === 'prompt' && structuredPrompt ? (
-                                                        <ResultsView 
-                                                            file={file}
-                                                            videoUrl={videoUrl}
-                                                            videoMeta={videoMeta}
-                                                            generatedPrompt={generatedPrompt}
-                                                            structuredPrompt={structuredPrompt}
-                                                            isCopied={isCopied}
-                                                            isRefining={isRefining}
-                                                            isDetailing={isDetailing}
-                                                            refineTone={refineTone}
-                                                            refineStyle={refineStyle}
-                                                            refineCamera={refineCamera}
-                                                            refineLighting={refineLighting}
-                                                            refineInstruction={refineInstruction}
-                                                            negativePrompt={negativePrompt}
-                                                            setNegativePrompt={setNegativePrompt}
-                                                            handlePromptChange={(e) => setGeneratedPrompt(e.target.value)}
-                                                            handleCopy={handleCopy}
-                                                            handleRefinePrompt={handleRefinePrompt}
-                                                            setRefineTone={setRefineTone}
-                                                            setRefineStyle={setRefineStyle}
-                                                            setRefineCamera={setRefineCamera}
-                                                            setRefineLighting={setRefineLighting}
-                                                            setRefineInstruction={setRefineInstruction}
-                                                            isTestingConsistency={isTestingConsistency}
-                                                            consistencyResult={consistencyResult}
-                                                            showConsistencyModal={showConsistencyModal}
-                                                            onTestConsistency={handleTestConsistency}
-                                                            onCloseConsistencyModal={() => setShowConsistencyModal(false)}
-                                                            onApplyImprovements={handleApplyImprovements}
-                                                            hasOriginalFrames={extractedFrames.length > 0}
-                                                            error={error}
-                                                            isRemixing={isRemixing}
-                                                            remixStyle={remixStyle}
-                                                            setRemixStyle={setRemixStyle}
-                                                            handleRemixStyle={handleRemixStyle}
-                                                            isConvertingToJson={isConvertingToJson}
-                                                            onConvertToJason={handleConvertToJason}
-                                                        />
-                                                    ) : resultType === 'video_analysis' && videoAnalysisResult ? (
-                                                        <VideoAnalysisView
-                                                            file={file}
-                                                            videoUrl={videoUrl}
-                                                            videoMeta={videoMeta}
-                                                            analysisResult={videoAnalysisResult}
-                                                            isCopied={isCopied}
-                                                            handleCopy={handleCopy}
-                                                            isGeneratingPrompt={isGeneratingPromptFromAnalysis}
-                                                            onGeneratePrompt={handleGeneratePromptFromAnalysis}
-                                                        />
-                                                    ) : null}
-                                                </div>
-                                            )}
+                                            </label>
                                         </div>
-                                    )}
+                                    </div>
+                                    <FAQ />
                                 </div>
-                                
-                                {/* FAQ if idle */}
-                                {analysisState === AnalysisState.IDLE && <FAQ />}
-                            </>
-                        )}
+                            ) : (
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                    <div className="lg:col-span-5 space-y-6">
+                                        <div className="p-4 rounded-3xl bg-white/40 dark:bg-black/40 border border-black/5 dark:border-white/5 backdrop-blur-xl">
+                                            <div className="aspect-video bg-black rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-2xl relative">
+                                                {file?.type.startsWith('video/') ? <video src={videoUrl} controls className="size-full object-contain" /> : <img src={videoUrl} className="size-full object-contain" />}
+                                                <button onClick={resetState} className="absolute top-4 right-4 size-10 bg-black/60 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"><CloseIcon /></button>
+                                            </div>
+                                            <div className="p-4 flex justify-between items-center text-xs font-bold text-gray-400">
+                                                <span className="uppercase tracking-widest">{file?.name}</span>
+                                                <div className="flex gap-4">
+                                                    <span>{videoMeta?.duration}</span>
+                                                    <span>{videoMeta?.resolution}</span>
+                                                </div>
+                                            </div>
+                                        </div>
 
-                        {currentView === 'profile' && <ProfilePage />}
-                        {currentView === 'settings' && <SettingsPage theme={theme} onToggleTheme={handleToggleTheme} />}
-                        {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={handleSelectHistoryItem} />}
-                    </div>
-                </main>
-            </div>
+                                        {analysisState === AnalysisState.PREVIEW && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-scale-in">
+                                                <BlurryButton onClick={handleStartAnalysis} className="!p-5 !text-lg"><MagicWandIcon className="size-6" /> Generate Prompt</BlurryButton>
+                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-5 !text-lg"><BrainCircuitIcon className="size-6" /> Deep Analysis</BlurryButton>
+                                            </div>
+                                        )}
+
+                                        {analysisState === AnalysisState.PROCESSING && (
+                                            <div className="p-8 rounded-3xl bg-white/40 dark:bg-black/40 border border-black/5 dark:border-white/5 text-center space-y-6">
+                                                <SpinnerIcon className="size-16 mx-auto text-primary" />
+                                                <div className="space-y-2">
+                                                    <p className="text-xl font-bold">{progressMessage}</p>
+                                                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden"><div className="bg-primary h-full transition-all" style={{width:`${progress}%`}} /></div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="lg:col-span-7">
+                                        {analysisState === AnalysisState.SUCCESS && (
+                                            <div className="animate-fade-in-slide-up">
+                                                {resultType === 'prompt' ? (
+                                                    <ResultsView 
+                                                        file={file} videoUrl={videoUrl} videoMeta={videoMeta} generatedPrompt={generatedPrompt} structuredPrompt={structuredPrompt} isCopied={isCopied} isRefining={isRefining} isDetailing={isDetailing} refineTone={refineTone} refineStyle={refineStyle} refineCamera={refineCamera} refineLighting={refineLighting} refineInstruction={refineInstruction} negativePrompt={negativePrompt} setNegativePrompt={setNegativePrompt} handlePromptChange={e => setGeneratedPrompt(e.target.value)} handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} handleRefinePrompt={async m => {
+                                                            const isJson = structuredPrompt?.objective === 'JSON Format Output';
+                                                            const inst = m === 'detail' ? 'Add extreme detail' : `Tone: ${refineTone}, Style: ${refineStyle}, Camera: ${refineCamera}, Light: ${refineLighting}. ${refineInstruction}`;
+                                                            m === 'detail' ? setIsDetailing(true) : setIsRefining(true);
+                                                            const res = isJson ? await refineJsonPrompt(generatedPrompt, inst, negativePrompt) : await refinePrompt(generatedPrompt, inst, negativePrompt);
+                                                            setGeneratedPrompt(res);
+                                                            setIsDetailing(false); setIsRefining(false);
+                                                        }} setRefineTone={setRefineTone} setRefineStyle={setRefineStyle} setRefineCamera={setRefineCamera} setRefineLighting={setRefineLighting} setRefineInstruction={setRefineInstruction} isTestingConsistency={isTestingConsistency} consistencyResult={consistencyResult} showConsistencyModal={showConsistencyModal} onTestConsistency={async () => {
+                                                            setIsTestingConsistency(true); setShowConsistencyModal(true);
+                                                            const res = structuredPrompt?.objective === 'JSON Format Output' ? await testJsonConsistency(generatedPrompt, extractedFrames) : await testPromptConsistency(generatedPrompt, extractedFrames);
+                                                            setConsistencyResult(res); setIsTestingConsistency(false);
+                                                        }} onCloseConsistencyModal={() => setShowConsistencyModal(false)} onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false)}} hasOriginalFrames={extractedFrames.length > 0} error={error} isRemixing={isRemixing} remixStyle={remixStyle} setRemixStyle={setRemixStyle} handleRemixStyle={async () => {
+                                                            setIsRemixing(true); const res = await remixVideoStyle(extractedFrames, remixStyle); setGeneratedPrompt(res); setIsRemixing(false);
+                                                        }} isConvertingToJson={isConvertingToJson} onConvertToJason={async () => {
+                                                            setIsConvertingToJson(true); const res = await convertPromptToJson(structuredPrompt!); setGeneratedPrompt(res); setStructuredPrompt(p => ({...p!, objective: 'JSON Format Output'})); setIsConvertingToJson(false);
+                                                        }}
+                                                    />
+                                                ) : <VideoAnalysisView file={file} videoUrl={videoUrl} videoMeta={videoMeta} analysisResult={videoAnalysisResult!} isCopied={isCopied} handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} isGeneratingPrompt={isGeneratingPromptFromAnalysis} onGeneratePrompt={async () => {
+                                                    setIsGeneratingPromptFromAnalysis(true); const res = await generatePromptFromAnalysis(videoAnalysisResult!); setGeneratedPrompt(res.core_focus); setStructuredPrompt(res); setResultType('prompt'); setIsGeneratingPromptFromAnalysis(false);
+                                                }} />}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {currentView === 'profile' && <ProfilePage />}
+                    {currentView === 'settings' && <SettingsPage theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />}
+                    {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={item => { resetState(); setAnalysisState(AnalysisState.SUCCESS); setResultType('prompt'); setStructuredPrompt(item.structuredPrompt); setGeneratedPrompt(item.prompt); setVideoUrl(item.thumbnail); setCurrentView('main'); }} />}
+                </div>
+            </main>
+
+            <PromptLibrary isOpen={isLibraryOpen} onClose={() => setIsLibraryOpen(false)} onSelectPrompt={item => { resetState(); setAnalysisState(AnalysisState.SUCCESS); setResultType('prompt'); setStructuredPrompt(item.structuredPrompt); setGeneratedPrompt(item.prompt); setCurrentView('main'); }} />
         </div>
     );
 };
