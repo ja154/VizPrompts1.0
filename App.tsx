@@ -106,14 +106,14 @@ const App: React.FC = () => {
         }
     };
 
-    const handleStartAnalysis = async () => {
+    const handleStartAnalysis = async (customInstruction?: string) => {
         setAnalysisState(AnalysisState.PROCESSING);
         setResultType('prompt');
         try {
             const isVideo = file?.type.startsWith('video/');
-            const frames = isVideo ? await extractFramesFromVideo(file!, 8, p => setProgress(p*0.5)) : [videoUrl];
+            const frames = extractedFrames.length > 0 ? extractedFrames : (isVideo ? await extractFramesFromVideo(file!, 8, p => setProgress(p*0.5)) : [videoUrl]);
             setExtractedFrames(frames);
-            const result = await generateStructuredPromptFromFrames(frames, setProgressMessage);
+            const result = await generateStructuredPromptFromFrames(frames, setProgressMessage, customInstruction);
             setGeneratedPrompt(result.core_focus);
             setStructuredPrompt(result);
             addToHistory({ id: Date.now().toString(), prompt: result.core_focus, structuredPrompt: result, thumbnail: frames[0], timestamp: new Date().toISOString() });
@@ -283,8 +283,8 @@ const App: React.FC = () => {
 
                                         {analysisState === AnalysisState.PREVIEW && (
                                             <div className="flex flex-col gap-4">
-                                                <BlurryButton onClick={handleStartAnalysis} className="!p-6 !text-xl shadow-2xl shadow-primary/20"><MagicWandIcon className="size-7" /> Engineer Prompt</BlurryButton>
-                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-xl !bg-slate-500/10 shadow-xl"><BrainCircuitIcon className="size-7" /> Scene Analytics</BlurryButton>
+                                                <BlurryButton onClick={() => handleStartAnalysis()} className="!p-6 !text-xl shadow-2xl shadow-primary/20"><MagicWandIcon className="size-7" /> Engineer Prompt</BlurryButton>
+                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-xl !bg-slate-500/10 shadow-xl"><BrainCircuitIcon className="size-7" /> Scene Analytics</BrainCircuitIcon>
                                             </div>
                                         )}
 
@@ -317,7 +317,7 @@ const App: React.FC = () => {
                                                             setIsTestingConsistency(true); setShowConsistencyModal(true);
                                                             const res = structuredPrompt?.objective === 'JSON Format Output' ? await testJsonConsistency(generatedPrompt, extractedFrames) : await testPromptConsistency(generatedPrompt, extractedFrames);
                                                             setConsistencyResult(res); setIsTestingConsistency(false);
-                                                        }} onCloseConsistencyModal={() => setShowConsistencyModal(false)} onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false)}} hasOriginalFrames={extractedFrames.length > 0} error={error} isRemixing={isRemixing} remixStyle={remixStyle} setRemixStyle={setRemixStyle} handleRemixStyle={async () => {
+                                                        }} onCloseConsistencyModal={() => setShowConsistencyModal(false)} onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false)}} onRegenerate={handleStartAnalysis} hasOriginalFrames={extractedFrames.length > 0} error={error} isRemixing={isRemixing} remixStyle={remixStyle} setRemixStyle={setRemixStyle} handleRemixStyle={async () => {
                                                             setIsRemixing(true); const res = await remixVideoStyle(extractedFrames, remixStyle); setGeneratedPrompt(res); setIsRemixing(false);
                                                         }} isConvertingToJson={isConvertingToJson} onConvertToJason={async () => {
                                                             setIsConvertingToJson(true); const res = await convertPromptToJson(structuredPrompt!); setGeneratedPrompt(res); setStructuredPrompt(p => ({...p!, objective: 'JSON Format Output'})); setIsConvertingToJson(false);

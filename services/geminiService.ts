@@ -82,15 +82,20 @@ const parseStructuredPrompt = (responseText: string): StructuredPrompt => {
     return { objective, core_focus, constraints };
 };
 
-export const generateStructuredPromptFromFrames = async (frameDataUrls: string[], onProgress: (msg: string) => void): Promise<StructuredPrompt> => {
+export const generateStructuredPromptFromFrames = async (frameDataUrls: string[], onProgress: (msg: string) => void, userInstructions?: string): Promise<StructuredPrompt> => {
     onProgress('Engineering Prompt with Gemini 3 Pro...');
     const imageParts = frameDataUrls.map(url => {
         const { base64, mimeType } = parseDataUrl(url);
         return { inlineData: { mimeType, data: base64 } };
     });
+
+    const promptText = userInstructions 
+        ? `Analyze this media and generate a structured production prompt. User guidance: ${userInstructions}` 
+        : "Analyze this media and generate a structured production prompt.";
+
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: "Analyze this media and generate a structured production prompt." }, ...imageParts] },
+        contents: { parts: [{ text: promptText }, ...imageParts] },
         config: { 
             systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
             thinkingConfig: { thinkingBudget: 4000 }

@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon, CopyIcon, CheckIcon, SpinnerIcon } from './icons';
+import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon, CopyIcon, CheckIcon, SpinnerIcon, SparklesIcon } from './icons';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
 import AnimatedList from './AnimatedList.tsx';
@@ -213,6 +212,7 @@ interface ResultsViewProps {
     onTestConsistency: () => void;
     onCloseConsistencyModal: () => void;
     onApplyImprovements: (output: string) => void;
+    onRegenerate: (instruction?: string) => void;
     hasOriginalFrames: boolean;
     error: string;
     isRemixing: boolean;
@@ -231,7 +231,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     handlePromptChange, handleCopy, handleRefinePrompt,
     setRefineTone, setRefineStyle, setRefineCamera, setRefineLighting, setRefineInstruction,
     isTestingConsistency, consistencyResult, showConsistencyModal,
-    onTestConsistency, onCloseConsistencyModal, onApplyImprovements, hasOriginalFrames, error,
+    onTestConsistency, onCloseConsistencyModal, onApplyImprovements, onRegenerate, hasOriginalFrames, error,
+    // FIX: Corrected duplicate destructuring of 'setRefineStyle' to 'setRemixStyle'
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
     isConvertingToJson, onConvertToJason
 }) => {
@@ -394,6 +395,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                       
                       <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
                         {isTestingConsistency ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
+                      </BlurryButton>
+
+                      <BlurryButton onClick={() => onRegenerate(refineInstruction)} disabled={isRefining || isDetailing || !hasOriginalFrames}>
+                         <MagicWandIcon className="w-5 h-5 mr-2" />
+                         <span>Generate Prompt</span>
                       </BlurryButton>
                   </div>
               </div>
