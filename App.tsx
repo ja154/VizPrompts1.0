@@ -131,7 +131,7 @@ const App: React.FC = () => {
         setResultType('prompt');
         try {
             const isVideo = file?.type.startsWith('video/');
-            const frames = extractedFrames.length > 0 ? extractedFrames : (isVideo ? await extractFramesFromVideo(file!, 8, p => setProgress(p*0.5)) : [videoUrl]);
+            const frames = extractedFrames.length > 0 ? extractedFrames : (isVideo ? await extractFramesFromVideo(file!, 12, p => setProgress(p*0.5)) : [videoUrl]);
             setExtractedFrames(frames);
             const result = await generateStructuredPromptFromFrames(frames, setProgressMessage, customInstruction);
             setGeneratedPrompt(result.core_focus);
@@ -150,7 +150,7 @@ const App: React.FC = () => {
         setResultType('video_analysis');
         try {
             const isVideo = file?.type.startsWith('video/');
-            const frames = isVideo ? await extractFramesFromVideo(file!, 8, p => setProgress(p*0.5)) : [videoUrl];
+            const frames = isVideo ? await extractFramesFromVideo(file!, 12, p => setProgress(p*0.5)) : [videoUrl];
             setExtractedFrames(frames);
             const result = await analyzeVideoContent(frames, setProgressMessage);
             setVideoAnalysisResult(result);
@@ -339,7 +339,7 @@ const App: React.FC = () => {
                                                         <ResultsView 
                                                             file={file} videoUrl={videoUrl} videoMeta={videoMeta} generatedPrompt={generatedPrompt} structuredPrompt={structuredPrompt} isCopied={isCopied} isRefining={isRefining} isDetailing={isDetailing} refineTone={refineTone} refineStyle={refineStyle} refineCamera={refineCamera} refineLighting={refineLighting} refineInstruction={refineInstruction} negativePrompt={negativePrompt} setNegativePrompt={setNegativePrompt} handlePromptChange={e => setGeneratedPrompt(e.target.value)} handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} handleRefinePrompt={async m => {
                                                                 const isJson = structuredPrompt?.objective === 'JSON Format Output';
-                                                                const inst = m === 'detail' ? 'Add extreme production-level detail' : `Tone: ${refineTone}, Style: ${refineStyle}, Camera: ${refineCamera}, Light: ${refineLighting}. ${refineInstruction}`;
+                                                                const inst = m === 'detail' ? 'Expand this prompt with extreme production-level detail. Focus on micro-textures, cinematic lighting nuances, specific camera lens characteristics, and atmospheric depth.' : `Tone: ${refineTone}, Style: ${refineStyle}, Camera: ${refineCamera}, Light: ${refineLighting}. ${refineInstruction}`;
                                                                 m === 'detail' ? setIsDetailing(true) : setIsRefining(true);
                                                                 const res = isJson ? await refineJsonPrompt(generatedPrompt, inst, negativePrompt) : await refinePrompt(generatedPrompt, inst, negativePrompt);
                                                                 setGeneratedPrompt(res);

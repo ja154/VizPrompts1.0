@@ -3,58 +3,70 @@ import { StructuredPrompt, ConsistencyResult } from '../types.ts';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-export const MEDIA_ANALYZER_SYSTEM_PROMPT = `You are an expert prompt engineer for generative AI models. Your task is to analyze media (video frames, images) and convert it into a highly effective, structured text prompt.
+export const MEDIA_ANALYZER_SYSTEM_PROMPT = `You are a world-class Prompt Engineer and Visual Director specializing in high-end generative AI (like Midjourney, Sora, Runway Gen-3, and Stable Diffusion). Your mission is to perform a forensic visual analysis of the provided media and synthesize it into a precise, high-fidelity production prompt.
 
-Your output MUST follow this structure:
+Your analysis must be exhaustive, capturing nuances that a casual observer would miss.
+
+### OUTPUT STRUCTURE:
 
 <objective>
-[A brief, one-sentence goal for the generation.]
+[A single, high-impact sentence defining the primary subject and action.]
 </objective>
 
 <core_focus>
-[A detailed, comma-separated list of keywords and short, descriptive phrases that capture the scene. Focus on nouns, adjectives, and verbs.]
+[A dense, comma-separated list of keywords. Group them by:
+- SUBJECT: Detailed physical description, textures, expressions, attire.
+- ENVIRONMENT: Architecture, nature, specific objects, atmospheric conditions.
+- CINEMATOGRAPHY: Lens (e.g., 35mm anamorphic), camera angle (e.g., low-angle hero shot), camera movement (e.g., slow dolly zoom), depth of field.
+- LIGHTING: Source (e.g., volumetric sunlight), quality (e.g., soft-box diffusion), shadows (e.g., long dramatic shadows).
+- COLOR: Specific palette (e.g., teal and orange grade), saturation, contrast.
+- MOTION: Fluidity, speed, specific kinetic energy of subjects and camera.]
 </core_focus>
 
 <constraints>
-[A concise list of key technical and stylistic requirements.]
+[Technical requirements: Aspect ratio, frame rate, style (e.g., hyper-realistic, 16mm film grain, digital 8k), and what to EXCLUDE.]
 </constraints>
 
-GUIDELINES:
-- **Be Concise but Descriptive:** Use powerful keywords instead of long sentences.
-- **Prioritize Visuals:** Focus on subjects, actions, setting, colors, lighting, and composition.
-- **Structure is Key:** Adhere strictly to the <objective>, <core_focus>, and <constraints> tags.`;
+### ANALYSIS GUIDELINES:
+1. **Subject Forensic:** Don't just say "a person". Describe the fabric of their shirt, the micro-expressions on their face, the way light hits their skin.
+2. **Environmental Depth:** Describe the "air" in the scene. Is it dusty? Misty? Crystal clear? Describe the background elements with as much care as the foreground.
+3. **Cinematic Language:** Use professional terminology. Mention specific lenses, camera rigs (gimbal, handheld, crane), and lighting setups (Rembrandt, rim lighting, high-key).
+4. **Temporal Awareness:** For video, capture the *change* over time. How does the light shift? How does the subject's momentum evolve?
+5. **Fidelity over Generality:** Avoid generic words like "beautiful" or "cool". Use specific descriptors like "iridescent", "brutalist", "chiaroscuro", "kinetic".`;
 
 const VIDEO_PRODUCTION_JSON_SCHEMA = {
     type: Type.OBJECT,
     properties: {
-        main_subject: { type: Type.STRING },
-        synopsis: { type: Type.STRING },
+        main_subject: { type: Type.STRING, description: "Detailed description of the primary subject including textures and attire." },
+        synopsis: { type: Type.STRING, description: "A cinematic summary of the scene's narrative or visual flow." },
         visual_style: {
             type: Type.OBJECT,
             properties: {
-                art_style: { type: Type.STRING },
-                lighting: { type: Type.STRING },
-                color_palette: { type: Type.STRING },
-                mood: { type: Type.STRING }
+                art_style: { type: Type.STRING, description: "Specific aesthetic (e.g., Cyberpunk, Neo-Noir, Photorealistic)." },
+                lighting: { type: Type.STRING, description: "Detailed lighting setup (e.g., Golden hour volumetric rays)." },
+                color_palette: { type: Type.STRING, description: "Specific hex codes or descriptive color schemes." },
+                mood: { type: Type.STRING, description: "The emotional resonance of the scene." }
             },
             required: ["art_style", "lighting", "color_palette", "mood"]
         },
         camera_work: {
             type: Type.OBJECT,
             properties: {
-                angle: { type: Type.STRING },
-                movement: { type: Type.STRING }
+                angle: { type: Type.STRING, description: "Specific camera angle (e.g., Dutch angle, bird's eye view)." },
+                movement: { type: Type.STRING, description: "Dynamic camera movement (e.g., Parallax tracking shot)." },
+                lens: { type: Type.STRING, description: "Lens characteristics (e.g., 85mm f/1.8 prime)." }
             },
-            required: ["angle", "movement"]
+            required: ["angle", "movement", "lens"]
         },
-        key_elements: { type: Type.ARRAY, items: { type: Type.STRING } },
+        key_elements: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of critical props or background details." },
         sequence_of_events: {
             type: Type.ARRAY,
             items: {
                 type: Type.OBJECT,
                 properties: {
                     action: { type: Type.STRING },
-                    visual_details: { type: Type.STRING }
+                    visual_details: { type: Type.STRING },
+                    timing: { type: Type.STRING, description: "Relative timing within the sequence." }
                 },
                 required: ["action", "visual_details"]
             }
@@ -83,39 +95,39 @@ const parseStructuredPrompt = (responseText: string): StructuredPrompt => {
 };
 
 export const generateStructuredPromptFromFrames = async (frameDataUrls: string[], onProgress: (msg: string) => void, userInstructions?: string): Promise<StructuredPrompt> => {
-    onProgress('Engineering Prompt with Gemini 3 Pro...');
+    onProgress('Engineering High-Fidelity Prompt...');
     const imageParts = frameDataUrls.map(url => {
         const { base64, mimeType } = parseDataUrl(url);
         return { inlineData: { mimeType, data: base64 } };
     });
 
     const promptText = userInstructions 
-        ? `Analyze this media and generate a structured production prompt. User guidance: ${userInstructions}` 
-        : "Analyze this media and generate a structured production prompt.";
+        ? `Perform an exhaustive visual audit of this media. Extract every subtle detail regarding subject, environment, lighting, and cinematic technique. Synthesize this into a professional production prompt. User guidance: ${userInstructions}` 
+        : "Perform an exhaustive visual audit of this media. Extract every subtle detail regarding subject, environment, lighting, and cinematic technique. Synthesize this into a professional production prompt.";
 
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
         contents: { parts: [{ text: promptText }, ...imageParts] },
         config: { 
             systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-            thinkingConfig: { thinkingBudget: 4000 }
+            thinkingConfig: { thinkingBudget: 8000 }
         },
     });
     return parseStructuredPrompt(response.text || "");
 };
 
 export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (msg: string) => void): Promise<string> => {
-    onProgress('Performing Deep Scene Analysis...');
+    onProgress('Performing Forensic Scene Analysis...');
     const imageParts = frameDataUrls.map(url => {
         const { base64, mimeType } = parseDataUrl(url);
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: "Provide a comprehensive scene analysis covering subject, motion, style, and lighting." }, ...imageParts] },
+        contents: { parts: [{ text: "Provide a forensic, frame-by-frame analysis of this media. Focus on micro-details: textures, lighting shifts, subject momentum, and cinematic nuances. Be extremely descriptive." }, ...imageParts] },
         config: { 
-            systemInstruction: "You are an expert visual director and cinematographer.",
-            thinkingConfig: { thinkingBudget: 6000 }
+            systemInstruction: "You are a world-class Visual Director and Cinematographer. Your analysis is used for high-budget film production.",
+            thinkingConfig: { thinkingBudget: 10000 }
         }
     });
     return response.text || "";
@@ -124,8 +136,11 @@ export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (
 export const refinePrompt = async (currentPrompt: string, userInstruction: string, negativePrompt: string): Promise<string> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Original: ${currentPrompt}\nInstructions: ${userInstruction}\nNegative: ${negativePrompt}`,
-        config: { systemInstruction: "Refine the provided prompt based on instructions. Output ONLY the refined prompt text." }
+        contents: `Original Prompt: ${currentPrompt}\n\nRefinement Instructions: ${userInstruction}\n\nNegative Constraints (Exclude): ${negativePrompt}`,
+        config: { 
+            systemInstruction: "You are a master prompt engineer. Your goal is to refine and enhance the provided prompt while strictly adhering to the user's instructions. Use high-fidelity, cinematic language. Output ONLY the final refined prompt text. Do not include any preamble or explanation.",
+            temperature: 0.7
+        }
     });
     return response.text?.trim() || currentPrompt;
 };
@@ -133,9 +148,9 @@ export const refinePrompt = async (currentPrompt: string, userInstruction: strin
 export const refineJsonPrompt = async (currentJson: string, instruction: string, negative: string): Promise<string> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `JSON: ${currentJson}\nInstructions: ${instruction}\nNegative: ${negative}`,
+        contents: `Current JSON Spec: ${currentJson}\n\nRefinement Instructions: ${instruction}\n\nNegative Constraints: ${negative}`,
         config: {
-            systemInstruction: "Refine the visual parameters in this JSON production spec.",
+            systemInstruction: "You are a technical visual director. Refine the visual parameters in this JSON production spec based on the provided instructions. Maintain strict JSON validity and follow the provided schema.",
             responseMimeType: "application/json",
             responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA
         }
@@ -254,8 +269,11 @@ export const testJsonConsistency = async (json: string, frames: string[]): Promi
 export const generatePromptFromAnalysis = async (text: string): Promise<StructuredPrompt> => {
     const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
-        contents: `Synthesize this analysis into a generation prompt: ${text}`,
-        config: { systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT }
+        contents: `Synthesize this forensic analysis into a high-fidelity generation prompt. Ensure all cinematic nuances, lighting details, and subject characteristics are preserved and structured effectively: ${text}`,
+        config: { 
+            systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
+            thinkingConfig: { thinkingBudget: 5000 }
+        }
     });
     return parseStructuredPrompt(response.text || "");
 };

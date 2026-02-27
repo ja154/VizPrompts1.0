@@ -90,26 +90,85 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#31326f]">
+        <div className="fixed inset-0 z-50 overflow-hidden bg-[#31326f] flex flex-col lg:flex-row">
             <PatternBackground />
             
-            <div className="min-h-full w-full flex flex-col items-center justify-center p-4 py-12 relative z-10">
+            {/* Left Side: Branding & Marketing */}
+            <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-16 z-10 overflow-hidden">
                 <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
-                    className="w-full max-w-md bg-white/5 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden my-auto"
+                    className="flex items-center gap-4"
                 >
-                    {/* Header Section */}
-                    <div className="pt-12 pb-8 flex flex-col items-center justify-center text-center px-8">
-                         <div className="mb-6">
+                    <div className="size-12 bg-white text-[#31326f] rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
+                        <Sparkles size={24} fill="currentColor" />
+                    </div>
+                    <span className="text-2xl font-bold tracking-tighter font-heading uppercase">VizPrompts<span className="text-primary">.</span></span>
+                </motion.div>
+
+                <div className="space-y-8">
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="text-7xl font-bold tracking-tighter leading-[0.9] text-white font-heading uppercase"
+                    >
+                        Visual <br/>Intelligence <br/><span className="text-primary italic">for Prompters.</span>
+                    </motion.h1>
+                    <motion.p 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
+                        className="text-xl text-slate-400 font-medium leading-relaxed max-w-md"
+                    >
+                        Analyze cinematic motion and high-fidelity photos to extract perfect generation prompts for Sora, Kling, and Midjourney.
+                    </motion.p>
+                </div>
+
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.5 }}
+                    transition={{ duration: 1, delay: 0.6 }}
+                    className="flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500"
+                >
+                    <span>Sora</span>
+                    <span>Midjourney</span>
+                    <span>Runway</span>
+                    <span>Kling</span>
+                </motion.div>
+
+                {/* Decorative elements */}
+                <div className="absolute -bottom-20 -left-20 size-96 bg-primary/20 rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute top-1/4 -right-20 size-64 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+            </div>
+
+            {/* Right Side: Login Form */}
+            <div className="flex-1 flex items-center justify-center p-6 relative z-10 overflow-y-auto">
+                <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full max-w-md bg-white/5 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden"
+                >
+                    {/* Header Section (Mobile Only Logo) */}
+                    <div className="lg:hidden pt-12 pb-4 flex flex-col items-center justify-center text-center px-8">
+                         <div className="mb-4">
                             <AnimatedAppName />
                          </div>
-                         <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.2em]">AI-Powered Visual Engineering</p>
+                    </div>
+
+                    <div className="pt-10 pb-6 px-8 text-center">
+                        <h2 className="text-2xl font-bold font-heading uppercase tracking-tight text-white mb-2">
+                            {activeTab === 'login' ? 'Welcome Back' : 'Create Account'}
+                        </h2>
+                        <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">
+                            {activeTab === 'login' ? 'Enter your credentials to access the studio' : 'Join the elite visual engineering community'}
+                        </p>
                     </div>
 
                     {/* Tabs */}
-                    <div className="flex p-2 bg-black/20 mx-8 rounded-2xl mb-8">
+                    <div className="flex p-1.5 bg-black/20 mx-8 rounded-2xl mb-8">
                         <button 
                             onClick={() => { setActiveTab('login'); setError(''); }}
                             className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'login' ? 'bg-white text-[#31326f] shadow-lg' : 'text-slate-400 hover:text-white'}`}
@@ -127,14 +186,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                     </div>
 
                     {/* Content */}
-                    <div className="px-8 pb-12">
+                    <div className="px-8 pb-10">
                         <AnimatePresence mode="wait">
                             {error && (
                                 <motion.div 
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="mb-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-6 py-4 rounded-2xl text-xs font-medium text-center"
+                                    className="mb-6 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-6 py-4 rounded-2xl text-xs font-medium text-center"
                                 >
                                     {error}
                                 </motion.div>
@@ -151,7 +210,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                             >
                                 <div ref={googleButtonRef} className="w-full flex justify-center min-h-[40px] rounded-xl overflow-hidden"></div>
                                 
-                                <div className="relative flex items-center py-4">
+                                <div className="relative flex items-center py-2">
                                     <div className="flex-grow border-t border-white/5"></div>
                                     <span className="flex-shrink mx-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Or email</span>
                                     <div className="flex-grow border-t border-white/5"></div>
@@ -245,8 +304,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                         )}
 
                         {/* Guest Access */}
-                        <div className="mt-12 pt-8 border-t border-white/10 text-center">
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">Just want to try it out?</p>
+                        <div className="mt-10 pt-8 border-t border-white/10 text-center">
+                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Just want to try it out?</p>
                             <button 
                                 onClick={onGuestAccess}
                                 type="button"
