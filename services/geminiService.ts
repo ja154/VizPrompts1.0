@@ -5,7 +5,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const MEDIA_ANALYZER_SYSTEM_PROMPT = `You are a world-class Prompt Engineer and Visual Director specializing in high-end generative AI (like Midjourney, Sora, Runway Gen-3, and Stable Diffusion). Your mission is to perform a forensic visual analysis of the provided media and synthesize it into a precise, high-fidelity production prompt.
 
-Your analysis must be exhaustive, capturing nuances that a casual observer would miss.
+Your analysis must be exhaustive, capturing nuances that a casual observer would miss. You MUST ensure 100% consistency between the generated prompt and the reference media.
 
 ### OUTPUT STRUCTURE:
 
@@ -15,12 +15,12 @@ Your analysis must be exhaustive, capturing nuances that a casual observer would
 
 <core_focus>
 [A dense, comma-separated list of keywords. Group them by:
-- SUBJECT: Detailed physical description, textures, expressions, attire.
-- ENVIRONMENT: Architecture, nature, specific objects, atmospheric conditions.
+- SUBJECT: Detailed physical description, textures, expressions, attire. Focus on invariant features across frames.
+- ENVIRONMENT: Architecture, nature, specific objects, atmospheric conditions. Precise spatial layout.
 - CINEMATOGRAPHY: Lens (e.g., 35mm anamorphic), camera angle (e.g., low-angle hero shot), camera movement (e.g., slow dolly zoom), depth of field.
 - LIGHTING: Source (e.g., volumetric sunlight), quality (e.g., soft-box diffusion), shadows (e.g., long dramatic shadows).
 - COLOR: Specific palette (e.g., teal and orange grade), saturation, contrast.
-- MOTION: Fluidity, speed, specific kinetic energy of subjects and camera.]
+- MOTION: Fluidity, speed, specific kinetic energy of subjects and camera. Describe the arc of motion.]
 </core_focus>
 
 <constraints>
@@ -28,11 +28,12 @@ Your analysis must be exhaustive, capturing nuances that a casual observer would
 </constraints>
 
 ### ANALYSIS GUIDELINES:
-1. **Subject Forensic:** Don't just say "a person". Describe the fabric of their shirt, the micro-expressions on their face, the way light hits their skin.
+1. **Subject Forensic:** Don't just say "a person". Describe the fabric of their shirt, the micro-expressions on their face, the way light hits their skin. Ensure the description matches ALL provided frames.
 2. **Environmental Depth:** Describe the "air" in the scene. Is it dusty? Misty? Crystal clear? Describe the background elements with as much care as the foreground.
 3. **Cinematic Language:** Use professional terminology. Mention specific lenses, camera rigs (gimbal, handheld, crane), and lighting setups (Rembrandt, rim lighting, high-key).
-4. **Temporal Awareness:** For video, capture the *change* over time. How does the light shift? How does the subject's momentum evolve?
-5. **Fidelity over Generality:** Avoid generic words like "beautiful" or "cool". Use specific descriptors like "iridescent", "brutalist", "chiaroscuro", "kinetic".`;
+4. **Temporal Awareness:** For video, capture the *change* over time. How does the light shift? How does the subject's momentum evolve? Ensure the prompt describes a coherent sequence.
+5. **Fidelity over Generality:** Avoid generic words like "beautiful" or "cool". Use specific descriptors like "iridescent", "brutalist", "chiaroscuro", "kinetic".
+6. **Consistency Check:** Before outputting, cross-reference your prompt against every single frame provided. If a detail in your prompt contradicts any frame, correct it.`;
 
 const VIDEO_PRODUCTION_JSON_SCHEMA = {
     type: Type.OBJECT,
@@ -106,11 +107,11 @@ export const generateStructuredPromptFromFrames = async (frameDataUrls: string[]
         : "Perform an exhaustive visual audit of this media. Extract every subtle detail regarding subject, environment, lighting, and cinematic technique. Synthesize this into a professional production prompt.";
 
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: { parts: [{ text: promptText }, ...imageParts] },
         config: { 
             systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-            thinkingConfig: { thinkingBudget: 8000 }
+            thinkingConfig: { thinkingBudget: 10000 }
         },
     });
     return parseStructuredPrompt(response.text || "");
@@ -123,11 +124,11 @@ export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: { parts: [{ text: "Provide a forensic, frame-by-frame analysis of this media. Focus on micro-details: textures, lighting shifts, subject momentum, and cinematic nuances. Be extremely descriptive." }, ...imageParts] },
         config: { 
-            systemInstruction: "You are a world-class Visual Director and Cinematographer. Your analysis is used for high-budget film production.",
-            thinkingConfig: { thinkingBudget: 10000 }
+            systemInstruction: "You are a world-class Visual Director and Cinematographer. Your analysis is used for high-budget film production. Ensure absolute fidelity to the visual evidence.",
+            thinkingConfig: { thinkingBudget: 12000 }
         }
     });
     return response.text || "";
@@ -190,9 +191,9 @@ export const remixVideoStyle = async (frames: string[], style: string): Promise<
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: { parts: [{ text: `Re-imagine this scene in the style of: ${style}` }, ...parts] },
-        config: { thinkingConfig: { thinkingBudget: 3000 } }
+        config: { thinkingConfig: { thinkingBudget: 5000 } }
     });
     return response.text || "";
 };
@@ -203,9 +204,10 @@ export const testPromptConsistency = async (prompt: string, frames: string[]): P
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: `Compare this prompt with the provided media: ${prompt}` }, ...parts] },
+        model: 'gemini-3.1-pro-preview',
+        contents: { parts: [{ text: `Perform a rigorous consistency audit. Compare every detail of this prompt with the provided media: ${prompt}. Identify any discrepancies, missing elements, or inaccuracies.` }, ...parts] },
         config: {
+            systemInstruction: "You are a forensic visual auditor. Your goal is to ensure 100% alignment between text prompts and visual media. Be hyper-critical.",
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.OBJECT,
@@ -237,9 +239,10 @@ export const testJsonConsistency = async (json: string, frames: string[]): Promi
         return { inlineData: { mimeType, data: base64 } };
     });
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: { parts: [{ text: `Test JSON consistency for: ${json}` }, ...parts] },
+        model: 'gemini-3.1-pro-preview',
+        contents: { parts: [{ text: `Test JSON consistency for: ${json}. Ensure every parameter in the JSON accurately reflects the visual evidence in the frames.` }, ...parts] },
         config: {
+            systemInstruction: "You are a technical visual auditor. Compare the production JSON spec against the provided media frames. Identify any technical inaccuracies.",
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.OBJECT,
@@ -268,11 +271,11 @@ export const testJsonConsistency = async (json: string, frames: string[]): Promi
 
 export const generatePromptFromAnalysis = async (text: string): Promise<StructuredPrompt> => {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: `Synthesize this forensic analysis into a high-fidelity generation prompt. Ensure all cinematic nuances, lighting details, and subject characteristics are preserved and structured effectively: ${text}`,
         config: { 
             systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-            thinkingConfig: { thinkingBudget: 5000 }
+            thinkingConfig: { thinkingBudget: 8000 }
         }
     });
     return parseStructuredPrompt(response.text || "");
