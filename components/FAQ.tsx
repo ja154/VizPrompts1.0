@@ -41,7 +41,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ faq, isOpen, onClick }) => (
       <span className={`font-bold transition-colors duration-300 ${isOpen ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
         {faq.question}
       </span>
-      <div className={`p-2 rounded-full transition-all duration-500 ${isOpen ? 'bg-white text-[#31326f] rotate-180' : 'bg-white/5 text-slate-500'}`}>
+      <div className={`p-2 rounded-full transition-all duration-500 ${isOpen ? 'bg-white text-background-dark rotate-180' : 'bg-white/5 text-slate-500'}`}>
         {isOpen ? <Minus size={16} /> : <Plus size={16} />}
       </div>
     </button>

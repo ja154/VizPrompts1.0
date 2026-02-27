@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import BlurryButton from './Button';
 import { Loader2, User, Mail, Lock, UserPlus, LogIn, Sparkles } from 'lucide-react';
 import AnimatedAppName from './AnimatedAppName';
-import PatternBackground from './PatternBackground';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface LoginPageProps {
@@ -90,8 +89,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-hidden bg-[#31326f] flex flex-col lg:flex-row">
-            <PatternBackground />
+        <div className="fixed inset-0 z-50 overflow-hidden bg-transparent flex flex-col lg:flex-row">
             
             {/* Left Side: Branding & Marketing */}
             <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-16 z-10 overflow-hidden">
@@ -101,7 +99,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                     transition={{ duration: 0.8 }}
                     className="flex items-center gap-4"
                 >
-                    <div className="size-12 bg-white text-[#31326f] rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
+                    <div className="size-12 bg-white text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
                         <Sparkles size={24} fill="currentColor" />
                     </div>
                     <span className="text-2xl font-bold tracking-tighter font-heading uppercase">VizPrompts<span className="text-primary">.</span></span>
@@ -171,14 +169,14 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                     <div className="flex p-1.5 bg-black/20 mx-8 rounded-2xl mb-8">
                         <button 
                             onClick={() => { setActiveTab('login'); setError(''); }}
-                            className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'login' ? 'bg-white text-[#31326f] shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                            className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'login' ? 'bg-white text-background-dark shadow-lg' : 'text-slate-400 hover:text-white'}`}
                         >
                             <LogIn size={14} />
                             Sign In
                         </button>
                         <button 
                             onClick={() => { setActiveTab('signup'); setError(''); }}
-                            className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'signup' ? 'bg-white text-[#31326f] shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                            className={`flex-1 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${activeTab === 'signup' ? 'bg-white text-background-dark shadow-lg' : 'text-slate-400 hover:text-white'}`}
                         >
                             <UserPlus size={14} />
                             Join

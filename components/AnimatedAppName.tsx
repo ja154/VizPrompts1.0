@@ -61,7 +61,7 @@ const AnimatedAppName = () => {
               id="animated-title-gradient"
             >
               <stop stopColor="#ffffff" offset="0"></stop>
-              <stop stopColor="#6366f1" offset="1"></stop>
+              <stop stopColor="#0ea5e9" offset="1"></stop>
               <animateTransform
                 repeatCount="indefinite"
                 keySplines=".42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1;.42,0,.58,1"

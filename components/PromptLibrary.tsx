@@ -125,11 +125,11 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                                         disabled={!!remixingId}
                                         className={`w-full text-left px-5 py-4 rounded-2xl font-bold flex items-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 md:flex-shrink group ${
                                             activeCategory.name === category.name 
-                                                ? 'bg-white text-[#31326f] shadow-xl' 
+                                                ? 'bg-white text-background-dark shadow-xl' 
                                                 : 'text-slate-500 hover:bg-white/5 hover:text-white'
                                         }`}
                                     >
-                                        <Icon size={18} className={activeCategory.name === category.name ? 'text-[#31326f]' : 'text-slate-600 group-hover:text-slate-400'} />
+                                        <Icon size={18} className={activeCategory.name === category.name ? 'text-background-dark' : 'text-slate-600 group-hover:text-slate-400'} />
                                         <span className="ml-4 text-[10px] uppercase tracking-widest truncate">{category.name}</span>
                                     </button>
                                 );
@@ -171,7 +171,7 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                                         <button 
                                             onClick={() => handleSelect(prompt)}
                                             disabled={!!remixingId}
-                                            className="px-6 py-3 rounded-xl bg-white text-[#31326f] font-bold uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all flex items-center gap-2 shadow-lg active:scale-95"
+                                            className="px-6 py-3 rounded-xl bg-white text-background-dark font-bold uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all flex items-center gap-2 shadow-lg active:scale-95"
                                         >
                                             <span>Use</span>
                                             <ChevronRight size={14} />

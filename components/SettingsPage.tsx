@@ -75,9 +75,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                 <button 
                                     key={tab.id} 
                                     onClick={() => setActiveTab(tab.id as any)} 
-                                    className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 group ${activeTab === tab.id ? 'bg-white text-[#31326f] shadow-xl' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}
+                                    className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 group ${activeTab === tab.id ? 'bg-white text-background-dark shadow-xl' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}
                                 >
-                                    <tab.icon size={18} className={activeTab === tab.id ? 'text-[#31326f]' : 'text-slate-600 group-hover:text-slate-400'} />
+                                    <tab.icon size={18} className={activeTab === tab.id ? 'text-background-dark' : 'text-slate-600 group-hover:text-slate-400'} />
                                     <span className="text-[10px] uppercase tracking-widest">{tab.label}</span>
                                 </button>
                             ))}
@@ -183,7 +183,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                         onClick={onToggleTheme} 
                                         className={`relative inline-flex h-10 w-20 rounded-full transition-all duration-500 p-1.5 ${theme === 'dark' ? 'bg-white' : 'bg-slate-700'}`}
                                     >
-                                        <span className={`inline-block size-7 transform rounded-full shadow-xl transition-all duration-500 ${theme === 'dark' ? 'translate-x-10 bg-[#31326f]' : 'translate-x-0 bg-white'}`} />
+                                        <span className={`inline-block size-7 transform rounded-full shadow-xl transition-all duration-500 ${theme === 'dark' ? 'translate-x-10 bg-background-dark' : 'translate-x-0 bg-white'}`} />
                                     </button>
                                 </div>
                             </div>
@@ -217,7 +217,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                     
                                     <div className="bg-black/40 rounded-[2rem] p-8 font-mono text-[11px] leading-relaxed text-slate-500 overflow-hidden max-h-64 relative group border border-white/5 shadow-inner">
                                         <pre className="whitespace-pre-wrap">{MEDIA_ANALYZER_SYSTEM_PROMPT}</pre>
-                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#31326f] to-transparent"></div>
+                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background-dark to-transparent"></div>
                                         <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                                     </div>
                                     

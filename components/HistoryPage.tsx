@@ -51,7 +51,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                                     alt="Thumbnail" 
                                     className="w-full h-full object-cover bg-black transition-transform duration-700 ease-out group-hover:scale-110" 
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#31326f] via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
                                 <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
                                     <Clock size={12} className="text-slate-400" />
                                     <span className="text-[10px] font-bold text-white uppercase tracking-widest">
@@ -70,7 +70,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                                 
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">View Details</span>
-                                    <div className="size-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white group-hover:text-[#31326f] transition-all duration-300">
+                                    <div className="size-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white group-hover:text-background-dark transition-all duration-300">
                                         <ChevronRight size={16} />
                                     </div>
                                 </div>

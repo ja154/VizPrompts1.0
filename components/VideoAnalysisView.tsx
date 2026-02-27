@@ -36,12 +36,12 @@ const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
-                        <p className="font-bold text-sm">{videoMeta?.duration}</p>
+                        <p className="text-[10px] text-white/60 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
+                        <p className="font-bold text-sm text-white">{videoMeta?.duration}</p>
                     </div>
                     <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
-                        <p className="font-bold text-sm">{videoMeta?.resolution}</p>
+                        <p className="text-[10px] text-white/60 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
+                        <p className="font-bold text-sm text-white">{videoMeta?.resolution}</p>
                     </div>
                 </div>
             </div>
@@ -53,19 +53,19 @@ const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
                         <Brain className="w-5 h-5 text-white opacity-50"/>
                         Content Analysis
                     </h2>
-                    <button onClick={() => handleCopy(analysisResult)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                    <button onClick={() => handleCopy(analysisResult)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all">
                         {isCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
                     </button>
                 </div>
                 
                 <div className="bg-white/5 rounded-2xl p-6 mb-8 border border-white/5">
-                    <pre className="text-sm text-slate-300 min-h-[200px] max-h-[500px] overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed scrollbar-thin">
+                    <pre className="text-sm text-white/80 min-h-[200px] max-h-[500px] overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed scrollbar-thin">
                         {analysisResult}
                     </pre>
                 </div>
 
                 <div className="border-t border-white/10 pt-8">
-                     <p className="text-xs text-slate-500 mb-6 text-center font-medium uppercase tracking-widest">Ready to create? Turn this analysis into a structured generation prompt.</p>
+                     <p className="text-xs text-white/60 mb-6 text-center font-medium uppercase tracking-widest">Ready to create? Turn this analysis into a structured generation prompt.</p>
                      <BlurryButton onClick={onGeneratePrompt} className="w-full" disabled={isGeneratingPrompt}>
                         {isGeneratingPrompt ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Wand2 className="w-5 h-5" /><span>Generate Prompt</span></>}
                     </BlurryButton>

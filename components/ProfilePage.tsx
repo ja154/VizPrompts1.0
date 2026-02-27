@@ -107,7 +107,7 @@ const ProfilePage: React.FC = () => {
                                     <User className="w-16 h-16 text-slate-600" />
                                 )}
                             </div>
-                            <div className="absolute -bottom-2 -right-2 bg-white text-[#31326f] p-2 rounded-full shadow-lg">
+                            <div className="absolute -bottom-2 -right-2 bg-white text-background-dark p-2 rounded-full shadow-lg">
                                 <Check size={16} />
                             </div>
                         </div>

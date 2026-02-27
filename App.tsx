@@ -173,11 +173,11 @@ const App: React.FC = () => {
     ];
 
     return (
-        <div className="flex h-screen w-full transition-colors duration-500 bg-[#31326f] text-white overflow-hidden">
+        <div className="flex h-screen w-full transition-colors duration-500 bg-transparent text-white overflow-hidden">
             {/* Expanded Sidebar */}
             <aside className={`fixed sm:relative z-50 h-full flex flex-col p-4 glassmorphic-sidebar transition-all duration-500 ease-in-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full sm:translate-x-0 sm:w-20 hover:w-72'} group/sidebar`}>
                 <div className="flex items-center gap-4 mb-10 px-2 overflow-hidden cursor-pointer" onClick={() => setCurrentView('main')}>
-                    <div className="size-12 bg-white text-[#31326f] rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
+                    <div className="size-12 bg-white text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
                         <Zap size={24} fill="currentColor" />
                     </div>
                     <span className="text-xl font-bold tracking-tighter transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 sm:group-hover/sidebar:opacity-100 font-heading uppercase">VizPrompts<span className="text-primary">.</span></span>
@@ -185,7 +185,7 @@ const App: React.FC = () => {
 
                 <nav className="flex-1 space-y-3">
                     {navItems.map(item => (
-                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-white text-[#31326f] shadow-xl shadow-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-white text-background-dark shadow-xl shadow-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
                             <div className="shrink-0">{item.icon}</div>
                             <span className="font-bold text-sm whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">{item.label}</span>
                         </button>
@@ -209,7 +209,7 @@ const App: React.FC = () => {
 
             {/* Content Stage */}
             <main className="flex-1 overflow-y-auto scroll-smooth relative">
-                <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-[#31326f]/40 backdrop-blur-3xl z-40 border-b border-white/5">
+                <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-background-dark/40 backdrop-blur-3xl z-40 border-b border-white/5">
                     <div className="flex items-center gap-4">
                         <button onClick={() => setIsSidebarOpen(true)} className="sm:hidden text-slate-400"><Menu size={24} /></button>
                         <nav className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
@@ -248,7 +248,7 @@ const App: React.FC = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                         <div className="md:col-span-2 group p-[1px] rounded-[2rem] bg-gradient-to-br from-white/20 via-white/5 to-transparent shadow-2xl">
-                                            <label className="block h-full bg-[#31326f]/40 rounded-[1.95rem] p-12 cursor-pointer hover:bg-white/5 transition-all duration-500 border border-white/5">
+                                            <label className="block h-full bg-background-dark/40 rounded-[1.95rem] p-12 cursor-pointer hover:bg-white/5 transition-all duration-500 border border-white/5">
                                                 <input type="file" className="hidden" accept="video/*,image/*" onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
                                                 <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
                                                     <div className="size-24 bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-inner border border-white/10">
@@ -264,7 +264,7 @@ const App: React.FC = () => {
 
                                         <div className="flex flex-col gap-8">
                                             <div onClick={() => setIsLibraryOpen(true)} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
-                                                <div className="size-14 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-[#31326f] transition-all duration-500">
+                                                <div className="size-14 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-background-dark transition-all duration-500">
                                                     <Library size={24} />
                                                 </div>
                                                 <div>
@@ -273,7 +273,7 @@ const App: React.FC = () => {
                                                 </div>
                                             </div>
                                             <div onClick={() => setCurrentView('history')} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
-                                                <div className="size-14 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-[#31326f] transition-all duration-500">
+                                                <div className="size-14 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-background-dark transition-all duration-500">
                                                     <History size={24} />
                                                 </div>
                                                 <div>

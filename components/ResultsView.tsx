@@ -91,7 +91,7 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
             onClick={onClose}
         >
             <div 
-                className="bg-[#31326f] rounded-[2rem] p-1 max-w-lg w-full shadow-2xl border border-white/10 relative flex flex-col max-h-[90vh]"
+                className="bg-background-dark rounded-[2rem] p-1 max-w-lg w-full shadow-2xl border border-white/10 relative flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
             >
                 <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">

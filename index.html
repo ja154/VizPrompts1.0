@@ -19,10 +19,10 @@
         theme: {
             extend: {
                 colors: {
-                    "primary": "#6366f1",
-                    "accent": "#8b5cf6",
-                    "background-light": "#f8fafc",
-                    "background-dark": "#31326f",
+                    "primary": "#0ea5e9",
+                    "accent": "#f97316",
+                    "background-light": "#0f172a",
+                    "background-dark": "#020617",
                 },
                 fontFamily: {
                     "display": ["Syncopate", "sans-serif"],
@@ -47,8 +47,8 @@
 
     body {
         font-family: 'Space Grotesk', sans-serif;
-        background-color: #31326f; /* Deep Indigo base */
-        color: #fff;
+        background-color: transparent;
+        color: #f8fafc;
         overflow-x: hidden;
     }
     h1, h2, h3, .font-heading {
@@ -56,14 +56,14 @@
     }
 
     :root {
-        --glass-bg: rgba(255, 255, 255, 0.05);
-        --glass-border: rgba(255, 255, 255, 0.1);
-        --glow-color: rgba(99, 102, 241, 0.15);
+        --glass-bg: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.05);
+        --glow-color: rgba(14, 165, 233, 0.15);
     }
     .dark {
         --glass-bg: rgba(15, 23, 42, 0.4);
         --glass-border: rgba(255, 255, 255, 0.05);
-        --glow-color: rgba(99, 102, 241, 0.1);
+        --glow-color: rgba(14, 165, 233, 0.1);
     }
 
     .glassmorphic-card {
@@ -75,7 +75,7 @@
     }
 
     .glassmorphic-sidebar {
-        background: rgba(49, 50, 111, 0.8);
+        background: rgba(2, 6, 23, 0.8);
         backdrop-filter: blur(30px);
         -webkit-backdrop-filter: blur(30px);
         border-right: 1px solid var(--glass-border);
@@ -88,8 +88,8 @@
     }
     .glassmorphic-input:focus {
         background: rgba(255, 255, 255, 0.05);
-        border-color: #6366f1;
-        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        border-color: #0ea5e9;
+        box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
     }
 
     /* Aurora Background */
@@ -97,12 +97,18 @@
         position: fixed;
         inset: 0;
         z-index: -1;
-        background: radial-gradient(circle at 0% 0%, #1e1b4b 0%, transparent 50%),
-                    radial-gradient(circle at 100% 0%, #312e81 0%, transparent 50%),
-                    radial-gradient(circle at 100% 100%, #1e1b4b 0%, transparent 50%),
-                    radial-gradient(circle at 0% 100%, #312e81 0%, transparent 50%),
-                    #31326f;
+        background-color: #050b14;
+        background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+        background-size: cover;
+        background-position: center;
         overflow: hidden;
+    }
+    .aurora-bg::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: rgba(2, 6, 23, 0.85); /* Dark overlay to ensure text readability and hide background text */
+        backdrop-filter: blur(20px); /* Blur to hide any text in the background image */
     }
     .aurora-bg::after {
         content: "";
@@ -144,7 +150,7 @@
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
-<body class="font-sans bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 overflow-hidden">
+<body class="font-sans bg-transparent text-slate-900 dark:text-slate-100 overflow-hidden">
   <div class="aurora-bg"></div>
   <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
