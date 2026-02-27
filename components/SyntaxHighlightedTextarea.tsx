@@ -8,23 +8,23 @@ const colorKeywords = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pi
 const KEYWORD_CATEGORIES = {
   style: { 
     keywords: [...new Set([...refinementOptions.style, ...qualityKeywords])], 
-    className: 'text-purple-500 dark:text-purple-400 font-semibold' 
+    className: 'text-indigo-400 font-bold' 
   },
   camera: { 
     keywords: refinementOptions.camera, 
-    className: 'text-blue-500 dark:text-blue-400 font-semibold' 
+    className: 'text-sky-400 font-bold' 
   },
   lighting: { 
     keywords: refinementOptions.lighting, 
-    className: 'text-orange-500 dark:text-orange-400 font-semibold' 
+    className: 'text-amber-400 font-bold' 
   },
   tone: { 
     keywords: refinementOptions.tone, 
-    className: 'text-emerald-600 dark:text-emerald-400 font-semibold' 
+    className: 'text-emerald-400 font-bold' 
   },
   color: { 
     keywords: colorKeywords, 
-    className: 'text-rose-600 dark:text-rose-400 font-semibold' 
+    className: 'text-rose-400 font-bold' 
   },
 };
 
@@ -90,23 +90,23 @@ const highlightJson = (jsonString: string): string => {
 
         // Use a single regex pass to tokenize and wrap JSON elements.
         return escapedJson.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
-            let cls = 'text-blue-500 dark:text-blue-400'; // Default to number
+            let cls = 'text-sky-400'; // Default to number
             if (/^"/.test(match)) {
                 if (/:$/.test(match)) {
                     // It's a key
-                    cls = 'text-purple-500 dark:text-purple-400 font-semibold';
+                    cls = 'text-indigo-400 font-bold';
                     // Return the styled key without the colon, then add the colon back.
                     return `<span class="${cls}">${match.slice(0, -1)}</span>:`;
                 } else {
                     // It's a string value
-                    cls = 'text-emerald-600 dark:text-emerald-400';
+                    cls = 'text-emerald-400';
                 }
             } else if (/true|false/.test(match)) {
                 // It's a boolean
-                cls = 'text-orange-500 dark:text-orange-400 font-semibold';
+                cls = 'text-amber-400 font-bold';
             } else if (/null/.test(match)) {
                 // It's null
-                cls = 'text-gray-500 font-semibold';
+                cls = 'text-slate-500 font-bold';
             }
             return `<span class="${cls}">${match}</span>`;
         });
@@ -141,20 +141,20 @@ const SyntaxHighlightedTextarea: React.FC<SyntaxHighlightedTextareaProps> = ({
     return highlightText(value);
   }, [value, mode]);
 
-  const sharedClasses = "w-full prompt-textarea p-4 rounded-lg border focus:outline-none font-mono whitespace-pre-wrap break-words text-sm leading-relaxed";
+  const sharedClasses = "w-full prompt-textarea p-6 rounded-3xl border focus:outline-none font-mono whitespace-pre-wrap break-words text-sm leading-relaxed transition-all duration-300";
   
   return (
     <div className={`relative grid ${className || ''}`}>
       {/* Backdrop for highlighted text */}
       {mode === 'json' ? (
          <div
-            className={`${sharedClasses} col-start-1 row-start-1 bg-bg-uploader-light dark:bg-bg-uploader-dark border-border-primary-light dark:border-border-primary-dark text-text-primary-light dark:text-text-primary-dark pointer-events-none`}
+            className={`${sharedClasses} col-start-1 row-start-1 bg-white/5 border-white/5 text-slate-300 pointer-events-none`}
             aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: highlightedContent as string }}
          />
       ) : (
         <div
-            className={`${sharedClasses} col-start-1 row-start-1 bg-bg-uploader-light dark:bg-bg-uploader-dark border-border-primary-light dark:border-border-primary-dark text-text-primary-light dark:text-text-primary-dark pointer-events-none`}
+            className={`${sharedClasses} col-start-1 row-start-1 bg-white/5 border-white/5 text-slate-300 pointer-events-none`}
             aria-hidden="true"
         >
             {highlightedContent}
@@ -167,7 +167,7 @@ const SyntaxHighlightedTextarea: React.FC<SyntaxHighlightedTextareaProps> = ({
       <textarea
         value={value}
         onChange={onChange}
-        className={`${sharedClasses} col-start-1 row-start-1 bg-transparent text-transparent caret-text-primary-light dark:caret-text-primary-dark focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+        className={`${sharedClasses} col-start-1 row-start-1 bg-transparent text-transparent caret-white focus:ring-2 focus:ring-white/20 focus:border-white/10`}
         placeholder={placeholder}
         spellCheck="false"
         autoCapitalize="none"

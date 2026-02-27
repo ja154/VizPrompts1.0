@@ -1,5 +1,20 @@
 import React, { useState } from 'react';
-import { MagicWandIcon, BrainCircuitIcon, FilmIcon, TestPromptIcon, ChevronDownIcon, ArticleIcon, PaintBrushIcon, CopyIcon, CheckIcon, SpinnerIcon, SparklesIcon } from './icons';
+import { 
+    Wand2, 
+    Brain, 
+    Film, 
+    CheckCircle2, 
+    ChevronDown, 
+    FileText, 
+    Paintbrush, 
+    Copy, 
+    Check, 
+    Loader2, 
+    Sparkles,
+    AlertCircle,
+    X,
+    Monitor
+} from 'lucide-react';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
 import AnimatedList from './AnimatedList.tsx';
@@ -13,15 +28,15 @@ interface ScoreGaugeProps {
 
 const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score }) => {
     const radius = 60;
-    const stroke = 10;
+    const stroke = 8;
     const normalizedRadius = radius - stroke * 2;
     const circumference = normalizedRadius * 2 * Math.PI;
     const strokeDashoffset = circumference - (score / 100) * circumference;
 
     const getScoreColor = () => {
-        if (score < 50) return 'text-red-500';
-        if (score < 80) return 'text-yellow-500';
-        return 'text-green-500';
+        if (score < 50) return '#ef4444';
+        if (score < 80) return '#f59e0b';
+        return '#10b981';
     };
 
     return (
@@ -32,7 +47,7 @@ const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score }) => {
                 className="-rotate-90"
             >
                 <circle
-                    className="text-gray-200 dark:text-gray-700"
+                    className="text-white/5"
                     strokeWidth={stroke}
                     stroke="currentColor"
                     fill="transparent"
@@ -41,11 +56,10 @@ const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score }) => {
                     cy={radius}
                 />
                 <circle
-                    className={`${getScoreColor()} transition-all duration-1000 ease-out`}
+                    className="transition-all duration-1000 ease-out"
                     strokeWidth={stroke}
                     strokeDasharray={circumference + ' ' + circumference}
-                    style={{ strokeDashoffset }}
-                    stroke="currentColor"
+                    style={{ strokeDashoffset, stroke: getScoreColor() }}
                     fill="transparent"
                     r={normalizedRadius}
                     cx={radius}
@@ -53,7 +67,7 @@ const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score }) => {
                     strokeLinecap="round"
                 />
             </svg>
-            <span className={`absolute text-4xl font-bold ${getScoreColor()}`}>{score}</span>
+            <span className="absolute text-4xl font-bold font-heading" style={{ color: getScoreColor() }}>{score}</span>
         </div>
     );
 };
@@ -73,71 +87,74 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in-slide-up" 
-            style={{ animationDuration: '300ms' }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4" 
             onClick={onClose}
         >
             <div 
-                className="bg-white dark:bg-[#171122] rounded-2xl p-1 max-w-lg w-full shadow-2xl border border-gray-200 dark:border-white/10 relative animate-scale-in flex flex-col max-h-[90vh]"
-                style={{ animationDuration: '400ms' }}
+                className="bg-[#31326f] rounded-[2rem] p-1 max-w-lg w-full shadow-2xl border border-white/10 relative flex flex-col max-h-[90vh]"
                 onClick={(e) => e.stopPropagation()}
             >
-                <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center z-10">
-                    <span className="material-symbols-outlined">close</span>
+                <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                    <X size={24} />
                 </button>
-                <div className="p-8 overflow-y-auto">
-                    <h2 className="text-xl font-bold text-center mb-6">Prompt Consistency Test</h2>
+                <div className="p-10 overflow-y-auto">
+                    <h2 className="text-xl font-bold text-center mb-8 uppercase tracking-widest font-heading">Consistency Test</h2>
                     <div className="flex flex-col items-center justify-center min-h-[200px]">
                         {isLoading && (
-                            <>
-                                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                                <p className="mt-4 text-gray-500">Analyzing consistency...</p>
-                            </>
+                            <div className="text-center space-y-4">
+                                <Loader2 className="w-12 h-12 text-white animate-spin mx-auto opacity-50" />
+                                <p className="text-slate-400 font-medium uppercase tracking-widest text-xs">Analyzing consistency...</p>
+                            </div>
                         )}
                         {error && !isLoading && (
-                             <p className="text-red-500 text-center text-sm bg-red-500/10 p-4 rounded-lg">{error}</p>
+                             <div className="text-rose-400 text-center text-sm bg-rose-400/10 p-6 rounded-2xl border border-rose-400/20 flex flex-col items-center gap-3">
+                                <AlertCircle size={24} />
+                                <p>{error}</p>
+                             </div>
                         )}
                         {result && !isLoading && (
-                            <div className="animate-fade-in-slide-up w-full">
+                            <div className="w-full space-y-8">
                                 <div className="flex justify-center">
                                   <ScoreGauge score={result.consistency_score} />
                                 </div>
-                                <p className="mt-4 text-center text-gray-600 dark:text-gray-300">{result.explanation}</p>
+                                <p className="text-center text-slate-300 font-medium leading-relaxed">{result.explanation}</p>
                                 
                                 {result.missing_details && result.missing_details.length > 0 && (
-                                    <div className="text-left mt-4 bg-gray-100 dark:bg-white/5 p-4 rounded-lg border border-gray-200 dark:border-white/10">
-                                        <h4 className="font-semibold mb-2 text-gray-800 dark:text-gray-200">Missing Details:</h4>
-                                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                                    <div className="text-left bg-white/5 p-6 rounded-2xl border border-white/10">
+                                        <h4 className="font-bold mb-3 text-white uppercase tracking-wider text-xs">Missing Details</h4>
+                                        <ul className="space-y-2 text-sm text-slate-400">
                                             {result.missing_details.map((detail, index) => (
-                                                <li key={index}>{detail}</li>
+                                                <li key={index} className="flex items-start gap-2">
+                                                    <span className="text-primary mt-1">•</span>
+                                                    <span>{detail}</span>
+                                                </li>
                                             ))}
                                         </ul>
                                     </div>
                                 )}
 
                                 {result.reasoning && (
-                                    <div className="text-left mt-6 border-t border-gray-200 dark:border-white/10 pt-4">
+                                    <div className="text-left border-t border-white/10 pt-6">
                                         <button 
                                             onClick={() => setIsAnalysisVisible(!isAnalysisVisible)}
-                                            className="w-full flex justify-between items-center text-left font-semibold"
-                                            aria-expanded={isAnalysisVisible}
+                                            className="w-full flex justify-between items-center text-left font-bold uppercase tracking-widest text-xs text-slate-400 hover:text-white transition-colors"
                                         >
                                             <span>Forensic Analysis</span>
-                                            <ChevronDownIcon className={`w-5 h-5 transition-transform duration-200 ${isAnalysisVisible ? 'transform rotate-180' : ''}`} />
+                                            <ChevronDown size={16} className={`transition-transform duration-300 ${isAnalysisVisible ? 'rotate-180' : ''}`} />
                                         </button>
                                         {isAnalysisVisible && (
-                                            <div className="mt-2 space-y-4 text-sm text-gray-600 dark:text-gray-400 animate-fade-in-slide-up" style={{animationDuration: '300ms'}}>
-                                                <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg">
-                                                    <h5 className="font-bold text-gray-800 dark:text-white">Prompt Analysis:</h5>
-                                                    <p className="whitespace-pre-wrap font-mono text-xs">{result.reasoning.analysis_of_prompt}</p>
+                                            <div className="mt-4 space-y-4 text-xs text-slate-400">
+                                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                                    <h5 className="font-bold text-white mb-2 uppercase tracking-tighter">Prompt Analysis</h5>
+                                                    <p className="whitespace-pre-wrap font-mono leading-relaxed">{result.reasoning.analysis_of_prompt}</p>
                                                 </div>
-                                                <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg">
-                                                    <h5 className="font-bold text-gray-800 dark:text-white">Media Analysis:</h5>
-                                                    <p className="whitespace-pre-wrap font-mono text-xs">{result.reasoning.analysis_of_media}</p>
+                                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                                    <h5 className="font-bold text-white mb-2 uppercase tracking-tighter">Media Analysis</h5>
+                                                    <p className="whitespace-pre-wrap font-mono leading-relaxed">{result.reasoning.analysis_of_media}</p>
                                                 </div>
-                                                <div className="bg-gray-100 dark:bg-white/5 p-3 rounded-lg">
-                                                    <h5 className="font-bold text-gray-800 dark:text-white">Comparison:</h5>
-                                                    <p className="whitespace-pre-wrap font-mono text-xs">{result.reasoning.comparison}</p>
+                                                <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                                                    <h5 className="font-bold text-white mb-2 uppercase tracking-tighter">Comparison</h5>
+                                                    <p className="whitespace-pre-wrap font-mono leading-relaxed">{result.reasoning.comparison}</p>
                                                 </div>
                                             </div>
                                         )}
@@ -145,30 +162,29 @@ const ConsistencyModal: React.FC<ConsistencyModalProps> = ({ isOpen, onClose, is
                                 )}
 
                                 {result.revised_output && (
-                                    <div className="text-left mt-4">
-                                        <h4 className="font-semibold mb-2">Revised Output:</h4>
-                                        <div className="relative">
+                                    <div className="text-left space-y-3">
+                                        <h4 className="font-bold uppercase tracking-widest text-xs text-slate-400">Revised Output</h4>
+                                        <div className="relative group">
                                             <button 
                                                 onClick={() => navigator.clipboard.writeText(result.revised_output)} 
-                                                className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 transition-colors z-10 text-gray-500 dark:text-gray-400"
+                                                className="absolute top-4 right-4 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all z-10"
                                             >
-                                                <CopyIcon className="h-5 w-5" />
+                                                <Copy size={16} />
                                             </button>
                                             <SyntaxHighlightedTextarea
                                                 mode={result.revised_output.trim().startsWith('{') ? 'json' : 'text'}
                                                 value={result.revised_output}
-                                                onChange={() => {}} // No-op for read-only
+                                                onChange={() => {}} 
                                                 readOnly={true}
                                             />
                                         </div>
                                     </div>
                                 )}
                                 {result.revised_output && (
-                                    <div className="mt-6 border-t border-gray-200 dark:border-white/10 pt-4 text-center">
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Implement these improvements?</p>
-                                        <BlurryButton onClick={() => onApplyImprovements(result.revised_output)}>
-                                            <CheckIcon className="mr-2 h-4 w-4"/>
-                                            Apply & Close
+                                    <div className="mt-8 border-t border-white/10 pt-8 text-center">
+                                        <BlurryButton onClick={() => onApplyImprovements(result.revised_output)} className="w-full">
+                                            <Check size={18} />
+                                            Apply Improvements
                                         </BlurryButton>
                                     </div>
                                 )}
@@ -249,15 +265,15 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             error={error}
             onApplyImprovements={onApplyImprovements}
         />
-        <div className="animate-fade-in-slide-up animation-delay-300 flex flex-col gap-8">
+        <div className="flex flex-col gap-8">
             
               {/* Media Preview */}
-              <div className="glassmorphic-card rounded-xl p-6">
-                  <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-white">
-                      <FilmIcon className="w-6 h-6 text-primary"/>
+              <div className="glassmorphic-card rounded-[2rem] p-8">
+                  <h2 className="text-lg font-bold mb-6 flex items-center gap-3 uppercase tracking-widest font-heading">
+                      <Film className="w-5 h-5 text-white opacity-50"/>
                       Media Preview
                   </h2>
-                  <div className="bg-black rounded-lg mb-4 overflow-hidden flex items-center justify-center aspect-video max-h-64 border border-white/10">
+                  <div className="bg-black/40 rounded-2xl mb-6 overflow-hidden flex items-center justify-center aspect-video max-h-64 border border-white/10 shadow-inner">
                     {isVideo ? (
                         <video src={videoUrl} controls className="w-full h-full object-contain" key={videoUrl}></video>
                     ) : (
@@ -266,43 +282,43 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {isVideo && (
-                        <div className="glassmorphic-input p-3 rounded-lg">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Duration</p>
-                        <p className="font-medium">{videoMeta?.duration}</p>
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+                            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
+                            <p className="font-bold text-sm">{videoMeta?.duration}</p>
                         </div>
                     )}
-                    <div className={`${isVideo ? 'col-span-1' : 'col-span-2'} glassmorphic-input p-3 rounded-lg`}>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold mb-1">Resolution</p>
-                      <p className="font-medium">{videoMeta?.resolution}</p>
+                    <div className={`${isVideo ? 'col-span-1' : 'col-span-2'} bg-white/5 p-4 rounded-xl border border-white/5`}>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
+                      <p className="font-bold text-sm">{videoMeta?.resolution}</p>
                     </div>
                   </div>
               </div>
               
               {/* Analysis Results */}
-              <div className="glassmorphic-card rounded-xl p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2 text-gray-800 dark:text-white">
-                        <BrainCircuitIcon className="w-6 h-6 text-primary"/>
+              <div className="glassmorphic-card rounded-[2rem] p-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-lg font-bold flex items-center gap-3 uppercase tracking-widest font-heading">
+                        <Brain className="w-5 h-5 text-white opacity-50"/>
                         Analysis Results
                     </h2>
                   </div>
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {!isJsonOutput && (
                         <div>
-                            <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Objective</h3>
-                            <div className="glassmorphic-input p-4 rounded-lg text-sm text-gray-600 dark:text-gray-300">
+                            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Objective</h3>
+                            <div className="bg-white/5 p-5 rounded-xl border border-white/5 text-sm text-slate-300 leading-relaxed">
                                 {structuredPrompt?.objective}
                             </div>
                         </div>
                     )}
                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="font-semibold text-gray-700 dark:text-gray-200">Core Focus</h3>
-                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-gray-500 dark:text-gray-400">
-                                {isCopied ? <CheckIcon className="text-green-500 h-5 w-5" /> : <CopyIcon className="h-5 w-5" />}
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Core Focus</h3>
+                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
+                                {isCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
                             </button>
                         </div>
-                        <div className="glassmorphic-input rounded-lg overflow-hidden">
+                        <div className="rounded-xl overflow-hidden border border-white/10">
                             {isJsonOutput ? (
                                 <SyntaxHighlightedTextarea
                                     mode="json"
@@ -322,8 +338,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </div>
                      {!isJsonOutput && (
                         <div>
-                            <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Constraints</h3>
-                            <div className="glassmorphic-input p-4 rounded-lg text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Constraints</h3>
+                            <div className="bg-white/5 p-5 rounded-xl border border-white/5 text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
                                 {structuredPrompt?.constraints}
                             </div>
                         </div>
@@ -332,14 +348,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               </div>
               
               {/* Refine Card */}
-              <div className="glassmorphic-card rounded-xl p-6 relative">
-                  <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 dark:text-white">
-                      <MagicWandIcon className="w-6 h-6 text-primary" />
+              <div className="glassmorphic-card rounded-[2rem] p-8 relative">
+                  <h2 className="text-lg font-bold mb-8 flex items-center gap-3 uppercase tracking-widest font-heading">
+                      <Sparkles className="w-5 h-5 text-white opacity-50" />
                       Refine Prompt
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Tone</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Tone</label>
                         <AnimatedList 
                             items={["Default", ...refinementOptions.tone]}
                             selectedItem={refineTone || "Default"}
@@ -347,7 +363,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Style</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Style</label>
                         <AnimatedList
                             items={["Default", ...refinementOptions.style]}
                             selectedItem={refineStyle || "Default"}
@@ -355,7 +371,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Camera</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Camera</label>
                         <AnimatedList
                             items={["Default", ...refinementOptions.camera]}
                             selectedItem={refineCamera || "Default"}
@@ -363,7 +379,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Lighting</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Lighting</label>
                          <AnimatedList
                             items={["Default", ...refinementOptions.lighting]}
                             selectedItem={refineLighting || "Default"}
@@ -371,48 +387,48 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         />
                     </div>
                   </div>
-                  <div className="mb-6">
-                    <label htmlFor="refine-instruction" className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Custom Instruction</label>
-                    <textarea id="refine-instruction" value={refineInstruction} onChange={(e) => setRefineInstruction(e.target.value)} placeholder="e.g., make it shorter, add a dragon" rows={2} className="w-full p-3 rounded-lg glassmorphic-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm"></textarea>
+                  <div className="mb-8">
+                    <label htmlFor="refine-instruction" className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Custom Instruction</label>
+                    <textarea id="refine-instruction" value={refineInstruction} onChange={(e) => setRefineInstruction(e.target.value)} placeholder="e.g., make it shorter, add a dragon" rows={2} className="w-full p-4 rounded-xl bg-white/5 border border-white/5 focus:border-white/20 outline-none transition-all text-sm text-white placeholder:text-slate-600"></textarea>
                   </div>
 
-                  <div className="mb-6 border-t border-gray-200 dark:border-white/10 pt-6">
-                    <label htmlFor="negative-prompt" className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Negative Prompt (Elements to Exclude)</label>
-                    <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-3 rounded-lg glassmorphic-input focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm"></textarea>
+                  <div className="mb-8 border-t border-white/10 pt-8">
+                    <label htmlFor="negative-prompt" className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Negative Prompt</label>
+                    <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-4 rounded-xl bg-white/5 border border-white/5 focus:border-white/20 outline-none transition-all text-sm text-white placeholder:text-slate-600"></textarea>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                      <BlurryButton onClick={() => handleRefinePrompt('refine')} disabled={isRefining || isDetailing}>
-                        {isRefining ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Refining...</span></>) : "Refine"}
+                  <div className="flex flex-wrap gap-4">
+                      <BlurryButton onClick={() => handleRefinePrompt('refine')} disabled={isRefining || isDetailing} className="flex-1 min-w-[140px]">
+                        {isRefining ? (<Loader2 className="w-4 h-4 animate-spin" />) : "Refine"}
                       </BlurryButton>
-                       <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing}>
-                        {isDetailing ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Detailing...</span></>) : "Add More Detail"}
-                      </BlurryButton>
-                      
-                      <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput}>
-                        {isConvertingToJson ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Converting...</span></>) : <><ArticleIcon className="w-5 h-5 mr-2" /><span>Convert to JSON</span></>}
+                       <BlurryButton onClick={() => handleRefinePrompt('detail')} disabled={isRefining || isDetailing} className="flex-1 min-w-[140px]">
+                        {isDetailing ? (<Loader2 className="w-4 h-4 animate-spin" />) : "Detail"}
                       </BlurryButton>
                       
-                      <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames}>
-                        {isTestingConsistency ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Testing...</span></>) : <><TestPromptIcon className="w-5 h-5 mr-2" /><span>Test Consistency</span></>}
+                      <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput} className="flex-1 min-w-[140px]">
+                        {isConvertingToJson ? (<Loader2 className="w-4 h-4 animate-spin" />) : "JSON"}
+                      </BlurryButton>
+                      
+                      <BlurryButton onClick={onTestConsistency} disabled={isTestingConsistency || !hasOriginalFrames} className="flex-1 min-w-[140px]">
+                        {isTestingConsistency ? (<Loader2 className="w-4 h-4 animate-spin" />) : "Test"}
                       </BlurryButton>
 
-                      <BlurryButton onClick={() => onRegenerate(refineInstruction)} disabled={isRefining || isDetailing || !hasOriginalFrames}>
-                         <MagicWandIcon className="w-5 h-5 mr-2" />
-                         <span>Generate Prompt</span>
+                      <BlurryButton onClick={() => onRegenerate(refineInstruction)} disabled={isRefining || isDetailing || !hasOriginalFrames} className="w-full">
+                         <Wand2 className="w-5 h-5" />
+                         Generate
                       </BlurryButton>
                   </div>
               </div>
 
                 {/* Video Style Remix Card */}
-              <div className="glassmorphic-card rounded-xl p-6 relative">
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800 dark:text-white">
-                        <PaintBrushIcon className="w-6 h-6 text-primary" />
-                        Media Style Remix
+              <div className="glassmorphic-card rounded-[2rem] p-8 relative">
+                    <h2 className="text-lg font-bold mb-8 flex items-center gap-3 uppercase tracking-widest font-heading">
+                        <Paintbrush className="w-5 h-5 text-white opacity-50" />
+                        Style Remix
                     </h2>
-                    <div className="grid grid-cols-1 gap-4 mb-6">
+                    <div className="grid grid-cols-1 gap-6 mb-8">
                         <div>
-                            <label className="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Target Style</label>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Target Style</label>
                             <AnimatedList
                                 items={remixStyles.map(s => s.name)}
                                 selectedItem={remixStyle || null}
@@ -422,8 +438,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         </div>
                     </div>
                     <div>
-                        <BlurryButton onClick={handleRemixStyle} disabled={isRemixing || !hasOriginalFrames || !remixStyle}>
-                            {isRemixing ? (<><SpinnerIcon className="w-4 h-4 mr-2 animate-spin" /><span>Remixing...</span></>) : "Remix Style"}
+                        <BlurryButton onClick={handleRemixStyle} disabled={isRemixing || !hasOriginalFrames || !remixStyle} className="w-full">
+                            {isRemixing ? (<Loader2 className="w-4 h-4 animate-spin" />) : "Remix Style"}
                         </BlurryButton>
                     </div>
               </div>

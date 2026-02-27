@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { promptLibraryData, PromptCategory, PromptTemplate } from '../data/promptLibrary.ts';
 import { remixPrompt } from '../services/geminiService.ts';
+import { X, Wand2, Loader2, Library, ChevronRight, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface PromptLibraryProps {
     isOpen: boolean;
@@ -66,30 +68,54 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
     const activeCategory = libraryData.find(cat => cat.name === activeCategoryName) || libraryData[0];
 
     return (
-        <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in-slide-up" 
-            style={{ animationDuration: '300ms' }}
-            onClick={onClose}
-        >
-            <div 
-                className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl max-w-6xl w-full h-[90vh] md:h-[80vh] shadow-2xl border border-border-primary-light dark:border-border-primary-dark relative animate-scale-in flex flex-col overflow-hidden"
-                style={{ animationDuration: '400ms' }}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-12">
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                onClick={onClose}
+            />
+            
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="glassmorphic-card rounded-[3rem] max-w-7xl w-full h-[85vh] shadow-2xl border border-white/10 relative flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
-                <header className="p-6 border-b border-border-primary-light dark:border-border-primary-dark flex justify-between items-center flex-shrink-0">
-                    <h2 className="text-2xl font-bold">Prompt Library</h2>
-                    <button onClick={onClose} disabled={!!remixingId} className="text-text-secondary-light dark:text-text-secondary-dark hover:text-red-500 transition-colors w-8 h-8 rounded-full bg-transparent hover:bg-black/10 dark:hover:bg-white/10 flex items-center justify-center z-10 disabled:opacity-50">
-                        {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-                        <span className="fas fa-times"></span>
+                <header className="p-10 border-b border-white/5 flex justify-between items-center flex-shrink-0">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                            <Library className="text-slate-400" size={24} />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold font-heading uppercase tracking-tighter">Archives</h2>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">The Prompt Engineering Library</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} disabled={!!remixingId} className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all disabled:opacity-50">
+                        <X size={20} />
                     </button>
                 </header>
 
-                {remixError && <div className="p-4 bg-red-500/10 text-red-500 text-center text-sm">{remixError}</div>}
+                <AnimatePresence>
+                    {remixError && (
+                        <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="bg-rose-500/10 text-rose-400 px-10 py-4 text-xs font-bold uppercase tracking-widest border-b border-rose-500/10"
+                        >
+                            {remixError}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <div className="flex flex-col md:flex-row flex-grow overflow-hidden">
                     {/* Sidebar for categories */}
-                    <aside className="w-full md:w-1/3 lg:w-1/4 border-b md:border-b-0 md:border-r border-border-primary-light dark:border-border-primary-dark p-4 overflow-y-auto flex-shrink-0">
-                        <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0">
+                    <aside className="w-full md:w-72 border-b md:border-b-0 md:border-r border-white/5 p-6 overflow-y-auto flex-shrink-0">
+                        <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none">
                             {libraryData.map(category => {
                                 const Icon = category.icon;
                                 return (
@@ -97,14 +123,14 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                                         key={category.name}
                                         onClick={() => setActiveCategoryName(category.name)}
                                         disabled={!!remixingId}
-                                        className={`w-full text-left px-3 py-2.5 rounded-lg font-semibold flex items-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 md:flex-shrink ${
+                                        className={`w-full text-left px-5 py-4 rounded-2xl font-bold flex items-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 md:flex-shrink group ${
                                             activeCategory.name === category.name 
-                                                ? 'bg-purple-600/10 dark:bg-purple-400/20 text-purple-700 dark:text-purple-300' 
-                                                : 'hover:bg-gray-500/10'
+                                                ? 'bg-white text-[#31326f] shadow-xl' 
+                                                : 'text-slate-500 hover:bg-white/5 hover:text-white'
                                         }`}
                                     >
-                                        <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
-                                        <span className="truncate">{category.name}</span>
+                                        <Icon size={18} className={activeCategory.name === category.name ? 'text-[#31326f]' : 'text-slate-600 group-hover:text-slate-400'} />
+                                        <span className="ml-4 text-[10px] uppercase tracking-widest truncate">{category.name}</span>
                                     </button>
                                 );
                             })}
@@ -112,40 +138,51 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                     </aside>
 
                     {/* Main content for prompts */}
-                    <main className="w-full md:w-2/3 lg:w-3/4 p-6 overflow-y-auto">
-                        <h3 className="text-xl font-bold mb-6 text-text-primary-light dark:text-text-primary-dark">{activeCategory.name}</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            {activeCategory.prompts.map(prompt => (
-                                <div key={prompt.id} className="group bg-bg-uploader-light dark:bg-bg-uploader-dark p-4 rounded-lg border border-border-primary-light dark:border-border-primary-dark flex flex-col justify-between hover:border-purple-500 dark:hover:border-purple-400 transition-colors duration-200">
+                    <main className="flex-1 p-10 overflow-y-auto scrollbar-thin">
+                        <div className="flex items-center justify-between mb-10">
+                            <h3 className="text-xl font-bold">{activeCategory.name}</h3>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{activeCategory.prompts.length} Blueprints</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {activeCategory.prompts.map((prompt, index) => (
+                                <motion.div 
+                                    key={prompt.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.03 }}
+                                    className="group glassmorphic-card rounded-3xl p-8 border border-white/5 flex flex-col justify-between hover:border-white/20 transition-all duration-300"
+                                >
                                     <div>
-                                        <h4 className="font-bold mb-2">{prompt.title}</h4>
-                                        <p className="text-sm text-text-secondary-light dark:text-text-secondary-dark line-clamp-3">
+                                        <h4 className="font-bold mb-4 text-white group-hover:text-primary transition-colors">{prompt.title}</h4>
+                                        <p className="text-xs text-slate-400 font-medium line-clamp-4 leading-relaxed">
                                             {prompt.prompt}
                                         </p>
                                     </div>
-                                    <div className="mt-4 flex items-center justify-end gap-2">
+                                    <div className="mt-8 flex items-center justify-end gap-3">
                                          <button 
                                             onClick={() => handleRemix(prompt, activeCategory.name)}
                                             disabled={!!remixingId}
-                                            className="px-3 py-2 text-sm font-semibold rounded-lg bg-gray-500/10 text-text-secondary-light dark:text-text-secondary-dark hover:bg-gray-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-wait"
+                                            title="Creative Remix"
+                                            className="p-3 rounded-xl bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
                                         >
-                                            {/* FIX: Replaced <i> with <span> for Font Awesome icon */}
-                                            {remixingId === prompt.id ? <span className="fas fa-spinner fa-spin"></span> : <span className="fas fa-random"></span>}
+                                            {remixingId === prompt.id ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                                         </button>
                                         <button 
                                             onClick={() => handleSelect(prompt)}
                                             disabled={!!remixingId}
-                                            className="px-4 py-2 text-sm font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-all duration-200 transform group-hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="px-6 py-3 rounded-xl bg-white text-[#31326f] font-bold uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all flex items-center gap-2 shadow-lg active:scale-95"
                                         >
-                                            Use
+                                            <span>Use</span>
+                                            <ChevronRight size={14} />
                                         </button>
                                     </div>
-                                </div>
+                                </motion.div>
                             ))}
                         </div>
                     </main>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };

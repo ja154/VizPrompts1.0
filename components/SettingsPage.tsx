@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import GlowCard from './GlowCard';
 import BlurryButton from './Button';
-import { UserIcon, CopyIcon, CheckIcon } from './icons';
+import { User, Palette, Cpu, Camera, Edit3, Check, Copy, Download, Loader2, AlertCircle, CheckCircle2, Moon, Sun } from 'lucide-react';
 import { imageToDataUrl } from '../utils/video';
 import { MEDIA_ANALYZER_SYSTEM_PROMPT } from '../services/geminiService';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface SettingsPageProps {
     theme: 'light' | 'dark';
@@ -53,118 +53,187 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
         setTimeout(() => setIsPromptCopied(false), 2000);
     };
 
+    const tabs = [
+        { id: 'account', icon: User, label: 'Account' },
+        { id: 'appearance', icon: Palette, label: 'Appearance' },
+        { id: 'general', icon: Cpu, label: 'Core Engine' }
+    ];
+
     return (
-        <section className="max-w-5xl mx-auto animate-slide-up">
-            <div className="mb-12">
-                <h2 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white">Studio Settings</h2>
-                <p className="text-slate-500 mt-2 font-medium">Configure your visual engineering workspace.</p>
-            </div>
+        <div className="max-w-6xl mx-auto">
+            <header className="mb-12">
+                <h2 className="text-4xl font-bold font-heading uppercase tracking-tighter mb-2">Configurations</h2>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em]">Studio Workspace Settings</p>
+            </header>
             
-            <div className="flex flex-col md:flex-row gap-10">
-                <div className="w-full md:w-72 flex-shrink-0">
-                    <div className="glassmorphic-card rounded-3xl p-3 border-white/5 shadow-xl">
-                        <nav className="flex flex-col p-2 gap-2">
-                            {[
-                                { id: 'account', icon: 'person', label: 'Account' },
-                                { id: 'appearance', icon: 'palette', label: 'Appearance' },
-                                { id: 'general', icon: 'bolt', label: 'Core Engine' }
-                            ].map((tab) => (
-                                <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`flex items-center gap-4 px-5 py-4 rounded-2xl text-left font-bold transition-all duration-300 ${activeTab === tab.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}>
-                                    <span className="material-symbols-outlined text-xl">{tab.icon}</span>
-                                    <span className="text-sm capitalize">{tab.label}</span>
+            <div className="flex flex-col lg:flex-row gap-12">
+                {/* Sidebar Nav */}
+                <aside className="w-full lg:w-64 flex-shrink-0">
+                    <div className="glassmorphic-card rounded-[2rem] p-3 border-white/10">
+                        <nav className="flex flex-col gap-2">
+                            {tabs.map((tab) => (
+                                <button 
+                                    key={tab.id} 
+                                    onClick={() => setActiveTab(tab.id as any)} 
+                                    className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 group ${activeTab === tab.id ? 'bg-white text-[#31326f] shadow-xl' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}
+                                >
+                                    <tab.icon size={18} className={activeTab === tab.id ? 'text-[#31326f]' : 'text-slate-600 group-hover:text-slate-400'} />
+                                    <span className="text-[10px] uppercase tracking-widest">{tab.label}</span>
                                 </button>
                             ))}
                         </nav>
                     </div>
-                </div>
+                </aside>
 
-                <div className="flex-1">
-                    <div className="glassmorphic-card rounded-[2.5rem] p-3 border-white/5 shadow-2xl">
-                        <div className="p-10">
-                            {activeTab === 'account' && (
-                                <form onSubmit={handleSaveProfile} className="space-y-10">
-                                    <div className="flex items-center gap-10">
-                                        <div className="relative group size-28 rounded-3xl overflow-hidden ring-4 ring-primary/20 bg-slate-800 shadow-2xl">
-                                            <UserIcon className="size-full object-cover" imgSrc={profilePicture} />
-                                            <div onClick={() => fileInputRef.current?.click()} className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-all duration-300 backdrop-blur-sm">
-                                                <span className="material-symbols-outlined text-white text-3xl">edit_square</span>
-                                                <span className="text-[10px] text-white font-black uppercase mt-1">Change</span>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h4 className="text-xl font-black">Studio Identity</h4>
-                                            <p className="text-xs text-slate-500 font-medium">Your avatar is displayed in shared prompt sessions.</p>
-                                            <BlurryButton type="button" onClick={() => fileInputRef.current?.click()} className="!text-[10px] !py-1.5">Upload Custom Avatar</BlurryButton>
-                                        </div>
-                                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async e => e.target.files?.[0] && setProfilePicture(await imageToDataUrl(e.target.files[0]))} />
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 px-1">Display Name</label>
-                                            <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="w-full bg-slate-500/5 border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-primary outline-none text-sm font-bold transition-all" placeholder="Full Name" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 px-1">Studio Username</label>
-                                            <input type="text" value={currentUser.username} disabled className="w-full bg-slate-500/10 border-white/5 rounded-2xl p-4 opacity-50 cursor-not-allowed text-sm font-bold" />
-                                        </div>
-                                    </div>
-                                    <div className="pt-4 flex flex-col items-start gap-4">
-                                        <BlurryButton type="submit" disabled={isLoading} className="!p-5 !text-lg">{isLoading ? 'Synchronizing...' : 'Save Profile Changes'}</BlurryButton>
-                                        {message && <p className={`text-sm font-bold flex items-center gap-2 ${message.type === 'success' ? 'text-green-500' : 'text-rose-500'}`}>
-                                            <span className="material-symbols-outlined text-lg">{message.type === 'success' ? 'check_circle' : 'error'}</span>
-                                            {message.text}
-                                        </p>}
-                                    </div>
-                                </form>
+                {/* Main Content Area */}
+                <main className="flex-1">
+                    <motion.div 
+                        key={activeTab}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="glassmorphic-card rounded-[2.5rem] p-12 border border-white/10"
+                    >
+                        <AnimatePresence mode="wait">
+                            {message && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className={`mb-8 px-6 py-4 rounded-2xl text-xs font-medium text-center flex items-center justify-center gap-3 ${message.type === 'success' ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border border-rose-500/20 text-rose-400'}`}
+                                >
+                                    {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                                    {message.text}
+                                </motion.div>
                             )}
+                        </AnimatePresence>
 
-                            {activeTab === 'appearance' && (
-                                <div className="space-y-8">
-                                    <div className="flex items-center justify-between bg-slate-500/5 p-6 rounded-[2rem] border border-white/5">
-                                        <div className="space-y-1">
-                                            <p className="text-lg font-black">Midnight Interface</p>
-                                            <p className="text-xs text-slate-500 font-medium italic">High-contrast dark mode for focused creativity.</p>
+                        {activeTab === 'account' && (
+                            <form onSubmit={handleSaveProfile} className="space-y-12">
+                                <div className="flex flex-col sm:flex-row items-center gap-8">
+                                    <div className="relative group size-32 rounded-[2rem] overflow-hidden bg-white/5 border-2 border-white/10 shadow-2xl">
+                                        {profilePicture ? (
+                                            <img src={profilePicture} alt="Avatar" className="size-full object-cover" />
+                                        ) : (
+                                            <div className="size-full flex items-center justify-center">
+                                                <User size={48} className="text-slate-700" />
+                                            </div>
+                                        )}
+                                        <div 
+                                            onClick={() => fileInputRef.current?.click()} 
+                                            className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-all duration-300 backdrop-blur-sm"
+                                        >
+                                            <Camera className="text-white mb-2" size={24} />
+                                            <span className="text-[10px] text-white font-bold uppercase tracking-widest">Change</span>
                                         </div>
-                                        <button onClick={onToggleTheme} className={`relative inline-flex h-8 w-14 rounded-full transition-all duration-500 p-1 ${theme === 'dark' ? 'bg-primary' : 'bg-slate-300'}`}>
-                                            <span className={`inline-block size-6 transform rounded-full bg-white shadow-xl transition-all duration-500 ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`} />
-                                        </button>
+                                    </div>
+                                    <div className="text-center sm:text-left">
+                                        <h4 className="text-xl font-bold mb-2">Studio Identity</h4>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">Your visual presence in the workspace.</p>
+                                        <BlurryButton type="button" onClick={() => fileInputRef.current?.click()} className="!py-2 !px-6">
+                                            <Edit3 size={14} />
+                                            <span>Upload Avatar</span>
+                                        </BlurryButton>
+                                    </div>
+                                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={async e => e.target.files?.[0] && setProfilePicture(await imageToDataUrl(e.target.files[0]))} />
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-1">Display Name</label>
+                                        <input 
+                                            type="text" 
+                                            value={fullName} 
+                                            onChange={e => setFullName(e.target.value)} 
+                                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 focus:border-white/20 outline-none text-sm font-medium transition-all" 
+                                            placeholder="Full Name" 
+                                        />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-1">Studio Username</label>
+                                        <input 
+                                            type="text" 
+                                            value={currentUser.username} 
+                                            disabled 
+                                            className="w-full bg-black/20 border border-white/5 rounded-2xl px-6 py-4 opacity-50 cursor-not-allowed text-sm font-medium text-slate-500" 
+                                        />
                                     </div>
                                 </div>
-                            )}
 
-                            {activeTab === 'general' && (
-                                <div className="space-y-10">
-                                    <div className="space-y-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="space-y-1">
-                                                <h4 className="text-2xl font-black">Visual Synthesis Core</h4>
-                                                <p className="text-xs text-slate-500 font-medium">This logic powers the Gemini 3 intelligence.</p>
-                                            </div>
-                                            <div className="flex gap-3">
-                                                <button onClick={handleCopyPrompt} className="size-12 bg-slate-500/10 dark:bg-white/5 rounded-2xl flex items-center justify-center hover:text-primary transition-all duration-300 hover:scale-110">
-                                                    {isPromptCopied ? <CheckIcon className="size-5" /> : <CopyIcon className="size-5" />}
-                                                </button>
-                                                <button onClick={handleDownloadPrompt} className="size-12 bg-slate-500/10 dark:bg-white/5 rounded-2xl flex items-center justify-center hover:text-primary transition-all duration-300 hover:scale-110">
-                                                    <span className="material-symbols-outlined text-xl">download</span>
-                                                </button>
-                                            </div>
+                                <div className="pt-4">
+                                    <BlurryButton type="submit" disabled={isLoading} className="w-full sm:w-auto px-12">
+                                        {isLoading ? <Loader2 className="animate-spin" size={18} /> : <><Check size={18} /><span>Save Changes</span></>}
+                                    </BlurryButton>
+                                </div>
+                            </form>
+                        )}
+
+                        {activeTab === 'appearance' && (
+                            <div className="space-y-8">
+                                <div className="flex items-center justify-between bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
+                                    <div className="flex items-center gap-6">
+                                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                            {theme === 'dark' ? <Moon className="text-white" /> : <Sun className="text-slate-400" />}
                                         </div>
-                                        <div className="bg-slate-900 rounded-[2rem] p-8 font-mono text-[11px] leading-relaxed text-slate-400 overflow-hidden max-h-56 relative group border border-white/5 shadow-inner">
-                                            <pre className="whitespace-pre-wrap">{MEDIA_ANALYZER_SYSTEM_PROMPT}</pre>
-                                            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent"></div>
-                                            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                        <div>
+                                            <p className="text-lg font-bold mb-1">Midnight Interface</p>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High-contrast dark mode for focused creativity.</p>
                                         </div>
-                                        <p className="text-xs text-slate-500 font-medium leading-relaxed italic">
-                                            Advanced: This system prompt can be used in your own custom LLM workflows to replicate VizPrompts' visual analysis logic.
+                                    </div>
+                                    <button 
+                                        onClick={onToggleTheme} 
+                                        className={`relative inline-flex h-10 w-20 rounded-full transition-all duration-500 p-1.5 ${theme === 'dark' ? 'bg-white' : 'bg-slate-700'}`}
+                                    >
+                                        <span className={`inline-block size-7 transform rounded-full shadow-xl transition-all duration-500 ${theme === 'dark' ? 'translate-x-10 bg-[#31326f]' : 'translate-x-0 bg-white'}`} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'general' && (
+                            <div className="space-y-12">
+                                <div className="space-y-8">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h4 className="text-2xl font-bold mb-1">Visual Synthesis Core</h4>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">This logic powers the Gemini intelligence.</p>
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <button 
+                                                onClick={handleCopyPrompt} 
+                                                className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group"
+                                                title="Copy to Clipboard"
+                                            >
+                                                {isPromptCopied ? <Check size={20} className="text-emerald-400" /> : <Copy size={20} className="text-slate-400 group-hover:text-white" />}
+                                            </button>
+                                            <button 
+                                                onClick={handleDownloadPrompt} 
+                                                className="p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all group"
+                                                title="Download as File"
+                                            >
+                                                <Download size={20} className="text-slate-400 group-hover:text-white" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="bg-black/40 rounded-[2rem] p-8 font-mono text-[11px] leading-relaxed text-slate-500 overflow-hidden max-h-64 relative group border border-white/5 shadow-inner">
+                                        <pre className="whitespace-pre-wrap">{MEDIA_ANALYZER_SYSTEM_PROMPT}</pre>
+                                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#31326f] to-transparent"></div>
+                                        <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                                    </div>
+                                    
+                                    <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex gap-4 items-start">
+                                        <AlertCircle className="text-slate-600 flex-shrink-0" size={18} />
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
+                                            Advanced: This system prompt can be used in your own custom LLM workflows to replicate the visual analysis logic.
                                         </p>
                                     </div>
                                 </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                            </div>
+                        )}
+                    </motion.div>
+                </main>
             </div>
-        </section>
+        </div>
     );
 };
 

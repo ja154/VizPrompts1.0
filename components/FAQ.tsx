@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { FAQPlusIcon, FAQMinusIcon, BrainCircuitIcon } from './icons.tsx';
-import GlowCard from './GlowCard.tsx';
+import { Plus, Minus, HelpCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const faqData = [
   {
     question: "How does the AI analysis work?",
-    answer: "Our app uses Google's advanced Gemini AI model. When you upload a video, we extract several key frames. These frames, along with a specialized system prompt, are sent to the AI. The AI then 'looks' at these images and generates a detailed, structured description based on what it sees, covering everything from subjects and actions to style and lighting."
+    answer: "Our app uses Google's advanced Gemini AI model. When you upload a video, we extract several key frames. These frames, along with a specialized system prompt, are sent to the AI. The AI then 'looks' at these images and generates a detailed, structured description based on what it sees, covering subjects, actions, style, and lighting."
   },
   {
     question: "What kind of videos or images produce the best prompts?",
@@ -17,11 +17,11 @@ const faqData = [
   },
   {
     question: "What's the difference between Text and JSON output?",
-    answer: "The standard output is structured text, designed for readability. The JSON output, however, is a highly structured data format perfect for developers or for use in automated workflows. You can convert any text prompt to JSON using the 'Convert to JSON' button. This gives you a more detailed, machine-readable breakdown of the analysis."
+    answer: "The standard output is structured text, designed for readability. The JSON output, however, is a highly structured data format perfect for developers or for use in automated workflows. You can convert any text prompt to JSON using the 'Convert to JSON' button."
   },
   {
     question: "What does the 'Test Consistency' feature do?",
-    answer: "This powerful tool uses AI to compare your prompt against the original media you uploaded. It scores how accurately the text describes the visuals and identifies specific details that are missing from your prompt. It even provides a revised, more accurate version for you to apply, helping you create the most faithful text-to-media prompts possible."
+    answer: "This powerful tool uses AI to compare your prompt against the original media you uploaded. It scores how accurately the text describes the visuals and identifies specific details that are missing from your prompt. It even provides a revised, more accurate version for you to apply."
   }
 ];
 
@@ -32,22 +32,36 @@ interface FAQItemProps {
 }
 
 const FAQItem: React.FC<FAQItemProps> = ({ faq, isOpen, onClick }) => (
-  <div className="border-b border-border-primary-light dark:border-border-primary-dark">
+  <div className={`border-b border-white/5 last:border-0 transition-all duration-500 ${isOpen ? 'bg-white/5' : ''}`}>
     <button
       onClick={onClick}
-      className="w-full flex justify-between items-center text-left py-5 px-6"
+      className="w-full flex justify-between items-center text-left py-8 px-10 group"
       aria-expanded={isOpen}
     >
-      <span className="font-semibold text-text-primary-light dark:text-text-primary-dark">{faq.question}</span>
-      {isOpen ? <FAQMinusIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" /> : <FAQPlusIcon className="w-6 h-6 text-text-secondary-light dark:text-text-secondary-dark" />}
-    </button>
-    {isOpen && (
-      <div className="pb-5 px-6 animate-fade-in-slide-up" style={{ animationDuration: '300ms' }}>
-        <p className="text-text-secondary-light dark:text-text-secondary-dark leading-relaxed">
-          {faq.answer}
-        </p>
+      <span className={`font-bold transition-colors duration-300 ${isOpen ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+        {faq.question}
+      </span>
+      <div className={`p-2 rounded-full transition-all duration-500 ${isOpen ? 'bg-white text-[#31326f] rotate-180' : 'bg-white/5 text-slate-500'}`}>
+        {isOpen ? <Minus size={16} /> : <Plus size={16} />}
       </div>
-    )}
+    </button>
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+        >
+          <div className="pb-8 px-10">
+            <p className="text-slate-400 text-sm leading-relaxed font-medium">
+              {faq.answer}
+            </p>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   </div>
 );
 
@@ -59,12 +73,23 @@ const FAQ = () => {
     };
 
     return (
-        <section className="mt-24">
-             <h2 className="text-3xl font-bold text-center mb-12">
-                <span className="title-glow-subtle bg-gradient-to-r from-gray-700 to-gray-900 dark:from-stone-100 dark:to-stone-300 bg-clip-text text-transparent">Frequently Asked Questions</span>
-            </h2>
-            <GlowCard className="bg-bg-secondary-light dark:bg-bg-secondary-dark rounded-2xl p-1 shadow-lg border border-border-primary-light dark:border-border-primary-dark max-w-4xl mx-auto">
-                <div className="rounded-xl overflow-hidden">
+        <section className="mt-32 max-w-4xl mx-auto">
+             <header className="text-center mb-16">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6">
+                    <HelpCircle size={14} className="text-slate-400" />
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Support Center</span>
+                </div>
+                <h2 className="text-4xl font-bold font-heading uppercase tracking-tighter mb-4">Knowledge Base</h2>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.3em]">Frequently Asked Questions</p>
+            </header>
+            
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="glassmorphic-card rounded-[3rem] border border-white/10 overflow-hidden shadow-2xl"
+            >
+                <div>
                     {faqData.map((faq, index) => (
                         <FAQItem
                             key={index}
@@ -74,7 +99,7 @@ const FAQ = () => {
                         />
                     ))}
                 </div>
-            </GlowCard>
+            </motion.div>
         </section>
     );
 };

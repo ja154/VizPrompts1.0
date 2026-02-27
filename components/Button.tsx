@@ -22,29 +22,22 @@ const BlurryButton: React.FC<BlurryButtonProps> = ({
       disabled={disabled}
       className={`
         group relative inline-flex items-center justify-center
-        p-0.5 rounded-xl
-        font-semibold
-        transition-all duration-200 ease-in-out
-        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-bg-primary-light dark:focus:ring-offset-bg-primary-dark focus:ring-purple-500
+        p-[1px] rounded-2xl
+        font-bold uppercase tracking-widest
+        transition-all duration-300 ease-in-out
+        focus:outline-none focus:ring-2 focus:ring-white/20
         disabled:opacity-60 disabled:cursor-not-allowed
+        bg-gradient-to-br from-white/40 to-transparent
+        hover:from-white/60 hover:to-white/10
         ${className}
       `}
     >
-      <div
-        className="
-          shimmer-bg absolute -inset-0.5 bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-500 
-          rounded-xl blur opacity-60 group-hover:opacity-100 
-          transition-all duration-1000 group-hover:duration-200
-          bg-[length:200%_auto]
-        "
-      ></div>
       <span
         className="
-          relative w-full h-full px-5 py-2.5 text-sm
-          bg-bg-secondary-light dark:bg-bg-secondary-dark 
-          text-text-primary-light dark:text-text-primary-dark 
-          rounded-lg leading-none flex items-center justify-center gap-2
-          transform group-hover:-translate-y-px transition-transform duration-150
+          relative w-full h-full px-8 py-4 text-sm
+          bg-[#31326f] text-white
+          rounded-[0.95rem] leading-none flex items-center justify-center gap-3
+          group-hover:bg-white group-hover:text-[#31326f] transition-all duration-300
         "
       >
         {children}

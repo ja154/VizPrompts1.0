@@ -17,10 +17,8 @@ const UploaderIcon = () => {
                 {`
                 .pl { width: 5em; height: 5em; }
                 .pl circle { transform-box: fill-box; transform-origin: 50% 50%; }
-                .pl__ring { stroke: #4B5563; }
-                .dark .pl__ring { stroke: #FFFAF0; }
-                .pl__ring--alt { stroke: #c026d3; }
-                .dark .pl__ring--alt { stroke: #FBCFE8; }
+                .pl__ring { stroke: rgba(255, 255, 255, 0.1); }
+                .pl__ring--alt { stroke: #6366f1; }
                 .pl__ring1 { animation: ring1_ 4s 0s ease-in-out infinite; }
                 .pl__ring2 { animation: ring2_ 4s 0.04s ease-in-out infinite; }
                 .pl__ring3 { animation: ring3_ 4s 0.08s ease-in-out infinite; }
