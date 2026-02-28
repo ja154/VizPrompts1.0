@@ -185,7 +185,7 @@ const App: React.FC = () => {
 
                 <nav className="flex-1 space-y-3">
                     {navItems.map(item => (
-                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-white text-background-dark shadow-xl shadow-white/10' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-white text-background-dark shadow-xl shadow-white/10' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}>
                             <div className="shrink-0">{item.icon}</div>
                             <span className="font-bold text-sm whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">{item.label}</span>
                         </button>
@@ -193,14 +193,14 @@ const App: React.FC = () => {
                 </nav>
 
                 <div className="mt-auto space-y-4">
-                    <button onClick={() => setCurrentView('profile')} className="w-full flex items-center gap-4 p-2.5 rounded-2xl text-slate-400 hover:text-white transition-all group/profile">
+                    <button onClick={() => setCurrentView('profile')} className="w-full flex items-center gap-4 p-2.5 rounded-2xl text-slate-300 hover:text-white hover:bg-white/5 transition-all group/profile">
                         <div className="size-10 rounded-xl overflow-hidden ring-2 ring-white/10 shrink-0"><UserIcon imgSrc={currentUser?.profilePicture} className="size-full" /></div>
                         <div className="flex flex-col text-left opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 truncate">
                             <span className="text-sm font-bold truncate uppercase tracking-tight">{currentUser?.fullName || 'Guest User'}</span>
-                            <span className="text-[10px] text-slate-500 truncate uppercase tracking-widest">Studio Pro Plan</span>
+                            <span className="text-[10px] text-slate-400 truncate uppercase tracking-widest">Studio Pro Plan</span>
                         </div>
                     </button>
-                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-500 hover:text-rose-400 hover:bg-rose-400/10 transition-all">
+                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-300 hover:text-rose-400 hover:bg-rose-400/10 transition-all">
                         <LogOut size={20} className="shrink-0" />
                         <span className="font-bold text-sm opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">Exit Studio</span>
                     </button>
@@ -212,10 +212,10 @@ const App: React.FC = () => {
                 <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-background-dark/40 backdrop-blur-3xl z-40 border-b border-white/5">
                     <div className="flex items-center gap-4">
                         <button onClick={() => setIsSidebarOpen(true)} className="sm:hidden text-slate-400"><Menu size={24} /></button>
-                        <nav className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
+                        <nav className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
                            <span className="hover:text-white cursor-pointer transition-colors" onClick={() => setCurrentView('main')}>Studio</span>
-                           <ChevronRight size={12} className="text-slate-700" />
-                           <span className="text-slate-300">{currentView}</span>
+                           <ChevronRight size={12} className="text-slate-500" />
+                           <span className="text-slate-200">{currentView}</span>
                         </nav>
                     </div>
                     <div className="flex items-center gap-6">
@@ -241,7 +241,7 @@ const App: React.FC = () => {
                                         <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter leading-[1.1] text-white font-heading uppercase">
                                             Visual <br/>Intelligence <br/><span className="text-primary italic">for Prompters.</span>
                                         </h1>
-                                        <p className="text-lg text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto">
+                                        <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
                                             Analyze cinematic motion and high-fidelity photos to extract perfect generation prompts for Sora, Kling, and Midjourney.
                                         </p>
                                     </div>
@@ -256,7 +256,7 @@ const App: React.FC = () => {
                                                     </div>
                                                     <div>
                                                         <h3 className="text-2xl font-bold uppercase tracking-wider font-heading">Drop visual script</h3>
-                                                        <p className="text-slate-500 mt-3 font-medium tracking-wide">MP4, MOV, RAW, JPEG up to 4K resolution</p>
+                                                        <p className="text-slate-400 mt-3 font-medium tracking-wide">MP4, MOV, RAW, JPEG up to 4K resolution</p>
                                                     </div>
                                                 </div>
                                             </label>
@@ -269,7 +269,7 @@ const App: React.FC = () => {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2">Library</h3>
-                                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">Browse 50+ curated templates for visual consistency.</p>
+                                                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Browse 50+ curated templates for visual consistency.</p>
                                                 </div>
                                             </div>
                                             <div onClick={() => setCurrentView('history')} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
@@ -278,7 +278,7 @@ const App: React.FC = () => {
                                                 </div>
                                                 <div>
                                                     <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2">History</h3>
-                                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">Recover your previous visual engineering sessions.</p>
+                                                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Recover your previous visual engineering sessions.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -297,7 +297,7 @@ const App: React.FC = () => {
                                                 )}
                                                 <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100"><X size={20} /></button>
                                             </div>
-                                            <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">
+                                            <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                                                 <span className="truncate max-w-[200px]">{file?.name}</span>
                                                 <div className="flex gap-6">
                                                     {videoMeta?.isVideo && <span>{videoMeta?.duration}</span>}
@@ -309,7 +309,7 @@ const App: React.FC = () => {
                                         {analysisState === AnalysisState.PREVIEW && (
                                             <div className="flex flex-col gap-4">
                                                 <BlurryButton onClick={() => handleStartAnalysis()} className="!p-6 !text-lg uppercase tracking-widest font-heading"><Wand2 size={24} /> Engineer Prompt</BlurryButton>
-                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-white/5 shadow-xl"><Brain size={24} /> Scene Analytics</BlurryButton>
+                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-white/5 shadow-xl text-slate-300 hover:text-white"><Brain size={24} /> Scene Analytics</BlurryButton>
                                             </div>
                                         )}
 

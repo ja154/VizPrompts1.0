@@ -35,7 +35,7 @@ const BlurryButton: React.FC<BlurryButtonProps> = ({
       <span
         className="
           relative w-full h-full px-8 py-4 text-sm
-          bg-background-dark text-white
+          bg-background-dark text-slate-200
           rounded-[0.95rem] leading-none flex items-center justify-center gap-3
           group-hover:bg-white group-hover:text-background-dark transition-all duration-300
         "

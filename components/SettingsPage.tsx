@@ -75,9 +75,9 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                 <button 
                                     key={tab.id} 
                                     onClick={() => setActiveTab(tab.id as any)} 
-                                    className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 group ${activeTab === tab.id ? 'bg-white text-background-dark shadow-xl' : 'text-slate-500 hover:bg-white/5 hover:text-white'}`}
+                                    className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-left font-bold transition-all duration-300 group ${activeTab === tab.id ? 'bg-white text-background-dark shadow-xl' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}
                                 >
-                                    <tab.icon size={18} className={activeTab === tab.id ? 'text-background-dark' : 'text-slate-600 group-hover:text-slate-400'} />
+                                    <tab.icon size={18} className={activeTab === tab.id ? 'text-background-dark' : 'text-slate-400 group-hover:text-slate-200'} />
                                     <span className="text-[10px] uppercase tracking-widest">{tab.label}</span>
                                 </button>
                             ))}
@@ -128,7 +128,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                     </div>
                                     <div className="text-center sm:text-left">
                                         <h4 className="text-xl font-bold mb-2">Studio Identity</h4>
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">Your visual presence in the workspace.</p>
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Your visual presence in the workspace.</p>
                                         <BlurryButton type="button" onClick={() => fileInputRef.current?.click()} className="!py-2 !px-6">
                                             <Edit3 size={14} />
                                             <span>Upload Avatar</span>
@@ -139,7 +139,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-1">Display Name</label>
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Display Name</label>
                                         <input 
                                             type="text" 
                                             value={fullName} 

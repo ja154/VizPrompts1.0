@@ -118,7 +118,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
-                        className="text-xl text-slate-400 font-medium leading-relaxed max-w-md"
+                        className="text-xl text-slate-300 font-medium leading-relaxed max-w-md"
                     >
                         Analyze cinematic motion and high-fidelity photos to extract perfect generation prompts for Sora, Kling, and Midjourney.
                     </motion.p>
@@ -128,7 +128,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 0.5 }}
                     transition={{ duration: 1, delay: 0.6 }}
-                    className="flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500"
+                    className="flex items-center gap-8 text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400"
                 >
                     <span>Sora</span>
                     <span>Midjourney</span>
