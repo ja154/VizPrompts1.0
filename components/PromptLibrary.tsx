@@ -91,7 +91,7 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold font-heading uppercase tracking-tighter">Archives</h2>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">The Prompt Engineering Library</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">The Prompt Engineering Library</p>
                         </div>
                     </div>
                     <button onClick={onClose} disabled={!!remixingId} className="p-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all disabled:opacity-50">
@@ -126,10 +126,10 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                                         className={`w-full text-left px-5 py-4 rounded-2xl font-bold flex items-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 md:flex-shrink group ${
                                             activeCategory.name === category.name 
                                                 ? 'bg-white text-background-dark shadow-xl' 
-                                                : 'text-slate-500 hover:bg-white/5 hover:text-white'
+                                                : 'text-slate-300 hover:bg-white/10 hover:text-white'
                                         }`}
                                     >
-                                        <Icon size={18} className={activeCategory.name === category.name ? 'text-background-dark' : 'text-slate-600 group-hover:text-slate-400'} />
+                                        <Icon size={18} className={activeCategory.name === category.name ? 'text-background-dark' : 'text-slate-400 group-hover:text-slate-200'} />
                                         <span className="ml-4 text-[10px] uppercase tracking-widest truncate">{category.name}</span>
                                     </button>
                                 );
@@ -141,7 +141,7 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                     <main className="flex-1 p-10 overflow-y-auto scrollbar-thin">
                         <div className="flex items-center justify-between mb-10">
                             <h3 className="text-xl font-bold">{activeCategory.name}</h3>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{activeCategory.prompts.length} Blueprints</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{activeCategory.prompts.length} Blueprints</span>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -164,7 +164,7 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                                             onClick={() => handleRemix(prompt, activeCategory.name)}
                                             disabled={!!remixingId}
                                             title="Creative Remix"
-                                            className="p-3 rounded-xl bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
+                                            className="p-3 rounded-xl bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50"
                                         >
                                             {remixingId === prompt.id ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                                         </button>

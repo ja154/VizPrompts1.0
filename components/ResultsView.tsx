@@ -283,12 +283,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                   <div className="grid grid-cols-2 gap-4">
                     {isVideo && (
                         <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                            <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
                             <p className="font-bold text-sm">{videoMeta?.duration}</p>
                         </div>
                     )}
                     <div className={`${isVideo ? 'col-span-1' : 'col-span-2'} bg-white/5 p-4 rounded-xl border border-white/5`}>
-                      <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
+                      <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
                       <p className="font-bold text-sm">{videoMeta?.resolution}</p>
                     </div>
                   </div>
@@ -305,7 +305,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                   <div className="space-y-8">
                     {!isJsonOutput && (
                         <div>
-                            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Objective</h3>
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Objective</h3>
                             <div className="bg-white/5 p-5 rounded-xl border border-white/5 text-sm text-slate-300 leading-relaxed">
                                 {structuredPrompt?.objective}
                             </div>
@@ -313,7 +313,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     )}
                      <div>
                         <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Core Focus</h3>
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Core Focus</h3>
                             <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
                                 {isCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
                             </button>
@@ -338,7 +338,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </div>
                      {!isJsonOutput && (
                         <div>
-                            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-3">Constraints</h3>
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Constraints</h3>
                             <div className="bg-white/5 p-5 rounded-xl border border-white/5 text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
                                 {structuredPrompt?.constraints}
                             </div>

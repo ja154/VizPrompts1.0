@@ -149,7 +149,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                         />
                                     </div>
                                     <div className="space-y-3">
-                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 px-1">Studio Username</label>
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1">Studio Username</label>
                                         <input 
                                             type="text" 
                                             value={currentUser.username} 
@@ -176,7 +176,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                         </div>
                                         <div>
                                             <p className="text-lg font-bold mb-1">Midnight Interface</p>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">High-contrast dark mode for focused creativity.</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">High-contrast dark mode for focused creativity.</p>
                                         </div>
                                     </div>
                                     <button 
@@ -195,7 +195,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <h4 className="text-2xl font-bold mb-1">Visual Synthesis Core</h4>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">This logic powers the Gemini intelligence.</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">This logic powers the Gemini intelligence.</p>
                                         </div>
                                         <div className="flex gap-4">
                                             <button 
@@ -215,7 +215,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                         </div>
                                     </div>
                                     
-                                    <div className="bg-black/40 rounded-[2rem] p-8 font-mono text-[11px] leading-relaxed text-slate-500 overflow-hidden max-h-64 relative group border border-white/5 shadow-inner">
+                                    <div className="bg-black/40 rounded-[2rem] p-8 font-mono text-[11px] leading-relaxed text-slate-400 overflow-hidden max-h-64 relative group border border-white/5 shadow-inner">
                                         <pre className="whitespace-pre-wrap">{MEDIA_ANALYZER_SYSTEM_PROMPT}</pre>
                                         <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background-dark to-transparent"></div>
                                         <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
@@ -223,7 +223,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                     
                                     <div className="bg-white/5 p-6 rounded-2xl border border-white/5 flex gap-4 items-start">
                                         <AlertCircle className="text-slate-600 flex-shrink-0" size={18} />
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
+                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">
                                             Advanced: This system prompt can be used in your own custom LLM workflows to replicate the visual analysis logic.
                                         </p>
                                     </div>

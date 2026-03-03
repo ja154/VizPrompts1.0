@@ -66,7 +66,7 @@ const ProfilePage: React.FC = () => {
         <div className="max-w-2xl mx-auto">
             <header className="text-center mb-12">
                 <h2 className="text-4xl font-bold font-heading uppercase tracking-tighter mb-2">Identity</h2>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em]">User Profile Management</p>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">User Profile Management</p>
             </header>
 
             <motion.div 
@@ -120,13 +120,13 @@ const ProfilePage: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full mb-12">
                             <div className="bg-white/5 p-6 rounded-3xl border border-white/5 text-left">
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
                                     <Mail size={12} /> Email
                                 </p>
                                 <p className="text-sm font-medium">{currentUser.email}</p>
                             </div>
                             <div className="bg-white/5 p-6 rounded-3xl border border-white/5 text-left">
-                                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
+                                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-2 flex items-center gap-2">
                                     <Calendar size={12} /> Joined
                                 </p>
                                 <p className="text-sm font-medium">{new Date(currentUser.createdAt).toLocaleDateString()}</p>
@@ -159,12 +159,12 @@ const ProfilePage: React.FC = () => {
                                 </div>
                             </div>
                             <input type="file" ref={fileInputRef} onChange={handlePictureUpload} className="hidden" accept="image/*" />
-                            <p className="mt-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tap to change avatar</p>
+                            <p className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tap to change avatar</p>
                         </div>
 
                         <div className="space-y-6">
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Full Name</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Full Name</label>
                                 <input 
                                     type="text" 
                                     value={fullName} 
@@ -175,7 +175,7 @@ const ProfilePage: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Username</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Username</label>
                                     <input 
                                         type="text" 
                                         value={currentUser.username} 
@@ -184,7 +184,7 @@ const ProfilePage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Email</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Email</label>
                                     <input 
                                         type="email" 
                                         value={currentUser.email} 

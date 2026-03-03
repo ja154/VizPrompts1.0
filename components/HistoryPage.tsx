@@ -14,7 +14,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
     <div className="max-w-6xl mx-auto">
         <header className="text-center mb-12">
             <h2 className="text-4xl font-bold font-heading uppercase tracking-tighter mb-2">Chronicles</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.3em]">Your Visual Engineering History</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">Your Visual Engineering History</p>
         </header>
 
         {history.length === 0 ? (
@@ -27,7 +27,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                     <History className="w-10 h-10 text-slate-600" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">No History Yet</h3>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
                     Your generated prompts will appear here.
                 </p>
             </motion.div>
@@ -69,7 +69,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                                 </div>
                                 
                                 <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">View Details</span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">View Details</span>
                                     <div className="size-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white group-hover:text-background-dark transition-all duration-300">
                                         <ChevronRight size={16} />
                                     </div>
