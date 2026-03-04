@@ -209,7 +209,7 @@ const App: React.FC = () => {
 
             {/* Content Stage */}
             <main className="flex-1 overflow-y-auto scroll-smooth relative">
-                <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-background-dark/40 backdrop-blur-3xl z-40 border-b border-white/5">
+                <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-background-dark/80 backdrop-blur-md z-40 border-b border-white/5">
                     <div className="flex items-center gap-4">
                         <button onClick={() => setIsSidebarOpen(true)} className="sm:hidden text-slate-400"><Menu size={24} /></button>
                         <nav className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -232,7 +232,7 @@ const App: React.FC = () => {
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8 }}
+                            transition={{ duration: 0.4 }}
                             className="space-y-16 py-8"
                         >
                             {analysisState === AnalysisState.IDLE ? (
@@ -295,7 +295,7 @@ const App: React.FC = () => {
                                                 ) : (
                                                     <img src={videoUrl} className="size-full object-contain" />
                                                 )}
-                                                <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100"><X size={20} /></button>
+                                                <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/80 rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100"><X size={20} /></button>
                                             </div>
                                             <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                                                 <span className="truncate max-w-[200px]">{file?.name}</span>

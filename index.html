@@ -68,16 +68,16 @@
 
     .glassmorphic-card {
         background: var(--glass-bg);
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border: 1px solid var(--glass-border);
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
     }
 
     .glassmorphic-sidebar {
         background: rgba(2, 6, 23, 0.8);
-        backdrop-filter: blur(30px);
-        -webkit-backdrop-filter: blur(30px);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-right: 1px solid var(--glass-border);
     }
 
@@ -98,7 +98,7 @@
         inset: 0;
         z-index: -1;
         background-color: #050b14;
-        background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+        background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=60&w=1280&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
         overflow: hidden;
@@ -107,8 +107,7 @@
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(2, 6, 23, 0.7); /* Dark overlay to ensure text readability and hide background text */
-        backdrop-filter: blur(16px); /* Blur to hide any text in the background image */
+        background: rgba(2, 6, 23, 0.85); /* Darker overlay to ensure text readability without blur */
     }
     .aurora-bg::after {
         content: "";
@@ -124,13 +123,13 @@
         from { opacity: 0; transform: translateY(20px); filter: blur(10px); }
         to { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
-    .animate-slide-up { animation: slide-up 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
     @keyframes pulse-glow {
-        0%, 100% { box-shadow: 0 0 20px var(--glow-color); }
-        50% { box-shadow: 0 0 40px var(--glow-color); }
+        0%, 100% { box-shadow: 0 0 10px var(--glow-color); }
+        50% { box-shadow: 0 0 20px var(--glow-color); }
     }
-    .glow-pulse { animation: pulse-glow 4s infinite ease-in-out; }
+    .glow-pulse { animation: pulse-glow 6s infinite ease-in-out; }
 
     .material-symbols-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
