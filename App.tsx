@@ -404,6 +404,7 @@ const App: React.FC = () => {
                                                             }} isConvertingToJson={isConvertingToJson} onConvertToJason={async () => {
                                                                 setIsConvertingToJson(true); const res = await convertPromptToJson(structuredPrompt!); setGeneratedPrompt(res); setStructuredPrompt(p => ({...p!, objective: 'JSON Format Output'})); setIsConvertingToJson(false);
                                                             }}
+                                                            extractedFrames={extractedFrames}
                                                         />
                                                     ) : <VideoAnalysisView file={file} videoUrl={videoUrl} videoMeta={videoMeta} analysisResult={videoAnalysisResult!} isCopied={isCopied} handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} isGeneratingPrompt={isGeneratingPromptFromAnalysis} onGeneratePrompt={async () => {
                                                         setIsGeneratingPromptFromAnalysis(true); const res = await generatePromptFromAnalysis(videoAnalysisResult!); setGeneratedPrompt(res.core_focus); setStructuredPrompt(res); setResultType('prompt'); setIsGeneratingPromptFromAnalysis(false);

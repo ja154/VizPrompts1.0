@@ -13,7 +13,8 @@ import {
     Sparkles,
     AlertCircle,
     X,
-    Monitor
+    Monitor,
+    Microscope
 } from 'lucide-react';
 import { ConsistencyResult, StructuredPrompt } from '../types.ts';
 import BlurryButton from './Button';
@@ -21,6 +22,7 @@ import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
 import { remixStyles } from '../data/remixStyles.ts';
 import SyntaxHighlightedTextarea from './SyntaxHighlightedTextarea.tsx';
+import EvidenceView from './EvidenceView.tsx';
 
 interface ScoreGaugeProps {
     score: number;
@@ -237,6 +239,7 @@ interface ResultsViewProps {
     handleRemixStyle: () => void;
     isConvertingToJson: boolean;
     onConvertToJason: () => void;
+    extractedFrames: string[];
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({
@@ -250,10 +253,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, onRegenerate, hasOriginalFrames, error,
     // FIX: Corrected duplicate destructuring of 'setRefineStyle' to 'setRemixStyle'
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
-    isConvertingToJson, onConvertToJason
+    isConvertingToJson, onConvertToJason,
+    extractedFrames
 }) => {
     const isVideo = videoMeta?.isVideo;
     const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
+    const [activeTab, setActiveTab] = useState<'prompt' | 'evidence'>('prompt');
 
     return (
         <>
@@ -266,7 +271,33 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             onApplyImprovements={onApplyImprovements}
         />
         <div className="flex flex-col gap-8">
-            
+            {/* Tab switcher */}
+            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/8">
+                <button
+                onClick={() => setActiveTab('prompt')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300
+                    ${activeTab === 'prompt' ? 'bg-white text-background-dark shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                <Brain size={14} />
+                Prompt
+                </button>
+                <button
+                onClick={() => setActiveTab('evidence')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300
+                    ${activeTab === 'evidence' ? 'bg-white text-background-dark shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                >
+                <Microscope size={14} />
+                Evidence
+                </button>
+            </div>
+
+            {activeTab === 'evidence' ? (
+                <EvidenceView
+                frames={extractedFrames}
+                structuredPrompt={structuredPrompt!}
+                />
+            ) : (
+                <>
               {/* Media Preview */}
               <div className="glassmorphic-card rounded-[2rem] p-8">
                   <h2 className="text-lg font-bold mb-6 flex items-center gap-3 uppercase tracking-widest font-heading">
@@ -443,6 +474,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         </BlurryButton>
                     </div>
               </div>
+            </>
+            )}
         </div>
         </>
     );

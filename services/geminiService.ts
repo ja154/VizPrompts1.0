@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
-import { StructuredPrompt, ConsistencyResult } from '../types.ts';
+import { StructuredPrompt, ConsistencyResult, PromptEvidence, EvidenceSentence } from '../types.ts';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
@@ -623,4 +623,107 @@ export const generatePromptFromAnalysis = async (analysisText: string): Promise<
     },
   });
   return parseStructuredPrompt(response.text ?? '');
+};
+
+/**
+ * Given a generated prompt's core_focus and the extracted frames,
+ * asks Gemini to map each sentence to the specific frame(s) that
+ * provide visual evidence for it.
+ *
+ * Returns a PromptEvidence object with:
+ *  - sentences[]  — each sentence annotated with frameIndices + confidence
+ *  - frameIndex   — inverted index: frameN → [sentenceIds]
+ */
+export const generatePromptEvidence = async (
+  coreFocus: string,
+  frameDataUrls: string[]
+): Promise<PromptEvidence> => {
+  const { parts, preamble } = buildAnnotatedFrameParts(frameDataUrls);
+
+  // Split the core_focus into individual sentences/clauses for mapping.
+  // We do this server-side to let the model decide natural boundaries.
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.1-pro-preview',
+    contents: {
+      parts: [
+        {
+          text:
+            `${preamble}\n\n` +
+            `PROMPT CORE_FOCUS:\n${coreFocus}\n\n` +
+            `For every distinct claim or descriptor in the prompt above, identify:\n` +
+            `1. The exact text of the claim (a sentence, clause, or keyword group)\n` +
+            `2. Which frame(s) directly support that claim (use the [F1], [F2]… labels)\n` +
+            `3. A confidence score 0.0–1.0 (1.0 = claim is unmistakably visible in those frames)\n` +
+            `4. The category of the claim\n\n` +
+            `If a claim cannot be traced to any frame, set frameIndices to [] and confidence to 0.0.\n` +
+            `Split compound sentences into individual claims where possible.\n` +
+            `Return ALL claims — do not skip any part of the prompt.`,
+        },
+        ...parts,
+      ],
+    },
+    config: {
+      systemInstruction:
+        'You are a forensic visual auditor. Map every prompt claim to its visual evidence with precision. ' +
+        'Be conservative with confidence — only score 1.0 if the detail is unmistakably clear in the frame.',
+      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+      temperature: 0.1,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          mappings: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                text:          { type: Type.STRING, description: 'The exact claim text from the prompt.' },
+                frame_numbers: {
+                  type: Type.ARRAY,
+                  items: { type: Type.INTEGER },
+                  description: '1-based frame numbers (F1=1, F2=2...) that support this claim.',
+                },
+                confidence: { type: Type.NUMBER, description: '0.0 to 1.0' },
+                category: {
+                  type: Type.STRING,
+                  enum: ['subject', 'environment', 'cinematography', 'lighting', 'color', 'motion', 'detail', 'other'],
+                },
+              },
+              required: ['text', 'frame_numbers', 'confidence', 'category'],
+            },
+          },
+        },
+        required: ['mappings'],
+      },
+    },
+  });
+
+  type RawMapping = {
+    text: string;
+    frame_numbers: number[];
+    confidence: number;
+    category: EvidenceSentence['category'];
+  };
+
+  const raw: { mappings: RawMapping[] } = JSON.parse(response.text ?? '{"mappings":[]}');
+
+  // Build sentences array (0-based frame indices)
+  const sentences: EvidenceSentence[] = raw.mappings.map((m, i) => ({
+    id: `s${i}`,
+    text: m.text,
+    frameIndices: m.frame_numbers.map(n => n - 1), // convert 1-based → 0-based
+    confidence: Math.min(1, Math.max(0, m.confidence)),
+    category: m.category ?? 'other',
+  }));
+
+  // Build inverted index: frameIndex → sentenceIds
+  const frameIndex: Record<number, string[]> = {};
+  sentences.forEach(s => {
+    s.frameIndices.forEach(fi => {
+      if (!frameIndex[fi]) frameIndex[fi] = [];
+      frameIndex[fi].push(s.id);
+    });
+  });
+
+  return { sentences, frameIndex };
 };

@@ -47,3 +47,26 @@ export interface ConsistencyResult {
     missing_details: string[];
     revised_output: string;
 }
+
+/**
+ * A single sentence from core_focus mapped to the frame indices that support it.
+ * frameIndices are 0-based into the extractedFrames array.
+ * confidence: 0..1 — how strongly the sentence is grounded in those frames.
+ */
+export interface EvidenceSentence {
+  id: string;           // stable key, e.g. "s0", "s1"
+  text: string;         // the sentence text
+  frameIndices: number[]; // which frames back this claim
+  confidence: number;   // 0..1
+  category: 'subject' | 'environment' | 'cinematography' | 'lighting' | 'color' | 'motion' | 'detail' | 'other';
+}
+
+/**
+ * Full evidence mapping for a prompt's core_focus.
+ * Returned by generatePromptEvidence() in geminiService.
+ */
+export interface PromptEvidence {
+  sentences: EvidenceSentence[];
+  /** frameIndex → sentence ids that cite it */
+  frameIndex: Record<number, string[]>;
+}
