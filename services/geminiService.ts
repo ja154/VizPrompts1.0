@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { StructuredPrompt, ConsistencyResult } from '../types.ts';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -111,7 +111,7 @@ export const generateStructuredPromptFromFrames = async (frameDataUrls: string[]
         contents: { parts: [{ text: promptText }, ...imageParts] },
         config: { 
             systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-            thinkingConfig: { thinkingBudget: 10000 }
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
         },
     });
     return parseStructuredPrompt(response.text || "");
@@ -128,7 +128,7 @@ export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (
         contents: { parts: [{ text: "Provide a forensic, frame-by-frame analysis of this media. Focus on micro-details: textures, lighting shifts, subject momentum, and cinematic nuances. Be extremely descriptive." }, ...imageParts] },
         config: { 
             systemInstruction: "You are a world-class Visual Director and Cinematographer. Your analysis is used for high-budget film production. Ensure absolute fidelity to the visual evidence.",
-            thinkingConfig: { thinkingBudget: 12000 }
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }
         }
     });
     return response.text || "";
@@ -136,10 +136,11 @@ export const analyzeVideoContent = async (frameDataUrls: string[], onProgress: (
 
 export const refinePrompt = async (currentPrompt: string, userInstruction: string, negativePrompt: string): Promise<string> => {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: `Original Prompt: ${currentPrompt}\n\nRefinement Instructions: ${userInstruction}\n\nNegative Constraints (Exclude): ${negativePrompt}`,
         config: { 
             systemInstruction: "You are a master prompt engineer. Your goal is to refine and enhance the provided prompt while strictly adhering to the user's instructions. Use high-fidelity, cinematic language. Output ONLY the final refined prompt text. Do not include any preamble or explanation.",
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
             temperature: 0.7
         }
     });
@@ -148,10 +149,11 @@ export const refinePrompt = async (currentPrompt: string, userInstruction: strin
 
 export const refineJsonPrompt = async (currentJson: string, instruction: string, negative: string): Promise<string> => {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: `Current JSON Spec: ${currentJson}\n\nRefinement Instructions: ${instruction}\n\nNegative Constraints: ${negative}`,
         config: {
             systemInstruction: "You are a technical visual director. Refine the visual parameters in this JSON production spec based on the provided instructions. Maintain strict JSON validity and follow the provided schema.",
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
             responseMimeType: "application/json",
             responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA
         }
@@ -161,10 +163,11 @@ export const refineJsonPrompt = async (currentJson: string, instruction: string,
 
 export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<string> => {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: JSON.stringify(prompt),
         config: {
             systemInstruction: "Convert the unstructured prompt details into a formal visual production JSON.",
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
             responseMimeType: "application/json",
             responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA
         }
@@ -174,10 +177,11 @@ export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<str
 
 export const remixPrompt = async (prompt: string): Promise<string[]> => {
     const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: `Remix: ${prompt}`,
         config: {
             systemInstruction: "Generate 3 stylistically distinct remixes of this prompt. Return as a JSON array of strings.",
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
             responseMimeType: "application/json",
             responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
         }
@@ -193,7 +197,7 @@ export const remixVideoStyle = async (frames: string[], style: string): Promise<
     const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
         contents: { parts: [{ text: `Re-imagine this scene in the style of: ${style}` }, ...parts] },
-        config: { thinkingConfig: { thinkingBudget: 5000 } }
+        config: { thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH } }
     });
     return response.text || "";
 };
@@ -208,6 +212,7 @@ export const testPromptConsistency = async (prompt: string, frames: string[]): P
         contents: { parts: [{ text: `Perform a rigorous consistency audit. Compare every detail of this prompt with the provided media: ${prompt}. Identify any discrepancies, missing elements, or inaccuracies.` }, ...parts] },
         config: {
             systemInstruction: "You are a forensic visual auditor. Your goal is to ensure 100% alignment between text prompts and visual media. Be hyper-critical.",
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.OBJECT,
@@ -243,6 +248,7 @@ export const testJsonConsistency = async (json: string, frames: string[]): Promi
         contents: { parts: [{ text: `Test JSON consistency for: ${json}. Ensure every parameter in the JSON accurately reflects the visual evidence in the frames.` }, ...parts] },
         config: {
             systemInstruction: "You are a technical visual auditor. Compare the production JSON spec against the provided media frames. Identify any technical inaccuracies.",
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
             responseMimeType: "application/json",
             responseSchema: {
                 type: Type.OBJECT,
