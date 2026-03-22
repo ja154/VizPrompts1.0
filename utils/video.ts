@@ -20,9 +20,14 @@ export const extractFramesFromVideo = (
     const video = document.createElement('video');
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    const frames: string[] = [];
+    
+    // Small canvas for fast pixel diffing
+    const smallCanvas = document.createElement('canvas');
+    smallCanvas.width = 64;
+    smallCanvas.height = 64;
+    const smallContext = smallCanvas.getContext('2d', { willReadFrequently: true });
 
-    if (!context) {
+    if (!context || !smallContext) {
       URL.revokeObjectURL(videoUrl); // Clean up
       return reject(new Error('Could not create canvas context.'));
     }
@@ -65,9 +70,15 @@ export const extractFramesFromVideo = (
         return;
       }
       
-      const interval = duration / (frameCount + 1);
+      // Sample more frames initially to find the best ones (scene changes)
+      const sampleMultiplier = 3;
+      const actualSampleCount = Math.max(frameCount * sampleMultiplier, Math.min(Math.ceil(duration * 2), 60)); 
+      const interval = duration / (actualSampleCount + 1);
       let currentTime = interval > 0 ? interval : 0.1;
       let framesExtracted = 0;
+
+      const sampledFrames: { time: number; dataUrl: string; diff: number }[] = [];
+      let previousImageData: ImageData | null = null;
 
       if (onProgress) {
           onProgress(0, 0, frameCount);
@@ -78,29 +89,75 @@ export const extractFramesFromVideo = (
       };
       
       video.onseeked = () => {
-        if (framesExtracted >= frameCount) return; // A seek might fire after we are done.
+        if (framesExtracted >= actualSampleCount) return; // A seek might fire after we are done.
 
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         // Reduce quality to 80% to decrease payload size and prevent upload issues.
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Draw to small canvas for diffing
+        smallContext.drawImage(video, 0, 0, 64, 64);
+        const currentImageData = smallContext.getImageData(0, 0, 64, 64);
+        
+        let diff = 0;
+        if (previousImageData) {
+            const data1 = currentImageData.data;
+            const data2 = previousImageData.data;
+            for (let i = 0; i < data1.length; i += 4) {
+                diff += Math.abs(data1[i] - data2[i]) + 
+                        Math.abs(data1[i+1] - data2[i+1]) + 
+                        Math.abs(data1[i+2] - data2[i+2]);
+            }
+        } else {
+            diff = Number.MAX_SAFE_INTEGER; // First frame always kept
+        }
+        
+        previousImageData = currentImageData;
+
         if (dataUrl && dataUrl.length > 'data:image/jpeg;base64,'.length) {
-          frames.push(dataUrl);
+          sampledFrames.push({ time: currentTime, dataUrl, diff });
         }
         framesExtracted++;
 
         if (onProgress) {
-            const progress = Math.min(100, Math.round((framesExtracted / frameCount) * 100));
-            onProgress(progress, framesExtracted, frameCount);
+            const progress = Math.min(100, Math.round((framesExtracted / actualSampleCount) * 100));
+            onProgress(progress, Math.min(framesExtracted, frameCount), frameCount);
         }
         
         currentTime += interval;
         
-        if (currentTime < duration && framesExtracted < frameCount) {
+        if (currentTime < duration && framesExtracted < actualSampleCount) {
           captureFrame();
         } else {
            if (onProgress) onProgress(100, frameCount, frameCount);
            cleanup(); // Clean up the object URL
-           resolve(frames);
+           
+           // Adaptive selection using time buckets to ensure chronological spread while picking highest diffs
+           if (sampledFrames.length <= frameCount) {
+               resolve(sampledFrames.map(f => f.dataUrl));
+           } else {
+               const finalFrames: typeof sampledFrames = [];
+               const bucketSize = sampledFrames.length / frameCount;
+               
+               for (let i = 0; i < frameCount; i++) {
+                   const startIndex = Math.floor(i * bucketSize);
+                   const endIndex = i === frameCount - 1 ? sampledFrames.length : Math.floor((i + 1) * bucketSize);
+                   const bucket = sampledFrames.slice(startIndex, endIndex);
+                   
+                   if (bucket.length > 0) {
+                       // Find frame with highest diff in this bucket (scene change or high motion)
+                       let bestFrame = bucket[0];
+                       for (let j = 1; j < bucket.length; j++) {
+                           if (bucket[j].diff > bestFrame.diff) {
+                               bestFrame = bucket[j];
+                           }
+                       }
+                       finalFrames.push(bestFrame);
+                   }
+               }
+               
+               resolve(finalFrames.map(f => f.dataUrl));
+           }
         }
       };
 
