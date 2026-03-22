@@ -1,168 +1,238 @@
+/**
+ * Computes a perceptual difference score between two canvas frames.
+ * Samples a grid of pixels (not every pixel) for performance.
+ * Returns a value 0..1 where 0 = identical, 1 = completely different.
+ */
+const computeFrameDiff = (
+  ctx: CanvasRenderingContext2D,
+  prevData: Uint8ClampedArray,
+  width: number,
+  height: number
+): number => {
+  const current = ctx.getImageData(0, 0, width, height).data;
+  const step = 8; // Sample every 8th pixel — fast enough, accurate enough
+  let totalDiff = 0;
+  let sampleCount = 0;
+
+  for (let i = 0; i < current.length; i += step * 4) {
+    const dr = Math.abs(current[i]     - prevData[i]);
+    const dg = Math.abs(current[i + 1] - prevData[i + 1]);
+    const db = Math.abs(current[i + 2] - prevData[i + 2]);
+    totalDiff += (dr + dg + db) / (3 * 255);
+    sampleCount++;
+  }
+
+  return sampleCount > 0 ? totalDiff / sampleCount : 0;
+};
 
 /**
- * Extracts a specified number of frames from a video file as data URLs.
- * This version uses URL.createObjectURL for memory efficiency, preventing crashes on mobile.
- * Frames are resized and compressed to reduce payload size.
- * @param videoFile The video file to process.
- * @param frameCount The number of frames to extract.
- * @param onProgress A callback function to report progress (0-100, current frame, total frames).
- * @returns A promise that resolves with an array of data URI strings.
+ * Extracts frames from a video using adaptive scene-change-aware sampling.
+ *
+ * Strategy:
+ * 1. Do a fast first-pass scan at low resolution to detect scene changes
+ *    (frames where pixel diff exceeds a threshold = likely cut or major motion).
+ * 2. Always include the detected scene-change frames as keyframes.
+ * 3. Fill remaining frame slots with evenly-distributed frames from
+ *    segments between keyframes to maintain temporal coverage.
+ * 4. Deduplicate near-identical frames (diff < dedup threshold).
+ *
+ * This means a video with 3 hard cuts gets frames from each scene,
+ * rather than 12 frames all from the longest static segment.
+ *
+ * @param videoFile     The video file to process.
+ * @param maxFrames     Maximum frames to extract (default 16).
+ * @param onProgress    Progress callback (0..1 ratio, current, total).
  */
 export const extractFramesFromVideo = (
   videoFile: File,
-  frameCount: number = 10,
-  onProgress?: (progress: number, currentFrame: number, totalFrames: number) => void
+  maxFrames = 16,
+  onProgress?: (progress: number, current: number, total: number) => void
 ): Promise<string[]> => {
   return new Promise((resolve, reject) => {
-    // MORE EFFICIENT: Use createObjectURL to avoid loading the whole file into memory.
     const videoUrl = URL.createObjectURL(videoFile);
-    
     const video = document.createElement('video');
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    
-    // Small canvas for fast pixel diffing
-    const smallCanvas = document.createElement('canvas');
-    smallCanvas.width = 64;
-    smallCanvas.height = 64;
-    const smallContext = smallCanvas.getContext('2d', { willReadFrequently: true });
 
-    if (!context || !smallContext) {
-      URL.revokeObjectURL(videoUrl); // Clean up
+    // Two canvases: one low-res for diff scanning, one full-res for capture
+    const scanCanvas = document.createElement('canvas');
+    const captureCanvas = document.createElement('canvas');
+    const scanCtx = scanCanvas.getContext('2d');
+    const captureCtx = captureCanvas.getContext('2d');
+
+    if (!scanCtx || !captureCtx) {
+      URL.revokeObjectURL(videoUrl);
       return reject(new Error('Could not create canvas context.'));
     }
 
-    // Centralized cleanup function
-    const cleanup = () => {
-      URL.revokeObjectURL(videoUrl);
-      // Let the browser garbage collect the elements
-    };
+    const cleanup = () => URL.revokeObjectURL(videoUrl);
 
     video.onerror = () => {
       cleanup();
-      reject(new Error('Could not process video. The file may be corrupt or in an unsupported format. Please try a different video (e.g., MP4).'));
+      reject(new Error('Could not process video. Try a different format (e.g. MP4).'));
     };
 
-    video.onloadedmetadata = () => {
+    video.onloadedmetadata = async () => {
       video.muted = true;
       video.playsInline = true;
-      
-      const MAX_DIMENSION = 1280; // Max width or height for frames
-      let { videoWidth, videoHeight } = video;
 
-      if (videoWidth > MAX_DIMENSION || videoHeight > MAX_DIMENSION) {
-        if (videoWidth > videoHeight) {
-          videoHeight = Math.round(videoHeight * (MAX_DIMENSION / videoWidth));
-          videoWidth = MAX_DIMENSION;
-        } else {
-          videoWidth = Math.round(videoWidth * (MAX_DIMENSION / videoHeight));
-          videoHeight = MAX_DIMENSION;
-        }
-      }
-
-      canvas.width = videoWidth;
-      canvas.height = videoHeight;
       const duration = video.duration;
-
       if (!isFinite(duration) || duration <= 0) {
         cleanup();
-        reject(new Error('Video has an invalid duration. It might be a live stream or a corrupted file that cannot be processed.'));
-        return;
-      }
-      
-      // Sample more frames initially to find the best ones (scene changes)
-      const sampleMultiplier = 3;
-      const actualSampleCount = Math.max(frameCount * sampleMultiplier, Math.min(Math.ceil(duration * 2), 60)); 
-      const interval = duration / (actualSampleCount + 1);
-      let currentTime = interval > 0 ? interval : 0.1;
-      let framesExtracted = 0;
-
-      const sampledFrames: { time: number; dataUrl: string; diff: number }[] = [];
-      let previousImageData: ImageData | null = null;
-
-      if (onProgress) {
-          onProgress(0, 0, frameCount);
+        return reject(new Error('Video has an invalid duration.'));
       }
 
-      const captureFrame = () => {
-        video.currentTime = currentTime;
-      };
-      
-      video.onseeked = () => {
-        if (framesExtracted >= actualSampleCount) return; // A seek might fire after we are done.
+      // --- Scan canvas: 160×90, used only for diff computation ---
+      const SCAN_W = 160;
+      const SCAN_H = 90;
+      scanCanvas.width = SCAN_W;
+      scanCanvas.height = SCAN_H;
 
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        // Reduce quality to 80% to decrease payload size and prevent upload issues.
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        
-        // Draw to small canvas for diffing
-        smallContext.drawImage(video, 0, 0, 64, 64);
-        const currentImageData = smallContext.getImageData(0, 0, 64, 64);
-        
-        let diff = 0;
-        if (previousImageData) {
-            const data1 = currentImageData.data;
-            const data2 = previousImageData.data;
-            for (let i = 0; i < data1.length; i += 4) {
-                diff += Math.abs(data1[i] - data2[i]) + 
-                        Math.abs(data1[i+1] - data2[i+1]) + 
-                        Math.abs(data1[i+2] - data2[i+2]);
-            }
+      // --- Capture canvas: max 1280px on longest edge ---
+      const MAX_DIM = 1280;
+      let capW = video.videoWidth;
+      let capH = video.videoHeight;
+      if (capW > MAX_DIM || capH > MAX_DIM) {
+        if (capW >= capH) {
+          capH = Math.round(capH * (MAX_DIM / capW));
+          capW = MAX_DIM;
         } else {
-            diff = Number.MAX_SAFE_INTEGER; // First frame always kept
+          capW = Math.round(capW * (MAX_DIM / capH));
+          capH = MAX_DIM;
         }
-        
-        previousImageData = currentImageData;
+      }
+      captureCanvas.width = capW;
+      captureCanvas.height = capH;
 
-        if (dataUrl && dataUrl.length > 'data:image/jpeg;base64,'.length) {
-          sampledFrames.push({ time: currentTime, dataUrl, diff });
-        }
-        framesExtracted++;
+      // -------------------------------------------------------
+      // PHASE 1: Fast scan — sample ~60 evenly-spaced timestamps
+      // and record the perceptual diff at each point.
+      // -------------------------------------------------------
+      const SCAN_SAMPLES = Math.min(60, Math.floor(duration * 10)); // ~1 per 100ms, max 60
+      const scanInterval = duration / (SCAN_SAMPLES + 1);
+      const diffScores: Array<{ t: number; diff: number }> = [];
 
-        if (onProgress) {
-            const progress = Math.min(100, Math.round((framesExtracted / actualSampleCount) * 100));
-            onProgress(progress, Math.min(framesExtracted, frameCount), frameCount);
-        }
-        
-        currentTime += interval;
-        
-        if (currentTime < duration && framesExtracted < actualSampleCount) {
-          captureFrame();
-        } else {
-           if (onProgress) onProgress(100, frameCount, frameCount);
-           cleanup(); // Clean up the object URL
-           
-           // Adaptive selection using time buckets to ensure chronological spread while picking highest diffs
-           if (sampledFrames.length <= frameCount) {
-               resolve(sampledFrames.map(f => f.dataUrl));
-           } else {
-               const finalFrames: typeof sampledFrames = [];
-               const bucketSize = sampledFrames.length / frameCount;
-               
-               for (let i = 0; i < frameCount; i++) {
-                   const startIndex = Math.floor(i * bucketSize);
-                   const endIndex = i === frameCount - 1 ? sampledFrames.length : Math.floor((i + 1) * bucketSize);
-                   const bucket = sampledFrames.slice(startIndex, endIndex);
-                   
-                   if (bucket.length > 0) {
-                       // Find frame with highest diff in this bucket (scene change or high motion)
-                       let bestFrame = bucket[0];
-                       for (let j = 1; j < bucket.length; j++) {
-                           if (bucket[j].diff > bestFrame.diff) {
-                               bestFrame = bucket[j];
-                           }
-                       }
-                       finalFrames.push(bestFrame);
-                   }
-               }
-               
-               resolve(finalFrames.map(f => f.dataUrl));
-           }
-        }
-      };
+      onProgress?.(0, 0, maxFrames);
 
-      // Start the process by triggering the first seek
-      captureFrame();
+      let prevScanData: Uint8ClampedArray | null = null;
+
+      const seekTo = (t: number): Promise<void> =>
+        new Promise(res => {
+          video.onseeked = () => res();
+          video.currentTime = t;
+        });
+
+      for (let i = 1; i <= SCAN_SAMPLES; i++) {
+        const t = scanInterval * i;
+        await seekTo(t);
+        scanCtx.drawImage(video, 0, 0, SCAN_W, SCAN_H);
+
+        if (prevScanData) {
+          const diff = computeFrameDiff(scanCtx, prevScanData, SCAN_W, SCAN_H);
+          diffScores.push({ t, diff });
+        }
+        prevScanData = scanCtx.getImageData(0, 0, SCAN_W, SCAN_H).data.slice();
+      }
+
+      // -------------------------------------------------------
+      // PHASE 2: Identify scene change timestamps.
+      // A "scene change" is any diff spike that is both:
+      //   > absolute threshold (0.12 = 12% pixel change)
+      //   > 1.5× the median diff (relative to this video's motion level)
+      // -------------------------------------------------------
+      const ABS_THRESHOLD = 0.12;
+      const REL_MULTIPLIER = 1.5;
+
+      const sortedDiffs = [...diffScores].sort((a, b) => a.diff - b.diff);
+      const medianDiff = sortedDiffs[Math.floor(sortedDiffs.length / 2)]?.diff ?? 0;
+      const relThreshold = medianDiff * REL_MULTIPLIER;
+      const effectiveThreshold = Math.max(ABS_THRESHOLD, relThreshold);
+
+      const sceneChangeTimes = diffScores
+        .filter(d => d.diff > effectiveThreshold)
+        // Minimum 0.5s gap between detected cuts to avoid clustering
+        .reduce<number[]>((acc, d) => {
+          if (acc.length === 0 || d.t - acc[acc.length - 1] > 0.5) {
+            acc.push(d.t);
+          }
+          return acc;
+        }, []);
+
+      // -------------------------------------------------------
+      // PHASE 3: Build final timestamp list.
+      // Reserve slots for scene-change keyframes, distribute
+      // remaining slots evenly across temporal segments.
+      // -------------------------------------------------------
+      const keyframeTimes = sceneChangeTimes.slice(0, Math.floor(maxFrames * 0.5));
+      const remainingSlots = maxFrames - keyframeTimes.length;
+
+      // Segment the timeline around keyframes and sample within each
+      const boundaries = [0, ...keyframeTimes, duration];
+      const segmentSlots = Math.max(1, Math.floor(remainingSlots / (boundaries.length - 1)));
+
+      const fillTimes: number[] = [];
+      for (let i = 0; i < boundaries.length - 1; i++) {
+        const segStart = boundaries[i];
+        const segEnd = boundaries[i + 1];
+        const segLen = segEnd - segStart;
+        const slots = i === boundaries.length - 2 ? remainingSlots - fillTimes.length : segmentSlots;
+        for (let j = 1; j <= slots; j++) {
+          fillTimes.push(segStart + (segLen * j) / (slots + 1));
+        }
+      }
+
+      // Merge keyframes + fill frames, sort chronologically
+      const allTimes = [...keyframeTimes, ...fillTimes]
+        .sort((a, b) => a - b)
+        // Clamp to valid range
+        .filter(t => t > 0 && t < duration);
+
+      // Take at most maxFrames
+      const targetTimes = allTimes.slice(0, maxFrames);
+
+      // -------------------------------------------------------
+      // PHASE 4: Capture high-res frames at selected timestamps.
+      // Deduplicate: skip a frame if diff vs previous capture < 0.04
+      // -------------------------------------------------------
+      const DEDUP_THRESHOLD = 0.04;
+      const frames: string[] = [];
+      let prevCaptureData: Uint8ClampedArray | null = null;
+      let prevCaptureScan: Uint8ClampedArray | null = null;
+
+      for (let i = 0; i < targetTimes.length; i++) {
+        const t = targetTimes[i];
+        await seekTo(t);
+
+        // Check dedup using scan canvas (fast)
+        scanCtx.drawImage(video, 0, 0, SCAN_W, SCAN_H);
+        const scanData = scanCtx.getImageData(0, 0, SCAN_W, SCAN_H).data.slice();
+
+        if (prevCaptureScan) {
+          const diff = computeFrameDiff(scanCtx, prevCaptureScan, SCAN_W, SCAN_H);
+          if (diff < DEDUP_THRESHOLD) {
+            // Near-identical frame — skip it
+            continue;
+          }
+        }
+
+        // Capture at full resolution
+        captureCtx.drawImage(video, 0, 0, capW, capH);
+        const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.82);
+
+        if (dataUrl.length > 'data:image/jpeg;base64,'.length + 100) {
+          frames.push(dataUrl);
+          prevCaptureData = captureCtx.getImageData(0, 0, capW, capH).data.slice();
+          prevCaptureScan = scanData;
+        }
+
+        onProgress?.(
+          Math.round(((i + 1) / targetTimes.length) * 100),
+          i + 1,
+          targetTimes.length
+        );
+      }
+
+      onProgress?.(100, frames.length, frames.length);
+      cleanup();
+      resolve(frames);
     };
 
     video.preload = 'auto';
@@ -170,83 +240,65 @@ export const extractFramesFromVideo = (
   });
 };
 
-
-export const getVideoMetadata = (file: File): Promise<{ duration: number; width: number; height: number; }> => {
+/**
+ * Returns duration, width, height of a video file.
+ */
+export const getVideoMetadata = (file: File): Promise<{ duration: number; width: number; height: number }> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
-    const videoUrl = URL.createObjectURL(file);
-    video.src = videoUrl;
-
+    const url = URL.createObjectURL(file);
+    video.src = url;
     video.onloadedmetadata = () => {
-      URL.revokeObjectURL(video.src);
-      resolve({
-        duration: video.duration,
-        width: video.videoWidth,
-        height: video.videoHeight,
-      });
+      URL.revokeObjectURL(url);
+      resolve({ duration: video.duration, width: video.videoWidth, height: video.videoHeight });
     };
     video.onerror = () => {
-      URL.revokeObjectURL(videoUrl);
-      reject(new Error('Failed to load video metadata. The file may be corrupt or in an unsupported format.'));
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load video metadata.'));
     };
   });
 };
 
 /**
- * Converts an image file to a data URL string, resizing it to a max dimension and compressing it to reduce payload size.
- * This helps prevent issues with streaming uploads in certain proxy environments.
- * This version uses URL.createObjectURL for memory efficiency.
- * @param file The image file to convert.
- * @returns A promise that resolves with the data URL string.
+ * Converts an image File to a compressed JPEG data URL.
+ * Resizes to max 1920px on the longest edge, quality 0.82.
  */
 export const imageToDataUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const imageUrl = URL.createObjectURL(file);
-    
+    const url = URL.createObjectURL(file);
     const img = new Image();
-    
-    const cleanup = () => {
-      URL.revokeObjectURL(imageUrl);
-    };
-    
-    img.onload = () => {
-      const MAX_DIMENSION = 1920; // Max width or height
-      let { width, height } = img;
 
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        if (width > height) {
-          height = Math.round(height * (MAX_DIMENSION / width));
-          width = MAX_DIMENSION;
+    img.onload = () => {
+      const MAX_DIM = 1920;
+      let { width, height } = img;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width >= height) {
+          height = Math.round(height * (MAX_DIM / width));
+          width = MAX_DIM;
         } else {
-          width = Math.round(width * (MAX_DIMENSION / height));
-          height = MAX_DIMENSION;
+          width = Math.round(width * (MAX_DIM / height));
+          height = MAX_DIM;
         }
       }
-
       const canvas = document.createElement('canvas');
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
-
       if (!ctx) {
-        cleanup();
-        return reject(new Error('Could not create canvas context for image resizing.'));
+        URL.revokeObjectURL(url);
+        return reject(new Error('Could not create canvas context.'));
       }
-
       ctx.drawImage(img, 0, 0, width, height);
-      
-      // Use JPEG with quality 0.8 to ensure smaller size, even for PNGs.
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8); 
-      cleanup();
-      resolve(dataUrl);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
     };
 
     img.onerror = () => {
-      cleanup();
-      reject(new Error("The provided file could not be loaded as an image. It may be corrupt."));
+      URL.revokeObjectURL(url);
+      reject(new Error('File could not be loaded as an image.'));
     };
 
-    img.src = imageUrl;
+    img.src = url;
   });
 };

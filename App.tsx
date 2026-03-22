@@ -131,17 +131,48 @@ const App: React.FC = () => {
         setResultType('prompt');
         try {
             const isVideo = file?.type.startsWith('video/');
-            const frames = extractedFrames.length > 0 ? extractedFrames : (isVideo ? await extractFramesFromVideo(file!, 12, p => setProgress(p*0.5)) : [videoUrl]);
+
+            // Get numeric duration for temporal annotation
+            let durationSeconds: number | undefined;
+            if (isVideo && file) {
+                try {
+                    const meta = await getVideoMetadata(file);
+                    durationSeconds = meta.duration;
+                } catch {
+                    // Non-critical — annotation will fall back to percentage-based
+                }
+            }
+
+            const frames =
+                extractedFrames.length > 0
+                    ? extractedFrames
+                    : isVideo
+                    ? await extractFramesFromVideo(file!, 16, p => setProgress(p * 0.4))
+                    : [videoUrl];
+
             setExtractedFrames(frames);
-            const result = await generateStructuredPromptFromFrames(frames, setProgressMessage, customInstruction);
+
+            const result = await generateStructuredPromptFromFrames(
+                frames,
+                setProgressMessage,
+                customInstruction,
+                durationSeconds          // ← NEW: temporal grounding
+            );
+
             setGeneratedPrompt(result.core_focus);
             setStructuredPrompt(result);
-            addToHistory({ id: Date.now().toString(), prompt: result.core_focus, structuredPrompt: result, thumbnail: frames[0], timestamp: new Date().toISOString() });
+            addToHistory({
+                id: Date.now().toString(),
+                prompt: result.core_focus,
+                structuredPrompt: result,
+                thumbnail: frames[0],
+                timestamp: new Date().toISOString(),
+            });
             setAnalysisState(AnalysisState.SUCCESS);
-        } catch (err) { 
+        } catch (err) {
             console.error(err);
-            setAnalysisState(AnalysisState.ERROR); 
-            setError('Studio intelligence encountered an error.'); 
+            setAnalysisState(AnalysisState.ERROR);
+            setError('Studio intelligence encountered an error.');
         }
     };
 
@@ -150,15 +181,35 @@ const App: React.FC = () => {
         setResultType('video_analysis');
         try {
             const isVideo = file?.type.startsWith('video/');
-            const frames = isVideo ? await extractFramesFromVideo(file!, 12, p => setProgress(p*0.5)) : [videoUrl];
+
+            let durationSeconds: number | undefined;
+            if (isVideo && file) {
+                try {
+                    const meta = await getVideoMetadata(file);
+                    durationSeconds = meta.duration;
+                } catch {
+                    // Non-critical
+                }
+            }
+
+            const frames = isVideo
+                ? await extractFramesFromVideo(file!, 16, p => setProgress(p * 0.4))
+                : [videoUrl];
+
             setExtractedFrames(frames);
-            const result = await analyzeVideoContent(frames, setProgressMessage);
+
+            const result = await analyzeVideoContent(
+                frames,
+                setProgressMessage,
+                durationSeconds          // ← NEW: temporal grounding
+            );
+
             setVideoAnalysisResult(result);
             setAnalysisState(AnalysisState.SUCCESS);
-        } catch (err) { 
+        } catch (err) {
             console.error(err);
-            setAnalysisState(AnalysisState.ERROR); 
-            setError('Analysis failed.'); 
+            setAnalysisState(AnalysisState.ERROR);
+            setError('Analysis failed.');
         }
     };
 
