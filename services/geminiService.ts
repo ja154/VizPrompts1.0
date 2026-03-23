@@ -1,7 +1,7 @@
-import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { StructuredPrompt, ConsistencyResult, PromptEvidence, EvidenceSentence } from '../types.ts';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // ---------------------------------------------------------------------------
 // SYSTEM PROMPTS
@@ -158,11 +158,12 @@ const buildAnnotatedFrameParts = (
     : '';
 
   // Build a text description of the frame sequence for temporal grounding
+  const divisor = Math.max(total - 1, 1);
   const frameList = frameDataUrls
     .map((_, i) => {
-      const pct = ((i / (total - 1)) * 100).toFixed(0);
+      const pct = ((i / divisor) * 100).toFixed(0);
       const timeHint = videoDurationHint
-        ? `@${((i / (total - 1)) * videoDurationHint).toFixed(1)}s`
+        ? `@${((i / divisor) * videoDurationHint).toFixed(1)}s`
         : `position ${pct}%`;
       return `[F${i + 1}] ${timeHint}`;
     })
@@ -234,7 +235,7 @@ const runEvidenceInventory = async (
   preamble: string
 ): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         { text: `${preamble}\n\nAnalyse each frame in order using the INVENTORY format specified.` },
@@ -243,7 +244,6 @@ const runEvidenceInventory = async (
     },
     config: {
       systemInstruction: EVIDENCE_INVENTORY_PROMPT,
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       temperature: 0.1, // Low temp — we want factual extraction, not creativity
     },
   });
@@ -256,7 +256,7 @@ const runEvidenceInventory = async (
  */
 const runContradictionCheck = async (inventory: string): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -268,7 +268,6 @@ const runContradictionCheck = async (inventory: string): Promise<string> => {
     },
     config: {
       systemInstruction: CONTRADICTION_CHECK_PROMPT,
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       temperature: 0.1,
     },
   });
@@ -289,7 +288,7 @@ const runPromptSynthesis = async (
     : '';
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -303,7 +302,6 @@ const runPromptSynthesis = async (
     },
     config: {
       systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       temperature: 0.4, // Slightly higher — allows good phrasing while staying grounded
     },
   });
@@ -358,7 +356,7 @@ export const analyzeVideoContent = async (
 
   onProgress('Pass 3 — Composing forensic report…');
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -375,7 +373,6 @@ export const analyzeVideoContent = async (
     config: {
       systemInstruction:
         'You are a senior cinematographer and visual analyst. Write for a director who wants to understand and replicate this visual style. Be precise and cite specific frames for every observation.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       temperature: 0.5,
     },
   });
@@ -392,14 +389,13 @@ export const refinePrompt = async (
   negativePrompt: string
 ): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: `Original Prompt:\n${currentPrompt}\n\nRefinement Instructions: ${userInstruction}\n\nNegative Constraints (exclude): ${negativePrompt}`,
     config: {
       systemInstruction:
         'You are a master prompt engineer. Refine the prompt per the user instructions. ' +
         'Use precise cinematic language. Output ONLY the refined prompt — no preamble, no explanation. ' +
         'Do not add details that were not already present or explicitly requested.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       temperature: 0.65,
     },
   });
@@ -416,13 +412,12 @@ export const refineJsonPrompt = async (
   negative: string
 ): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: `Current JSON Spec:\n${currentJson}\n\nRefinement: ${instruction}\n\nNegative Constraints: ${negative}`,
     config: {
       systemInstruction:
         'You are a technical visual director. Refine the JSON production spec per the instructions. ' +
         'Maintain strict JSON validity. Do not fabricate details not already present.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       responseMimeType: 'application/json',
       responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
     },
@@ -436,13 +431,12 @@ export const refineJsonPrompt = async (
 
 export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<string> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: JSON.stringify(prompt),
     config: {
       systemInstruction:
         'Convert the unstructured prompt details into a formal visual production JSON. ' +
         'Preserve all details accurately — do not add or embellish.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       responseMimeType: 'application/json',
       responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
     },
@@ -456,12 +450,11 @@ export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<str
 
 export const remixPrompt = async (prompt: string): Promise<string[]> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: `Generate 3 stylistically distinct remixes of this prompt. Keep the core subject but shift genre, era, or visual approach: ${prompt}`,
     config: {
       systemInstruction:
         'You are a creative director. Generate remixes that are meaningfully different — not just synonym swaps. Return a JSON array of 3 strings.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       responseMimeType: 'application/json',
       responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } },
     },
@@ -476,7 +469,7 @@ export const remixPrompt = async (prompt: string): Promise<string[]> => {
 export const remixVideoStyle = async (frames: string[], style: string): Promise<string> => {
   const { parts, preamble } = buildAnnotatedFrameParts(frames);
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -490,7 +483,7 @@ export const remixVideoStyle = async (frames: string[], style: string): Promise<
         ...parts,
       ],
     },
-    config: { thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH }, temperature: 0.7 },
+    config: { temperature: 0.7 },
   });
   return response.text ?? '';
 };
@@ -505,7 +498,7 @@ export const testPromptConsistency = async (
 ): Promise<ConsistencyResult> => {
   const { parts, preamble } = buildAnnotatedFrameParts(frames);
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -525,7 +518,6 @@ export const testPromptConsistency = async (
         'You are a forensic visual auditor. Be hyper-critical. ' +
         'Score 0-100 where 100 = every claim is confirmed by at least one frame. ' +
         'Deduct for unconfirmed details, not just contradictions.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,
@@ -561,7 +553,7 @@ export const testJsonConsistency = async (
 ): Promise<ConsistencyResult> => {
   const { parts, preamble } = buildAnnotatedFrameParts(frames);
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -579,7 +571,6 @@ export const testJsonConsistency = async (
       systemInstruction:
         'You are a technical visual auditor. Score 0-100 based on evidence coverage. ' +
         'Deduct for every field that cannot be verified in the frames.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       responseMimeType: 'application/json',
       responseSchema: {
         type: Type.OBJECT,
@@ -612,15 +603,14 @@ export const testJsonConsistency = async (
 
 export const generatePromptFromAnalysis = async (analysisText: string): Promise<StructuredPrompt> => {
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents:
       `Synthesise this forensic visual analysis into a production generation prompt. ` +
       `Preserve all cinematic details, lighting specifics, and subject characteristics. ` +
       `Do not add details not present in the analysis.\n\nANALYSIS:\n${analysisText}`,
     config: {
       systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-    },
+      },
   });
   return parseStructuredPrompt(response.text ?? '');
 };
@@ -643,7 +633,7 @@ export const generatePromptEvidence = async (
   // Split the core_focus into individual sentences/clauses for mapping.
   // We do this server-side to let the model decide natural boundaries.
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-pro-preview',
+    model: 'gemini-2.5-pro-preview-06-05',
     contents: {
       parts: [
         {
@@ -666,7 +656,6 @@ export const generatePromptEvidence = async (
       systemInstruction:
         'You are a forensic visual auditor. Map every prompt claim to its visual evidence with precision. ' +
         'Be conservative with confidence — only score 1.0 if the detail is unmistakably clear in the frame.',
-      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
       temperature: 0.1,
       responseMimeType: 'application/json',
       responseSchema: {

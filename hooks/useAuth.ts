@@ -20,6 +20,13 @@ const HISTORY_KEY_PREFIX = 'vizprompts_history_';
 const ACTIVE_USER_KEY = 'vizprompts_active_user';
 
 
+const hashPassword = async (password: string): Promise<string> => {
+    const msgBuffer = new TextEncoder().encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
 // Generates a simple, colorful SVG avatar based on the username.
 const generateAvatar = (username: string): string => {
     const hash = username.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
@@ -148,8 +155,8 @@ export const useAuth = () => {
         });
     };
     
-    const signup = (data: Omit<User, 'createdAt' | 'profilePicture'>): Promise<User> => {
-        return new Promise((resolve, reject) => {
+    const signup = async (data: Omit<User, 'createdAt' | 'profilePicture'>): Promise<User> => {
+        return new Promise(async (resolve, reject) => {
             if (users[data.username]) {
                 return reject(new Error('Username is already taken.'));
             }
@@ -162,8 +169,11 @@ export const useAuth = () => {
                 return reject(new Error('Password must be at least 6 characters long.'));
             }
 
+            const hashedPassword = await hashPassword(data.password);
+
             const newUser: User = {
                 ...data,
+                password: hashedPassword,
                 createdAt: new Date().toISOString(),
                 profilePicture: generateAvatar(data.username),
             };
@@ -178,8 +188,8 @@ export const useAuth = () => {
         });
     };
 
-    const login = (usernameOrEmail: string, password?: string): Promise<User> => {
-        return new Promise((resolve, reject) => {
+    const login = async (usernameOrEmail: string, password?: string): Promise<User> => {
+        return new Promise(async (resolve, reject) => {
             // FIX: Explicitly cast Object.values to User[] to ensure correct type inference
             const allUsers = Object.values(users) as User[];
             const user: User | undefined = allUsers.find(
@@ -193,12 +203,23 @@ export const useAuth = () => {
             if (user.password === undefined) {
                  return reject(new Error('This account was created with Google Sign-In. Please use Google to sign in.'));
             }
-            if (user.password !== password) {
+            
+            if (!password) {
+                return reject(new Error('Password is required.'));
+            }
+            const hashedPassword = await hashPassword(password);
+            if (user.password !== hashedPassword && user.password !== password) {
                 return reject(new Error('Invalid password.'));
             }
 
-            // Login successful: set current user and save session.
-            setCurrentUser(user);
+            // Backward compatibility: if plaintext password matched, update to hash
+            if (user.password === password) {
+                const updatedUser = { ...user, password: hashedPassword };
+                persistUsers({ ...users, [user.username]: updatedUser });
+                setCurrentUser(updatedUser);
+            } else {
+                setCurrentUser(user);
+            }
             loadHistoryForUser(user.username);
             localStorage.setItem(ACTIVE_USER_KEY, user.username);
             resolve(user);

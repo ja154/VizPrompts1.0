@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Microscope, Info, CheckCircle2, AlertCircle, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { PromptEvidence, EvidenceSentence, StructuredPrompt } from '../types.ts';
-import { generatePromptEvidence } from '../services/geminiService.ts';
+import { PromptEvidence, EvidenceSentence, StructuredPrompt } from '../types';
+import { generatePromptEvidence } from '../services/geminiService';
 import BlurryButton from './Button';
 
 // ─── Category colour tokens ────────────────────────────────────────────────
@@ -156,7 +156,7 @@ interface SentenceChipProps {
 const SentenceChip: React.FC<SentenceChipProps> = ({
   sentence, isActive, isHighlighted, isDimmed, frameCount, onClick, onHover,
 }) => {
-  const style = CATEGORY_STYLES[sentence.category];
+  const style = CATEGORY_STYLES[sentence.category] || CATEGORY_STYLES.other;
   const isUngrounded = sentence.frameIndices.length === 0;
 
   return (
@@ -365,7 +365,7 @@ const EvidenceView: React.FC<EvidenceViewProps> = ({ frames, structuredPrompt })
 
   // ── Main view ────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-[800px] overflow-y-auto scrollbar-thin pr-2">
 
       {/* Stats */}
       <StatsBar evidence={evidence!} />

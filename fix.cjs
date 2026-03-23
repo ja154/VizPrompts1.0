@@ -1,0 +1,10 @@
+const fs = require('fs');
+const path = 'services/geminiService.ts';
+let content = fs.readFileSync(path, 'utf8');
+content = content.replace(/gemini-3\.1-pro-preview/g, 'gemini-2.5-pro-preview-06-05');
+content = content.replace(/,\s*ThinkingLevel/g, '');
+content = content.replace(/ThinkingLevel,\s*/g, '');
+content = content.replace(/thinkingConfig:\s*\{\s*thinkingLevel:\s*ThinkingLevel\.HIGH\s*\},\s*/g, '');
+content = content.replace(/thinkingConfig:\s*\{\s*thinkingLevel:\s*ThinkingLevel\.HIGH\s*\}/g, '');
+fs.writeFileSync(path, content);
+console.log('Fixed geminiService.ts');

@@ -6,7 +6,7 @@ import BlurryButton from './Button';
 interface VideoAnalysisViewProps {
     file: File | null;
     videoUrl: string;
-    videoMeta: { duration: string; resolution: string } | null;
+    videoMeta: { duration: string; resolution: string; isVideo: boolean } | null;
     analysisResult: string;
     isCopied: boolean;
     handleCopy: (text: string) => void;
@@ -17,7 +17,7 @@ interface VideoAnalysisViewProps {
 const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
     file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt
 }) => {
-    const isVideo = !videoUrl.startsWith('data:image/svg+xml') && (file?.type.startsWith('video/') || !file);
+    const isVideo = videoMeta?.isVideo ?? (file?.type.startsWith('video/') || false);
 
     return (
         <div className="flex flex-col gap-8">

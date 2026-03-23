@@ -165,6 +165,7 @@ const SyntaxHighlightedTextarea: React.FC<SyntaxHighlightedTextareaProps> = ({
 
       {/* The actual, invisible textarea that handles user input */}
       <textarea
+        rows={8}
         value={value}
         onChange={onChange}
         className={`${sharedClasses} col-start-1 row-start-1 bg-transparent text-transparent caret-white focus:ring-2 focus:ring-white/20 focus:border-white/10`}

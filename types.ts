@@ -30,9 +30,11 @@ export interface StructuredPrompt {
 export interface PromptHistoryItem {
     id: string;
     prompt: string; // This will now be the core_focus
-    structuredPrompt: StructuredPrompt;
+    structuredPrompt?: StructuredPrompt;
     thumbnail: string; // Should be a full data URI: "data:image/jpeg;base64,..."
     timestamp: string;
+    isVideo?: boolean;
+    analysis?: string;
 }
 
 // New interface for the prompt consistency test result

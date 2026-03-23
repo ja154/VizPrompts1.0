@@ -147,7 +147,7 @@ const App: React.FC = () => {
                 extractedFrames.length > 0
                     ? extractedFrames
                     : isVideo
-                    ? await extractFramesFromVideo(file!, 16, p => setProgress(p * 0.4))
+                    ? await extractFramesFromVideo(file!, 16, (p, c, t) => setProgress(p * 0.4))
                     : [videoUrl];
 
             setExtractedFrames(frames);
@@ -167,6 +167,7 @@ const App: React.FC = () => {
                 structuredPrompt: result,
                 thumbnail: frames[0],
                 timestamp: new Date().toISOString(),
+                isVideo: !!isVideo,
             });
             setAnalysisState(AnalysisState.SUCCESS);
         } catch (err) {
@@ -193,7 +194,7 @@ const App: React.FC = () => {
             }
 
             const frames = isVideo
-                ? await extractFramesFromVideo(file!, 16, p => setProgress(p * 0.4))
+                ? await extractFramesFromVideo(file!, 16, (p, c, t) => setProgress(p * 0.4))
                 : [videoUrl];
 
             setExtractedFrames(frames);
@@ -205,6 +206,14 @@ const App: React.FC = () => {
             );
 
             setVideoAnalysisResult(result);
+            addToHistory({
+                id: Date.now().toString(),
+                prompt: 'Video Content Analysis',
+                analysis: result,
+                thumbnail: frames[0],
+                timestamp: new Date().toISOString(),
+                isVideo: !!isVideo,
+            });
             setAnalysisState(AnalysisState.SUCCESS);
         } catch (err) {
             console.error(err);
@@ -401,7 +410,7 @@ const App: React.FC = () => {
                                                                 setConsistencyResult(res); setIsTestingConsistency(false);
                                                             }} onCloseConsistencyModal={() => setShowConsistencyModal(false)} onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false)}} onRegenerate={handleStartAnalysis} hasOriginalFrames={extractedFrames.length > 0} error={error} isRemixing={isRemixing} remixStyle={remixStyle} setRemixStyle={setRemixStyle} handleRemixStyle={async () => {
                                                                 setIsRemixing(true); const res = await remixVideoStyle(extractedFrames, remixStyle); setGeneratedPrompt(res); setIsRemixing(false);
-                                                            }} isConvertingToJson={isConvertingToJson} onConvertToJason={async () => {
+                                                            }} isConvertingToJson={isConvertingToJson} onConvertToJSON={async () => {
                                                                 setIsConvertingToJson(true); const res = await convertPromptToJson(structuredPrompt!); setGeneratedPrompt(res); setStructuredPrompt(p => ({...p!, objective: 'JSON Format Output'})); setIsConvertingToJson(false);
                                                             }}
                                                             extractedFrames={extractedFrames}
@@ -420,7 +429,25 @@ const App: React.FC = () => {
 
                     {currentView === 'profile' && <ProfilePage />}
                     {currentView === 'settings' && <SettingsPage theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />}
-                    {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={item => { resetState(); setAnalysisState(AnalysisState.SUCCESS); setResultType('prompt'); setStructuredPrompt(item.structuredPrompt); setGeneratedPrompt(item.prompt); setVideoUrl(item.thumbnail); setCurrentView('main'); }} />}
+                    {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={item => { 
+                        resetState(); 
+                        setAnalysisState(AnalysisState.SUCCESS); 
+                        if (item.analysis) {
+                            setResultType('video_analysis');
+                            setVideoAnalysisResult(item.analysis);
+                        } else {
+                            setResultType('prompt');
+                            if (item.structuredPrompt) setStructuredPrompt(item.structuredPrompt);
+                            setGeneratedPrompt(item.prompt);
+                        }
+                        setVideoUrl(item.thumbnail); 
+                        setVideoMeta({
+                            duration: item.isVideo ? 'Restored' : 'N/A',
+                            resolution: 'Restored',
+                            isVideo: !!item.isVideo
+                        });
+                        setCurrentView('main'); 
+                    }} />}
                 </div>
             </main>
 

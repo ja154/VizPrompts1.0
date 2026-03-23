@@ -238,7 +238,7 @@ interface ResultsViewProps {
     setRemixStyle: (value: string) => void;
     handleRemixStyle: () => void;
     isConvertingToJson: boolean;
-    onConvertToJason: () => void;
+    onConvertToJSON: () => void;
     extractedFrames: string[];
 }
 
@@ -253,7 +253,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, onRegenerate, hasOriginalFrames, error,
     // FIX: Corrected duplicate destructuring of 'setRefineStyle' to 'setRemixStyle'
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
-    isConvertingToJson, onConvertToJason,
+    isConvertingToJson, onConvertToJSON,
     extractedFrames
 }) => {
     const isVideo = videoMeta?.isVideo;
@@ -291,13 +291,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                 </button>
             </div>
 
-            {activeTab === 'evidence' ? (
+            <div className={activeTab === 'evidence' ? 'block' : 'hidden'}>
                 <EvidenceView
                 frames={extractedFrames}
                 structuredPrompt={structuredPrompt!}
                 />
-            ) : (
-                <>
+            </div>
+            <div className={activeTab === 'prompt' ? 'block' : 'hidden'}>
               {/* Media Preview */}
               <div className="glassmorphic-card rounded-[2rem] p-8">
                   <h2 className="text-lg font-bold mb-6 flex items-center gap-3 uppercase tracking-widest font-heading">
@@ -436,7 +436,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         {isDetailing ? (<Loader2 className="w-4 h-4 animate-spin" />) : "Detail"}
                       </BlurryButton>
                       
-                      <BlurryButton onClick={onConvertToJason} disabled={isConvertingToJson || isJsonOutput} className="flex-1 min-w-[140px]">
+                      <BlurryButton onClick={onConvertToJSON} disabled={isConvertingToJson || isJsonOutput} className="flex-1 min-w-[140px]">
                         {isConvertingToJson ? (<Loader2 className="w-4 h-4 animate-spin" />) : "JSON"}
                       </BlurryButton>
                       
@@ -474,8 +474,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                         </BlurryButton>
                     </div>
               </div>
-            </>
-            )}
+            </div>
         </div>
         </>
     );

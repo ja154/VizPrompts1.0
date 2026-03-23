@@ -243,7 +243,7 @@ export const extractFramesFromVideo = (
 /**
  * Returns duration, width, height of a video file.
  */
-export const getVideoMetadata = (file: File): Promise<{ duration: number; width: number; height: number }> => {
+export const getVideoMetadata = (file: File): Promise<{ duration: number; width: number; height: number; isVideo: boolean }> => {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
     video.preload = 'metadata';
@@ -251,7 +251,7 @@ export const getVideoMetadata = (file: File): Promise<{ duration: number; width:
     video.src = url;
     video.onloadedmetadata = () => {
       URL.revokeObjectURL(url);
-      resolve({ duration: video.duration, width: video.videoWidth, height: video.videoHeight });
+      resolve({ duration: video.duration, width: video.videoWidth, height: video.videoHeight, isVideo: true });
     };
     video.onerror = () => {
       URL.revokeObjectURL(url);

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { PromptHistoryItem } from '../types';
-import { History, Clock, FileText, ChevronRight } from 'lucide-react';
+import { History, Clock, FileText, ChevronRight, Film } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface HistoryPageProps {
@@ -58,6 +58,11 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                                         {new Date(item.timestamp).toLocaleDateString()}
                                     </span>
                                 </div>
+                                {item.isVideo && (
+                                    <div className="absolute top-4 left-4 size-8 bg-black/60 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
+                                        <Film size={14} className="text-white" />
+                                    </div>
+                                )}
                            </div>
                            
                            <div className="p-8 flex flex-col flex-grow">
