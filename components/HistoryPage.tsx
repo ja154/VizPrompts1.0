@@ -13,21 +13,21 @@ interface HistoryPageProps {
 const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem }) => (
     <div className="max-w-6xl mx-auto">
         <header className="text-center mb-12">
-            <h2 className="text-4xl font-bold font-heading uppercase tracking-tighter mb-2">Chronicles</h2>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">Your Visual Engineering History</p>
+            <h2 className="text-4xl font-bold font-heading uppercase tracking-tighter mb-2 text-slate-900 dark:text-white">Chronicles</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-[0.3em]">Your Visual Engineering History</p>
         </header>
 
         {history.length === 0 ? (
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-24 glassmorphic-card rounded-[3rem] border border-white/5"
+                className="text-center py-24 glassmorphic-card rounded-[3rem] border border-black/5 dark:border-white/5"
             >
-                <div className="w-20 h-20 mx-auto rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6">
-                    <History className="w-10 h-10 text-slate-600" />
+                <div className="w-20 h-20 mx-auto rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center justify-center mb-6">
+                    <History className="w-10 h-10 text-slate-400 dark:text-slate-600" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No History Yet</h3>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-white">No History Yet</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest">
                     Your generated prompts will appear here.
                 </p>
             </motion.div>
@@ -39,7 +39,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className="group glassmorphic-card rounded-[2.5rem] overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-500"
+                        className="group glassmorphic-card rounded-[2.5rem] overflow-hidden border border-black/5 dark:border-white/5 hover:border-black/20 dark:hover:border-white/20 transition-all duration-500"
                     >
                         <button
                           onClick={() => onSelectHistoryItem(item)}
@@ -67,15 +67,15 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                            
                            <div className="p-8 flex flex-col flex-grow">
                                 <div className="flex items-start gap-3 mb-4">
-                                    <FileText size={16} className="text-slate-600 mt-1 flex-shrink-0" />
-                                    <p className="text-sm text-slate-300 font-medium line-clamp-3 leading-relaxed">
+                                    <FileText size={16} className="text-slate-400 dark:text-slate-600 mt-1 flex-shrink-0" />
+                                    <p className="text-sm text-slate-700 dark:text-slate-300 font-medium line-clamp-3 leading-relaxed">
                                         {item.prompt}
                                     </p>
                                 </div>
                                 
-                                <div className="mt-auto pt-6 border-t border-white/5 flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">View Details</span>
-                                    <div className="size-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white group-hover:text-background-dark transition-all duration-300">
+                                <div className="mt-auto pt-6 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">View Details</span>
+                                    <div className="size-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-300">
                                         <ChevronRight size={16} />
                                     </div>
                                 </div>

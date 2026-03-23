@@ -272,11 +272,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({
         />
         <div className="flex flex-col gap-8">
             {/* Tab switcher */}
-            <div className="flex p-1 bg-white/5 rounded-2xl border border-white/8">
+            <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/8">
                 <button
                 onClick={() => setActiveTab('prompt')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300
-                    ${activeTab === 'prompt' ? 'bg-white text-background-dark shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    ${activeTab === 'prompt' ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white'}`}
                 >
                 <Brain size={14} />
                 Prompt
@@ -284,7 +284,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                 <button
                 onClick={() => setActiveTab('evidence')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300
-                    ${activeTab === 'evidence' ? 'bg-white text-background-dark shadow-lg' : 'text-slate-400 hover:text-white'}`}
+                    ${activeTab === 'evidence' ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white'}`}
                 >
                 <Microscope size={14} />
                 Evidence
@@ -300,11 +300,11 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             <div className={activeTab === 'prompt' ? 'block' : 'hidden'}>
               {/* Media Preview */}
               <div className="glassmorphic-card rounded-[2rem] p-8">
-                  <h2 className="text-lg font-bold mb-6 flex items-center gap-3 uppercase tracking-widest font-heading">
-                      <Film className="w-5 h-5 text-white opacity-50"/>
+                  <h2 className="text-lg font-bold mb-6 flex items-center gap-3 uppercase tracking-widest font-heading text-slate-900 dark:text-white">
+                      <Film className="w-5 h-5 text-slate-900 dark:text-white opacity-50"/>
                       Media Preview
                   </h2>
-                  <div className="bg-black/40 rounded-2xl mb-6 overflow-hidden flex items-center justify-center aspect-video max-h-64 border border-white/10 shadow-inner">
+                  <div className="bg-black/40 rounded-2xl mb-6 overflow-hidden flex items-center justify-center aspect-video max-h-64 border border-black/5 dark:border-white/10 shadow-inner">
                     {isVideo ? (
                         <video src={videoUrl} controls className="w-full h-full object-contain" key={videoUrl}></video>
                     ) : (
@@ -313,14 +313,14 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     {isVideo && (
-                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
-                            <p className="font-bold text-sm">{videoMeta?.duration}</p>
+                        <div className="bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5">
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] font-bold mb-1">Duration</p>
+                            <p className="font-bold text-sm text-slate-900 dark:text-white">{videoMeta?.duration}</p>
                         </div>
                     )}
-                    <div className={`${isVideo ? 'col-span-1' : 'col-span-2'} bg-white/5 p-4 rounded-xl border border-white/5`}>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
-                      <p className="font-bold text-sm">{videoMeta?.resolution}</p>
+                    <div className={`${isVideo ? 'col-span-1' : 'col-span-2'} bg-black/5 dark:bg-white/5 p-4 rounded-xl border border-black/5 dark:border-white/5`}>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] font-bold mb-1">Resolution</p>
+                      <p className="font-bold text-sm text-slate-900 dark:text-white">{videoMeta?.resolution}</p>
                     </div>
                   </div>
               </div>
@@ -328,28 +328,28 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               {/* Analysis Results */}
               <div className="glassmorphic-card rounded-[2rem] p-8">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-lg font-bold flex items-center gap-3 uppercase tracking-widest font-heading">
-                        <Brain className="w-5 h-5 text-white opacity-50"/>
+                    <h2 className="text-lg font-bold flex items-center gap-3 uppercase tracking-widest font-heading text-slate-900 dark:text-white">
+                        <Brain className="w-5 h-5 text-slate-900 dark:text-white opacity-50"/>
                         Analysis Results
                     </h2>
                   </div>
                   <div className="space-y-8">
                     {!isJsonOutput && (
                         <div>
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Objective</h3>
-                            <div className="bg-white/5 p-5 rounded-xl border border-white/5 text-sm text-slate-300 leading-relaxed">
+                            <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-3">Objective</h3>
+                            <div className="bg-black/5 dark:bg-white/5 p-5 rounded-xl border border-black/5 dark:border-white/5 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                                 {structuredPrompt?.objective}
                             </div>
                         </div>
                     )}
                      <div>
                         <div className="flex justify-between items-center mb-3">
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Core Focus</h3>
-                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
-                                {isCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                            <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Core Focus</h3>
+                            <button onClick={() => handleCopy(generatedPrompt)} className="p-2 rounded-lg bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white transition-all">
+                                {isCopied ? <Check size={16} className="text-emerald-500 dark:text-emerald-400" /> : <Copy size={16} />}
                             </button>
                         </div>
-                        <div className="rounded-xl overflow-hidden border border-white/10">
+                        <div className="rounded-xl overflow-hidden border border-black/10 dark:border-white/10">
                             {isJsonOutput ? (
                                 <SyntaxHighlightedTextarea
                                     mode="json"
@@ -369,8 +369,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     </div>
                      {!isJsonOutput && (
                         <div>
-                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Constraints</h3>
-                            <div className="bg-white/5 p-5 rounded-xl border border-white/5 text-sm text-slate-300 whitespace-pre-wrap leading-relaxed">
+                            <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em] mb-3">Constraints</h3>
+                            <div className="bg-black/5 dark:bg-white/5 p-5 rounded-xl border border-black/5 dark:border-white/5 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
                                 {structuredPrompt?.constraints}
                             </div>
                         </div>
@@ -380,8 +380,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
               
               {/* Refine Card */}
               <div className="glassmorphic-card rounded-[2rem] p-8 relative">
-                  <h2 className="text-lg font-bold mb-8 flex items-center gap-3 uppercase tracking-widest font-heading">
-                      <Sparkles className="w-5 h-5 text-white opacity-50" />
+                  <h2 className="text-lg font-bold mb-8 flex items-center gap-3 uppercase tracking-widest font-heading text-slate-900 dark:text-white">
+                      <Sparkles className="w-5 h-5 text-slate-900 dark:text-white opacity-50" />
                       Refine Prompt
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -420,12 +420,12 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                   </div>
                   <div className="mb-8">
                     <label htmlFor="refine-instruction" className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Custom Instruction</label>
-                    <textarea id="refine-instruction" value={refineInstruction} onChange={(e) => setRefineInstruction(e.target.value)} placeholder="e.g., make it shorter, add a dragon" rows={2} className="w-full p-4 rounded-xl bg-white/5 border border-white/5 focus:border-white/20 outline-none transition-all text-sm text-white placeholder:text-slate-600"></textarea>
+                    <textarea id="refine-instruction" value={refineInstruction} onChange={(e) => setRefineInstruction(e.target.value)} placeholder="e.g., make it shorter, add a dragon" rows={2} className="w-full p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 focus:border-black/20 dark:focus:border-white/20 outline-none transition-all text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"></textarea>
                   </div>
 
-                  <div className="mb-8 border-t border-white/10 pt-8">
+                  <div className="mb-8 border-t border-black/10 dark:border-white/10 pt-8">
                     <label htmlFor="negative-prompt" className="block text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-2">Negative Prompt</label>
-                    <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-4 rounded-xl bg-white/5 border border-white/5 focus:border-white/20 outline-none transition-all text-sm text-white placeholder:text-slate-600"></textarea>
+                    <textarea id="negative-prompt" value={negativePrompt} onChange={(e) => setNegativePrompt(e.target.value)} placeholder="e.g., blurry, cartoon, extra limbs, watermark" rows={2} className="w-full p-4 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 focus:border-black/20 dark:focus:border-white/20 outline-none transition-all text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"></textarea>
                   </div>
 
                   <div className="flex flex-wrap gap-4">
@@ -453,8 +453,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
 
                 {/* Video Style Remix Card */}
               <div className="glassmorphic-card rounded-[2rem] p-8 relative">
-                    <h2 className="text-lg font-bold mb-8 flex items-center gap-3 uppercase tracking-widest font-heading">
-                        <Paintbrush className="w-5 h-5 text-white opacity-50" />
+                    <h2 className="text-lg font-bold mb-8 flex items-center gap-3 uppercase tracking-widest font-heading text-slate-900 dark:text-white">
+                        <Paintbrush className="w-5 h-5 text-slate-900 dark:text-white opacity-50" />
                         Style Remix
                     </h2>
                     <div className="grid grid-cols-1 gap-6 mb-8">

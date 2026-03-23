@@ -233,11 +233,11 @@ const App: React.FC = () => {
     ];
 
     return (
-        <div className="flex h-screen w-full transition-colors duration-500 bg-transparent text-white overflow-hidden">
+        <div className="flex h-screen w-full transition-colors duration-500 bg-transparent text-slate-900 dark:text-white overflow-hidden">
             {/* Expanded Sidebar */}
             <aside className={`fixed sm:relative z-50 h-full flex flex-col p-4 glassmorphic-sidebar transition-all duration-500 ease-in-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full sm:translate-x-0 sm:w-20 hover:w-72'} group/sidebar`}>
                 <div className="flex items-center gap-4 mb-10 px-2 overflow-hidden cursor-pointer" onClick={() => setCurrentView('main')}>
-                    <div className="size-12 bg-white text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
+                    <div className="size-12 bg-background-dark dark:bg-white text-white dark:text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
                         <Zap size={24} fill="currentColor" />
                     </div>
                     <span className="text-xl font-bold tracking-tighter transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 sm:group-hover/sidebar:opacity-100 font-heading uppercase">VizPrompts<span className="text-primary">.</span></span>
@@ -245,7 +245,7 @@ const App: React.FC = () => {
 
                 <nav className="flex-1 space-y-3">
                     {navItems.map(item => (
-                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-white text-background-dark shadow-xl shadow-white/10' : 'text-slate-300 hover:bg-white/10 hover:text-white'}`}>
+                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-xl shadow-white/10' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}>
                             <div className="shrink-0">{item.icon}</div>
                             <span className="font-bold text-sm whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">{item.label}</span>
                         </button>
@@ -253,14 +253,14 @@ const App: React.FC = () => {
                 </nav>
 
                 <div className="mt-auto space-y-4">
-                    <button onClick={() => setCurrentView('profile')} className="w-full flex items-center gap-4 p-2.5 rounded-2xl text-slate-300 hover:text-white hover:bg-white/5 transition-all group/profile">
-                        <div className="size-10 rounded-xl overflow-hidden ring-2 ring-white/10 shrink-0"><UserIcon imgSrc={currentUser?.profilePicture} className="size-full" /></div>
+                    <button onClick={() => setCurrentView('profile')} className="w-full flex items-center gap-4 p-2.5 rounded-2xl text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all group/profile">
+                        <div className="size-10 rounded-xl overflow-hidden ring-2 ring-black/10 dark:ring-white/10 shrink-0"><UserIcon imgSrc={currentUser?.profilePicture} className="size-full" /></div>
                         <div className="flex flex-col text-left opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 truncate">
                             <span className="text-sm font-bold truncate uppercase tracking-tight">{currentUser?.fullName || 'Guest User'}</span>
-                            <span className="text-[10px] text-slate-400 truncate uppercase tracking-widest">Studio Pro Plan</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate uppercase tracking-widest">Studio Pro Plan</span>
                         </div>
                     </button>
-                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-300 hover:text-rose-400 hover:bg-rose-400/10 transition-all">
+                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-400/10 transition-all">
                         <LogOut size={20} className="shrink-0" />
                         <span className="font-bold text-sm opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">Exit Studio</span>
                     </button>
@@ -269,20 +269,20 @@ const App: React.FC = () => {
 
             {/* Content Stage */}
             <main className="flex-1 overflow-y-auto scroll-smooth relative">
-                <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-background-dark/80 backdrop-blur-md z-40 border-b border-white/5">
+                <header className="flex items-center justify-between px-8 py-6 sticky top-0 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md z-40 border-b border-black/5 dark:border-white/5">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => setIsSidebarOpen(true)} className="sm:hidden text-slate-400"><Menu size={24} /></button>
-                        <nav className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                           <span className="hover:text-white cursor-pointer transition-colors" onClick={() => setCurrentView('main')}>Studio</span>
-                           <ChevronRight size={12} className="text-slate-500" />
-                           <span className="text-slate-200">{currentView}</span>
+                        <button onClick={() => setIsSidebarOpen(true)} className="sm:hidden text-slate-600 dark:text-slate-400"><Menu size={24} /></button>
+                        <nav className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                           <span className="hover:text-black dark:hover:text-white cursor-pointer transition-colors" onClick={() => setCurrentView('main')}>Studio</span>
+                           <ChevronRight size={12} className="text-slate-400 dark:text-slate-500" />
+                           <span className="text-slate-900 dark:text-slate-200">{currentView}</span>
                         </nav>
                     </div>
                     <div className="flex items-center gap-6">
                         <ThemeSwitch theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
-                        <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                            <div className="size-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Engine Online</span>
+                        <div className="hidden sm:flex items-center gap-2 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5">
+                            <div className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Engine Online</span>
                         </div>
                     </div>
                 </header>
@@ -298,47 +298,47 @@ const App: React.FC = () => {
                             {analysisState === AnalysisState.IDLE ? (
                                 <div className="space-y-16">
                                     <div className="text-center space-y-8 max-w-4xl mx-auto">
-                                        <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter leading-[1.1] text-white font-heading uppercase">
+                                        <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter leading-[1.1] text-slate-900 dark:text-white font-heading uppercase">
                                             Visual <br/>Intelligence <br/><span className="text-primary italic">for Prompters.</span>
                                         </h1>
-                                        <p className="text-lg text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
+                                        <p className="text-lg text-slate-600 dark:text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
                                             Analyze cinematic motion and high-fidelity photos to extract perfect generation prompts for Sora, Kling, and Midjourney.
                                         </p>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        <div className="md:col-span-2 group p-[1px] rounded-[2rem] bg-gradient-to-br from-white/20 via-white/5 to-transparent shadow-2xl">
-                                            <label className="block h-full bg-background-dark/40 rounded-[1.95rem] p-12 cursor-pointer hover:bg-white/5 transition-all duration-500 border border-white/5">
+                                        <div className="md:col-span-2 group p-[1px] rounded-[2rem] bg-gradient-to-br from-black/10 dark:from-white/20 via-black/5 dark:via-white/5 to-transparent shadow-2xl">
+                                            <label className="block h-full bg-white/40 dark:bg-background-dark/40 rounded-[1.95rem] p-12 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-500 border border-black/5 dark:border-white/5">
                                                 <input type="file" className="hidden" accept="video/*,image/*" onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
                                                 <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
-                                                    <div className="size-24 bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-inner border border-white/10">
-                                                        <Sparkles className="size-10 text-white" />
+                                                    <div className="size-24 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-inner border border-black/10 dark:border-white/10">
+                                                        <Sparkles className="size-10 text-slate-900 dark:text-white" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-2xl font-bold uppercase tracking-wider font-heading">Drop visual script</h3>
-                                                        <p className="text-slate-400 mt-3 font-medium tracking-wide">MP4, MOV, RAW, JPEG up to 4K resolution</p>
+                                                        <h3 className="text-2xl font-bold uppercase tracking-wider font-heading text-slate-900 dark:text-white">Drop visual script</h3>
+                                                        <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium tracking-wide">MP4, MOV, RAW, JPEG up to 4K resolution</p>
                                                     </div>
                                                 </div>
                                             </label>
                                         </div>
 
                                         <div className="flex flex-col gap-8">
-                                            <div onClick={() => setIsLibraryOpen(true)} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
-                                                <div className="size-14 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-background-dark transition-all duration-500">
+                                            <div onClick={() => setIsLibraryOpen(true)} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
+                                                <div className="size-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-900 dark:text-white mb-6 group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-500">
                                                     <Library size={24} />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2">Library</h3>
-                                                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Browse 50+ curated templates for visual consistency.</p>
+                                                    <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2 text-slate-900 dark:text-white">Library</h3>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Browse 50+ curated templates for visual consistency.</p>
                                                 </div>
                                             </div>
-                                            <div onClick={() => setCurrentView('history')} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
-                                                <div className="size-14 bg-white/5 rounded-2xl flex items-center justify-center text-white mb-6 group-hover:bg-white group-hover:text-background-dark transition-all duration-500">
+                                            <div onClick={() => setCurrentView('history')} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
+                                                <div className="size-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-900 dark:text-white mb-6 group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-500">
                                                     <History size={24} />
                                                 </div>
                                                 <div>
-                                                    <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2">History</h3>
-                                                    <p className="text-xs text-slate-400 font-medium leading-relaxed">Recover your previous visual engineering sessions.</p>
+                                                    <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2 text-slate-900 dark:text-white">History</h3>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Recover your previous visual engineering sessions.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -348,16 +348,16 @@ const App: React.FC = () => {
                             ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
                                     <div className="lg:col-span-5 space-y-8 sticky top-28">
-                                        <div className="p-2 rounded-[2rem] glassmorphic-card border-white/10 shadow-2xl">
-                                            <div className="aspect-video bg-black/40 rounded-[1.8rem] overflow-hidden ring-1 ring-white/10 shadow-inner relative flex items-center justify-center group">
+                                        <div className="p-2 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/10 shadow-2xl">
+                                            <div className="aspect-video bg-black/40 rounded-[1.8rem] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-inner relative flex items-center justify-center group">
                                                 {file?.type.startsWith('video/') ? (
                                                     <video src={videoUrl} controls className="size-full object-contain" />
                                                 ) : (
                                                     <img src={videoUrl} className="size-full object-contain" />
                                                 )}
-                                                <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/80 rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100"><X size={20} /></button>
+                                                <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/80 rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100 text-white"><X size={20} /></button>
                                             </div>
-                                            <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                            <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
                                                 <span className="truncate max-w-[200px]">{file?.name}</span>
                                                 <div className="flex gap-6">
                                                     {videoMeta?.isVideo && <span>{videoMeta?.duration}</span>}
@@ -369,17 +369,17 @@ const App: React.FC = () => {
                                         {analysisState === AnalysisState.PREVIEW && (
                                             <div className="flex flex-col gap-4">
                                                 <BlurryButton onClick={() => handleStartAnalysis()} className="!p-6 !text-lg uppercase tracking-widest font-heading"><Wand2 size={24} /> Engineer Prompt</BlurryButton>
-                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-white/5 shadow-xl text-slate-300 hover:text-white"><Brain size={24} /> Scene Analytics</BlurryButton>
+                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-black/5 dark:!bg-white/5 shadow-xl text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"><Brain size={24} /> Scene Analytics</BlurryButton>
                                             </div>
                                         )}
 
                                         {analysisState === AnalysisState.PROCESSING && (
-                                            <div className="p-10 rounded-[2.5rem] glassmorphic-card border-white/5 text-center space-y-8">
-                                                <Loader2 className="size-16 mx-auto text-white animate-spin opacity-50" />
+                                            <div className="p-10 rounded-[2.5rem] glassmorphic-card border-black/5 dark:border-white/5 text-center space-y-8">
+                                                <Loader2 className="size-16 mx-auto text-slate-900 dark:text-white animate-spin opacity-50" />
                                                 <div className="space-y-6">
-                                                    <p className="text-xl font-bold uppercase tracking-widest font-heading">{progressMessage}</p>
-                                                    <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                                                        <div className="bg-white h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{width:`${progress}%`}} />
+                                                    <p className="text-xl font-bold uppercase tracking-widest font-heading text-slate-900 dark:text-white">{progressMessage}</p>
+                                                    <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
+                                                        <div className="bg-background-dark dark:bg-white h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{width:`${progress}%`}} />
                                                     </div>
                                                 </div>
                                             </div>

@@ -48,7 +48,6 @@
     body {
         font-family: 'Space Grotesk', sans-serif;
         background-color: transparent;
-        color: #f8fafc;
         overflow-x: hidden;
     }
     h1, h2, h3, .font-heading {
@@ -56,9 +55,9 @@
     }
 
     :root {
-        --glass-bg: rgba(255, 255, 255, 0.03);
-        --glass-border: rgba(255, 255, 255, 0.05);
-        --glow-color: rgba(14, 165, 233, 0.15);
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(0, 0, 0, 0.1);
+        --glow-color: rgba(14, 165, 233, 0.1);
     }
     .dark {
         --glass-bg: rgba(15, 23, 42, 0.4);
@@ -75,16 +74,23 @@
     }
 
     .glassmorphic-sidebar {
-        background: rgba(2, 6, 23, 0.8);
+        background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border-right: 1px solid var(--glass-border);
+        transition: background 0.5s ease;
+    }
+    .dark .glassmorphic-sidebar {
+        background: rgba(2, 6, 23, 0.8);
     }
 
     .glassmorphic-input {
-        background: rgba(255, 255, 255, 0.03);
+        background: rgba(0, 0, 0, 0.03);
         border: 1px solid var(--glass-border);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .dark .glassmorphic-input {
+        background: rgba(255, 255, 255, 0.03);
     }
     .glassmorphic-input:focus {
         background: rgba(255, 255, 255, 0.05);
@@ -97,17 +103,25 @@
         position: fixed;
         inset: 0;
         z-index: -1;
-        background-color: #050b14;
+        background-color: #f8fafc;
         background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=60&w=1280&auto=format&fit=crop');
         background-size: cover;
         background-position: center;
         overflow: hidden;
+        transition: background-color 0.5s ease;
+    }
+    .dark .aurora-bg {
+        background-color: #050b14;
     }
     .aurora-bg::before {
         content: "";
         position: absolute;
         inset: 0;
-        background: rgba(2, 6, 23, 0.85); /* Darker overlay to ensure text readability without blur */
+        background: rgba(248, 250, 252, 0.8); /* Light mode overlay */
+        transition: background 0.5s ease;
+    }
+    .dark .aurora-bg::before {
+        background: rgba(2, 6, 23, 0.85); /* Dark mode overlay */
     }
     .aurora-bg::after {
         content: "";
