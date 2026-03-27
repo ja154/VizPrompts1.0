@@ -170,10 +170,17 @@ const App: React.FC = () => {
                 isVideo: !!isVideo,
             });
             setAnalysisState(AnalysisState.SUCCESS);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             setAnalysisState(AnalysisState.ERROR);
-            setError('Studio intelligence encountered an error.');
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else if (msg.includes('API KEY IS MISSING')) {
+                setError('Gemini API key is missing. Please configure it in settings.');
+            } else {
+                setError('Studio intelligence encountered an error.');
+            }
         }
     };
 
@@ -215,10 +222,15 @@ const App: React.FC = () => {
                 isVideo: !!isVideo,
             });
             setAnalysisState(AnalysisState.SUCCESS);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             setAnalysisState(AnalysisState.ERROR);
-            setError('Analysis failed.');
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else {
+                setError('Analysis failed.');
+            }
         }
     };
 
@@ -234,38 +246,106 @@ const App: React.FC = () => {
 
     return (
         <div className="flex h-screen w-full transition-colors duration-500 bg-transparent text-slate-900 dark:text-white overflow-hidden">
-            {/* Expanded Sidebar */}
-            <aside className={`fixed sm:relative z-50 h-full flex flex-col p-4 glassmorphic-sidebar transition-all duration-500 ease-in-out ${isSidebarOpen ? 'translate-x-0 w-72' : '-translate-x-full sm:translate-x-0 sm:w-20 hover:w-72'} group/sidebar`}>
-                <div className="flex items-center gap-4 mb-10 px-2 overflow-hidden cursor-pointer" onClick={() => setCurrentView('main')}>
-                    <div className="size-12 bg-background-dark dark:bg-white text-white dark:text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
-                        <Zap size={24} fill="currentColor" />
+            {/* Sidebar Stage */}
+            <AnimatePresence>
+                {isSidebarOpen && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsSidebarOpen(false)}
+                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 sm:hidden"
+                    />
+                )}
+            </AnimatePresence>
+
+            <motion.aside 
+                layout
+                className={`fixed sm:relative z-50 h-full flex flex-col p-4 glassmorphic-sidebar group/sidebar ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}`}
+                initial={false}
+                animate={{ 
+                    width: isSidebarOpen ? 288 : 80,
+                    x: isSidebarOpen ? 0 : (window.innerWidth < 640 ? -288 : 0)
+                }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                onHoverStart={() => !isSidebarOpen && window.innerWidth >= 640 && setIsSidebarOpen(true)}
+                onHoverEnd={() => isSidebarOpen && window.innerWidth >= 640 && setIsSidebarOpen(false)}
+            >
+                <div className="flex items-center justify-between mb-10 px-2">
+                    <div className="flex items-center gap-4 overflow-hidden cursor-pointer" onClick={() => setCurrentView('main')}>
+                        <div className="size-12 bg-background-dark dark:bg-white text-white dark:text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
+                            <Zap size={24} fill="currentColor" />
+                        </div>
+                        <motion.span 
+                            animate={{ opacity: isSidebarOpen ? 1 : 0 }}
+                            className="text-xl font-bold tracking-tighter font-heading uppercase whitespace-nowrap"
+                        >
+                            VizPrompts<span className="text-primary">.</span>
+                        </motion.span>
                     </div>
-                    <span className="text-xl font-bold tracking-tighter transition-opacity duration-300 opacity-0 group-hover/sidebar:opacity-100 sm:group-hover/sidebar:opacity-100 font-heading uppercase">VizPrompts<span className="text-primary">.</span></span>
+                    {isSidebarOpen && (
+                        <button onClick={() => setIsSidebarOpen(false)} className="sm:hidden p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                            <X size={20} />
+                        </button>
+                    )}
                 </div>
 
                 <nav className="flex-1 space-y-3">
-                    {navItems.map(item => (
-                        <button key={item.id} onClick={item.action || (() => setCurrentView(item.id as any))} className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${currentView === item.id ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-xl shadow-white/10' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}>
-                            <div className="shrink-0">{item.icon}</div>
-                            <span className="font-bold text-sm whitespace-nowrap opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">{item.label}</span>
-                        </button>
-                    ))}
+                    {navItems.map(item => {
+                        const isActive = currentView === item.id;
+                        return (
+                            <button 
+                                key={item.id} 
+                                onClick={item.action || (() => setCurrentView(item.id as any))} 
+                                className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/nav-item ${isActive ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-xl shadow-white/10 nav-item-active' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
+                            >
+                                <div className={`shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover/nav-item:scale-110'}`}>
+                                    {item.icon}
+                                </div>
+                                <motion.span 
+                                    animate={{ 
+                                        opacity: isSidebarOpen ? 1 : 0,
+                                        x: isSidebarOpen ? 0 : -10
+                                    }}
+                                    className="font-bold text-sm whitespace-nowrap uppercase tracking-wider"
+                                >
+                                    {item.label}
+                                </motion.span>
+                                {isActive && (
+                                    <motion.div 
+                                        layoutId="active-nav-indicator"
+                                        className="absolute left-0 w-1 h-6 bg-primary rounded-r-full"
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
                 </nav>
 
                 <div className="mt-auto space-y-4">
-                    <button onClick={() => setCurrentView('profile')} className="w-full flex items-center gap-4 p-2.5 rounded-2xl text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-all group/profile">
-                        <div className="size-10 rounded-xl overflow-hidden ring-2 ring-black/10 dark:ring-white/10 shrink-0"><UserIcon imgSrc={currentUser?.profilePicture} className="size-full" /></div>
-                        <div className="flex flex-col text-left opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 truncate">
+                    <button onClick={() => setCurrentView('profile')} className={`w-full flex items-center gap-4 p-2.5 rounded-2xl transition-all group/profile ${currentView === 'profile' ? 'bg-black/5 dark:bg-white/5' : 'text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                        <div className={`size-10 rounded-xl overflow-hidden ring-2 shrink-0 transition-all duration-300 ${currentView === 'profile' ? 'ring-primary' : 'ring-black/10 dark:ring-white/10 group-hover/profile:ring-primary/50'}`}>
+                            <UserIcon imgSrc={currentUser?.profilePicture} className="size-full" />
+                        </div>
+                        <motion.div 
+                            animate={{ opacity: isSidebarOpen ? 1 : 0 }}
+                            className="flex flex-col text-left truncate"
+                        >
                             <span className="text-sm font-bold truncate uppercase tracking-tight">{currentUser?.fullName || 'Guest User'}</span>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate uppercase tracking-widest">Studio Pro Plan</span>
-                        </div>
+                        </motion.div>
                     </button>
-                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-400/10 transition-all">
-                        <LogOut size={20} className="shrink-0" />
-                        <span className="font-bold text-sm opacity-0 group-hover/sidebar:opacity-100 transition-opacity duration-300 uppercase tracking-wider">Exit Studio</span>
+                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-400/10 transition-all group/logout">
+                        <LogOut size={20} className="shrink-0 transition-transform group-hover/logout:-translate-x-1" />
+                        <motion.span 
+                            animate={{ opacity: isSidebarOpen ? 1 : 0 }}
+                            className="font-bold text-sm uppercase tracking-wider whitespace-nowrap"
+                        >
+                            Exit Studio
+                        </motion.span>
                     </button>
                 </div>
-            </aside>
+            </motion.aside>
 
             {/* Content Stage */}
             <main className="flex-1 overflow-y-auto scroll-smooth relative">
@@ -381,6 +461,26 @@ const App: React.FC = () => {
                                                     <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
                                                         <div className="bg-background-dark dark:bg-white h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{width:`${progress}%`}} />
                                                     </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {analysisState === AnalysisState.ERROR && (
+                                            <div className="p-10 rounded-[2.5rem] glassmorphic-card border-rose-500/20 dark:border-rose-500/30 bg-rose-500/5 text-center space-y-8">
+                                                <div className="size-16 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500">
+                                                    <X size={32} />
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <h3 className="text-2xl font-bold uppercase tracking-wider font-heading text-slate-900 dark:text-white">Analysis Interrupted</h3>
+                                                    <p className="text-slate-600 dark:text-slate-400 font-medium max-w-md mx-auto">{error || 'Studio intelligence encountered an unexpected error.'}</p>
+                                                </div>
+                                                <div className="flex flex-col gap-3">
+                                                    <BlurryButton onClick={() => handleStartAnalysis()} className="!bg-rose-500 !text-white hover:!bg-rose-600">
+                                                        <Zap size={20} /> Retry Intelligence
+                                                    </BlurryButton>
+                                                    <button onClick={resetState} className="text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                                        Cancel & Start Over
+                                                    </button>
                                                 </div>
                                             </div>
                                         )}

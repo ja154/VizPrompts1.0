@@ -1,7 +1,40 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { StructuredPrompt, ConsistencyResult, PromptEvidence, EvidenceSentence } from '../types.ts';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const getAI = () => {
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('Gemini API key is missing. Please configure it in settings or select a key.');
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
+/**
+ * Helper to execute Gemini API calls with exponential backoff for 429, 500, 502, 503, 504 errors.
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> {
+  let lastError: any;
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      const errorMessage = error?.message?.toUpperCase() || '';
+      const isQuotaError = errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED');
+      const isServerError = errorMessage.includes('500') || errorMessage.includes('502') || errorMessage.includes('503') || errorMessage.includes('504') || errorMessage.includes('INTERNAL_ERROR') || errorMessage.includes('UNAVAILABLE');
+      
+      if ((isQuotaError || isServerError) && i < maxRetries) {
+        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+        const type = isQuotaError ? 'Quota exceeded' : 'Server error';
+        console.warn(`${type}. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
 
 // ---------------------------------------------------------------------------
 // SYSTEM PROMPTS
@@ -234,20 +267,23 @@ const runEvidenceInventory = async (
   frameParts: Array<{ inlineData: { mimeType: string; data: string } }>,
   preamble: string
 ): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        { text: `${preamble}\n\nAnalyse each frame in order using the INVENTORY format specified.` },
-        ...frameParts,
-      ],
-    },
-    config: {
-      systemInstruction: EVIDENCE_INVENTORY_PROMPT,
-      temperature: 0.1, // Low temp — we want factual extraction, not creativity
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          { text: `${preamble}\n\nAnalyse each frame in order using the INVENTORY format specified.` },
+          ...frameParts,
+        ],
+      },
+      config: {
+        systemInstruction: EVIDENCE_INVENTORY_PROMPT,
+        temperature: 0.1, // Low temp — we want factual extraction, not creativity
+      },
+    });
+    return response.text ?? '';
   });
-  return response.text ?? '';
 };
 
 /**
@@ -255,23 +291,26 @@ const runEvidenceInventory = async (
  * Returns raw text — will be fed into Pass 3.
  */
 const runContradictionCheck = async (inventory: string): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `Here is the frame-by-frame visual inventory:\n\n${inventory}\n\n` +
-            `Now perform the cross-frame analysis: identify invariants, variables, contradictions, ambiguities, and temporal arc.`,
-        },
-      ],
-    },
-    config: {
-      systemInstruction: CONTRADICTION_CHECK_PROMPT,
-      temperature: 0.1,
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `Here is the frame-by-frame visual inventory:\n\n${inventory}\n\n` +
+              `Now perform the cross-frame analysis: identify invariants, variables, contradictions, ambiguities, and temporal arc.`,
+          },
+        ],
+      },
+      config: {
+        systemInstruction: CONTRADICTION_CHECK_PROMPT,
+        temperature: 0.1,
+      },
+    });
+    return response.text ?? '';
   });
-  return response.text ?? '';
 };
 
 /**
@@ -287,25 +326,28 @@ const runPromptSynthesis = async (
     ? `\n\nUSER GUIDANCE (apply while respecting evidence constraints): ${userInstructions}`
     : '';
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `FRAME INVENTORY:\n${inventory}\n\n` +
-            `CONTRADICTION ANALYSIS:\n${contradictionAnalysis}\n\n` +
-            `Now synthesise the evidence into a production prompt following the required XML structure.` +
-            instructionBlock,
-        },
-      ],
-    },
-    config: {
-      systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-      temperature: 0.4, // Slightly higher — allows good phrasing while staying grounded
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `FRAME INVENTORY:\n${inventory}\n\n` +
+              `CONTRADICTION ANALYSIS:\n${contradictionAnalysis}\n\n` +
+              `Now synthesise the evidence into a production prompt following the required XML structure.` +
+              instructionBlock,
+          },
+        ],
+      },
+      config: {
+        systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
+        temperature: 0.4, // Slightly higher — allows good phrasing while staying grounded
+      },
+    });
+    return response.text ?? '';
   });
-  return response.text ?? '';
 };
 
 // ---------------------------------------------------------------------------
@@ -355,28 +397,31 @@ export const analyzeVideoContent = async (
   const contradictions = await runContradictionCheck(inventory);
 
   onProgress('Pass 3 — Composing forensic report…');
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `FRAME INVENTORY:\n${inventory}\n\n` +
-            `CROSS-FRAME ANALYSIS:\n${contradictions}\n\n` +
-            `Write a comprehensive forensic scene analysis report. ` +
-            `Include: scene structure, visual storytelling, cinematographic choices, ` +
-            `lighting philosophy, color strategy, subject behaviour, temporal arc, ` +
-            `and production context inferences. Be specific and cite frame numbers.`,
-        },
-      ],
-    },
-    config: {
-      systemInstruction:
-        'You are a senior cinematographer and visual analyst. Write for a director who wants to understand and replicate this visual style. Be precise and cite specific frames for every observation.',
-      temperature: 0.5,
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `FRAME INVENTORY:\n${inventory}\n\n` +
+              `CROSS-FRAME ANALYSIS:\n${contradictions}\n\n` +
+              `Write a comprehensive forensic scene analysis report. ` +
+              `Include: scene structure, visual storytelling, cinematographic choices, ` +
+              `lighting philosophy, color strategy, subject behaviour, temporal arc, ` +
+              `and production context inferences. Be specific and cite frame numbers.`,
+          },
+        ],
+      },
+      config: {
+        systemInstruction:
+          'You are a senior cinematographer and visual analyst. Write for a director who wants to understand and replicate this visual style. Be precise and cite specific frames for every observation.',
+        temperature: 0.5,
+      },
+    });
+    return response.text ?? '';
   });
-  return response.text ?? '';
 };
 
 // ---------------------------------------------------------------------------
@@ -388,18 +433,21 @@ export const refinePrompt = async (
   userInstruction: string,
   negativePrompt: string
 ): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: `Original Prompt:\n${currentPrompt}\n\nRefinement Instructions: ${userInstruction}\n\nNegative Constraints (exclude): ${negativePrompt}`,
-    config: {
-      systemInstruction:
-        'You are a master prompt engineer. Refine the prompt per the user instructions. ' +
-        'Use precise cinematic language. Output ONLY the refined prompt — no preamble, no explanation. ' +
-        'Do not add details that were not already present or explicitly requested.',
-      temperature: 0.65,
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Original Prompt:\n${currentPrompt}\n\nRefinement Instructions: ${userInstruction}\n\nNegative Constraints (exclude): ${negativePrompt}`,
+      config: {
+        systemInstruction:
+          'You are a master prompt engineer. Refine the prompt per the user instructions. ' +
+          'Use precise cinematic language. Output ONLY the refined prompt — no preamble, no explanation. ' +
+          'Do not add details that were not already present or explicitly requested.',
+        temperature: 0.65,
+      },
+    });
+    return response.text?.trim() ?? currentPrompt;
   });
-  return response.text?.trim() ?? currentPrompt;
 };
 
 // ---------------------------------------------------------------------------
@@ -411,18 +459,21 @@ export const refineJsonPrompt = async (
   instruction: string,
   negative: string
 ): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: `Current JSON Spec:\n${currentJson}\n\nRefinement: ${instruction}\n\nNegative Constraints: ${negative}`,
-    config: {
-      systemInstruction:
-        'You are a technical visual director. Refine the JSON production spec per the instructions. ' +
-        'Maintain strict JSON validity. Do not fabricate details not already present.',
-      responseMimeType: 'application/json',
-      responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Current JSON Spec:\n${currentJson}\n\nRefinement: ${instruction}\n\nNegative Constraints: ${negative}`,
+      config: {
+        systemInstruction:
+          'You are a technical visual director. Refine the JSON production spec per the instructions. ' +
+          'Maintain strict JSON validity. Do not fabricate details not already present.',
+        responseMimeType: 'application/json',
+        responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
+      },
+    });
+    return JSON.stringify(JSON.parse(response.text ?? '{}'), null, 2);
   });
-  return JSON.stringify(JSON.parse(response.text ?? '{}'), null, 2);
 };
 
 // ---------------------------------------------------------------------------
@@ -430,18 +481,21 @@ export const refineJsonPrompt = async (
 // ---------------------------------------------------------------------------
 
 export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<string> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: JSON.stringify(prompt),
-    config: {
-      systemInstruction:
-        'Convert the unstructured prompt details into a formal visual production JSON. ' +
-        'Preserve all details accurately — do not add or embellish.',
-      responseMimeType: 'application/json',
-      responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: JSON.stringify(prompt),
+      config: {
+        systemInstruction:
+          'Convert the unstructured prompt details into a formal visual production JSON. ' +
+          'Preserve all details accurately — do not add or embellish.',
+        responseMimeType: 'application/json',
+        responseSchema: VIDEO_PRODUCTION_JSON_SCHEMA,
+      },
+    });
+    return JSON.stringify(JSON.parse(response.text ?? '{}'), null, 2);
   });
-  return JSON.stringify(JSON.parse(response.text ?? '{}'), null, 2);
 };
 
 // ---------------------------------------------------------------------------
@@ -449,17 +503,20 @@ export const convertPromptToJson = async (prompt: StructuredPrompt): Promise<str
 // ---------------------------------------------------------------------------
 
 export const remixPrompt = async (prompt: string): Promise<string[]> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: `Generate 3 stylistically distinct remixes of this prompt. Keep the core subject but shift genre, era, or visual approach: ${prompt}`,
-    config: {
-      systemInstruction:
-        'You are a creative director. Generate remixes that are meaningfully different — not just synonym swaps. Return a JSON array of 3 strings.',
-      responseMimeType: 'application/json',
-      responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } },
-    },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Generate 3 stylistically distinct remixes of this prompt. Keep the core subject but shift genre, era, or visual approach: ${prompt}`,
+      config: {
+        systemInstruction:
+          'You are a creative director. Generate remixes that are meaningfully different — not just synonym swaps. Return a JSON array of 3 strings.',
+        responseMimeType: 'application/json',
+        responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } },
+      },
+    });
+    return JSON.parse(response.text ?? '[]');
   });
-  return JSON.parse(response.text ?? '[]');
 };
 
 // ---------------------------------------------------------------------------
@@ -468,24 +525,27 @@ export const remixPrompt = async (prompt: string): Promise<string[]> => {
 
 export const remixVideoStyle = async (frames: string[], style: string): Promise<string> => {
   const { parts, preamble } = buildAnnotatedFrameParts(frames);
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `${preamble}\n\n` +
-            `Re-imagine this scene in the visual style of: "${style}". ` +
-            `Describe what the scene would look like — lighting, color grading, texture, atmosphere — ` +
-            `while keeping the same subject matter and composition. ` +
-            `Output a production-ready generation prompt.`,
-        },
-        ...parts,
-      ],
-    },
-    config: { temperature: 0.7 },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `${preamble}\n\n` +
+              `Re-imagine this scene in the visual style of: "${style}". ` +
+              `Describe what the scene would look like — lighting, color grading, texture, atmosphere — ` +
+              `while keeping the same subject matter and composition. ` +
+              `Output a production-ready generation prompt.`,
+          },
+          ...parts,
+        ],
+      },
+      config: { temperature: 0.7 },
+    });
+    return response.text ?? '';
   });
-  return response.text ?? '';
 };
 
 // ---------------------------------------------------------------------------
@@ -497,50 +557,53 @@ export const testPromptConsistency = async (
   frames: string[]
 ): Promise<ConsistencyResult> => {
   const { parts, preamble } = buildAnnotatedFrameParts(frames);
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `${preamble}\n\n` +
-            `PROMPT TO AUDIT:\n${prompt}\n\n` +
-            `Perform a rigorous consistency audit. For every claim in the prompt, ` +
-            `determine if it is: (A) confirmed by specific frames, (B) not visible in any frame, ` +
-            `or (C) contradicted by at least one frame. ` +
-            `Produce a scored report and a revised, fully evidence-grounded version of the prompt.`,
-        },
-        ...parts,
-      ],
-    },
-    config: {
-      systemInstruction:
-        'You are a forensic visual auditor. Be hyper-critical. ' +
-        'Score 0-100 where 100 = every claim is confirmed by at least one frame. ' +
-        'Deduct for unconfirmed details, not just contradictions.',
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          reasoning: {
-            type: Type.OBJECT,
-            properties: {
-              analysis_of_prompt: { type: Type.STRING },
-              analysis_of_media:  { type: Type.STRING },
-              comparison:         { type: Type.STRING },
-            },
-            required: ['analysis_of_prompt', 'analysis_of_media', 'comparison'],
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `${preamble}\n\n` +
+              `PROMPT TO AUDIT:\n${prompt}\n\n` +
+              `Perform a rigorous consistency audit. For every claim in the prompt, ` +
+              `determine if it is: (A) confirmed by specific frames, (B) not visible in any frame, ` +
+              `or (C) contradicted by at least one frame. ` +
+              `Produce a scored report and a revised, fully evidence-grounded version of the prompt.`,
           },
-          consistency_score: { type: Type.INTEGER },
-          explanation:        { type: Type.STRING },
-          missing_details:    { type: Type.ARRAY, items: { type: Type.STRING } },
-          revised_output:     { type: Type.STRING },
-        },
-        required: ['reasoning', 'consistency_score', 'explanation', 'missing_details', 'revised_output'],
+          ...parts,
+        ],
       },
-    },
+      config: {
+        systemInstruction:
+          'You are a forensic visual auditor. Be hyper-critical. ' +
+          'Score 0-100 where 100 = every claim is confirmed by at least one frame. ' +
+          'Deduct for unconfirmed details, not just contradictions.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            reasoning: {
+              type: Type.OBJECT,
+              properties: {
+                analysis_of_prompt: { type: Type.STRING },
+                analysis_of_media:  { type: Type.STRING },
+                comparison:         { type: Type.STRING },
+              },
+              required: ['analysis_of_prompt', 'analysis_of_media', 'comparison'],
+            },
+            consistency_score: { type: Type.INTEGER },
+            explanation:        { type: Type.STRING },
+            missing_details:    { type: Type.ARRAY, items: { type: Type.STRING } },
+            revised_output:     { type: Type.STRING },
+          },
+          required: ['reasoning', 'consistency_score', 'explanation', 'missing_details', 'revised_output'],
+        },
+      },
+    });
+    return JSON.parse(response.text ?? '{}');
   });
-  return JSON.parse(response.text ?? '{}');
 };
 
 // ---------------------------------------------------------------------------
@@ -552,49 +615,52 @@ export const testJsonConsistency = async (
   frames: string[]
 ): Promise<ConsistencyResult> => {
   const { parts, preamble } = buildAnnotatedFrameParts(frames);
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `${preamble}\n\n` +
-            `JSON SPEC TO AUDIT:\n${json}\n\n` +
-            `For every field in the JSON spec, determine if its value is confirmed, ` +
-            `unconfirmed, or contradicted by the provided frames. ` +
-            `Produce a scored report and a fully evidence-grounded revised spec.`,
-        },
-        ...parts,
-      ],
-    },
-    config: {
-      systemInstruction:
-        'You are a technical visual auditor. Score 0-100 based on evidence coverage. ' +
-        'Deduct for every field that cannot be verified in the frames.',
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          reasoning: {
-            type: Type.OBJECT,
-            properties: {
-              analysis_of_prompt: { type: Type.STRING },
-              analysis_of_media:  { type: Type.STRING },
-              comparison:         { type: Type.STRING },
-            },
-            required: ['analysis_of_prompt', 'analysis_of_media', 'comparison'],
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `${preamble}\n\n` +
+              `JSON SPEC TO AUDIT:\n${json}\n\n` +
+              `For every field in the JSON spec, determine if its value is confirmed, ` +
+              `unconfirmed, or contradicted by the provided frames. ` +
+              `Produce a scored report and a fully evidence-grounded revised spec.`,
           },
-          consistency_score: { type: Type.INTEGER },
-          explanation:        { type: Type.STRING },
-          missing_details:    { type: Type.ARRAY, items: { type: Type.STRING } },
-          revised_output:     VIDEO_PRODUCTION_JSON_SCHEMA,
-        },
-        required: ['reasoning', 'consistency_score', 'explanation', 'missing_details', 'revised_output'],
+          ...parts,
+        ],
       },
-    },
+      config: {
+        systemInstruction:
+          'You are a technical visual auditor. Score 0-100 based on evidence coverage. ' +
+          'Deduct for every field that cannot be verified in the frames.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            reasoning: {
+              type: Type.OBJECT,
+              properties: {
+                analysis_of_prompt: { type: Type.STRING },
+                analysis_of_media:  { type: Type.STRING },
+                comparison:         { type: Type.STRING },
+              },
+              required: ['analysis_of_prompt', 'analysis_of_media', 'comparison'],
+            },
+            consistency_score: { type: Type.INTEGER },
+            explanation:        { type: Type.STRING },
+            missing_details:    { type: Type.ARRAY, items: { type: Type.STRING } },
+            revised_output:     VIDEO_PRODUCTION_JSON_SCHEMA,
+          },
+          required: ['reasoning', 'consistency_score', 'explanation', 'missing_details', 'revised_output'],
+        },
+      },
+    });
+    const raw = JSON.parse(response.text ?? '{}');
+    return { ...raw, revised_output: JSON.stringify(raw.revised_output, null, 2) };
   });
-  const raw = JSON.parse(response.text ?? '{}');
-  return { ...raw, revised_output: JSON.stringify(raw.revised_output, null, 2) };
 };
 
 // ---------------------------------------------------------------------------
@@ -602,17 +668,20 @@ export const testJsonConsistency = async (
 // ---------------------------------------------------------------------------
 
 export const generatePromptFromAnalysis = async (analysisText: string): Promise<StructuredPrompt> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents:
-      `Synthesise this forensic visual analysis into a production generation prompt. ` +
-      `Preserve all cinematic details, lighting specifics, and subject characteristics. ` +
-      `Do not add details not present in the analysis.\n\nANALYSIS:\n${analysisText}`,
-    config: {
-      systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
-      },
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents:
+        `Synthesise this forensic visual analysis into a production generation prompt. ` +
+        `Preserve all cinematic details, lighting specifics, and subject characteristics. ` +
+        `Do not add details not present in the analysis.\n\nANALYSIS:\n${analysisText}`,
+      config: {
+        systemInstruction: MEDIA_ANALYZER_SYSTEM_PROMPT,
+        },
+    });
+    return parseStructuredPrompt(response.text ?? '');
   });
-  return parseStructuredPrompt(response.text ?? '');
 };
 
 /**
@@ -632,87 +701,90 @@ export const generatePromptEvidence = async (
 
   // Split the core_focus into individual sentences/clauses for mapping.
   // We do this server-side to let the model decide natural boundaries.
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro-preview-06-05',
-    contents: {
-      parts: [
-        {
-          text:
-            `${preamble}\n\n` +
-            `PROMPT CORE_FOCUS:\n${coreFocus}\n\n` +
-            `For every distinct claim or descriptor in the prompt above, identify:\n` +
-            `1. The exact text of the claim (a sentence, clause, or keyword group)\n` +
-            `2. Which frame(s) directly support that claim (use the [F1], [F2]… labels)\n` +
-            `3. A confidence score 0.0–1.0 (1.0 = claim is unmistakably visible in those frames)\n` +
-            `4. The category of the claim\n\n` +
-            `If a claim cannot be traced to any frame, set frameIndices to [] and confidence to 0.0.\n` +
-            `Split compound sentences into individual claims where possible.\n` +
-            `Return ALL claims — do not skip any part of the prompt.`,
-        },
-        ...parts,
-      ],
-    },
-    config: {
-      systemInstruction:
-        'You are a forensic visual auditor. Map every prompt claim to its visual evidence with precision. ' +
-        'Be conservative with confidence — only score 1.0 if the detail is unmistakably clear in the frame.',
-      temperature: 0.1,
-      responseMimeType: 'application/json',
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          mappings: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                text:          { type: Type.STRING, description: 'The exact claim text from the prompt.' },
-                frame_numbers: {
-                  type: Type.ARRAY,
-                  items: { type: Type.INTEGER },
-                  description: '1-based frame numbers (F1=1, F2=2...) that support this claim.',
+  return withRetry(async () => {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-pro-preview',
+      contents: {
+        parts: [
+          {
+            text:
+              `${preamble}\n\n` +
+              `PROMPT CORE_FOCUS:\n${coreFocus}\n\n` +
+              `For every distinct claim or descriptor in the prompt above, identify:\n` +
+              `1. The exact text of the claim (a sentence, clause, or keyword group)\n` +
+              `2. Which frame(s) directly support that claim (use the [F1], [F2]… labels)\n` +
+              `3. A confidence score 0.0–1.0 (1.0 = claim is unmistakably visible in those frames)\n` +
+              `4. The category of the claim\n\n` +
+              `If a claim cannot be traced to any frame, set frameIndices to [] and confidence to 0.0.\n` +
+              `Split compound sentences into individual claims where possible.\n` +
+              `Return ALL claims — do not skip any part of the prompt.`,
+          },
+          ...parts,
+        ],
+      },
+      config: {
+        systemInstruction:
+          'You are a forensic visual auditor. Map every prompt claim to its visual evidence with precision. ' +
+          'Be conservative with confidence — only score 1.0 if the detail is unmistakably clear in the frame.',
+        temperature: 0.1,
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            mappings: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  text:          { type: Type.STRING, description: 'The exact claim text from the prompt.' },
+                  frame_numbers: {
+                    type: Type.ARRAY,
+                    items: { type: Type.INTEGER },
+                    description: '1-based frame numbers (F1=1, F2=2...) that support this claim.',
+                  },
+                  confidence: { type: Type.NUMBER, description: '0.0 to 1.0' },
+                  category: {
+                    type: Type.STRING,
+                    enum: ['subject', 'environment', 'cinematography', 'lighting', 'color', 'motion', 'detail', 'other'],
+                  },
                 },
-                confidence: { type: Type.NUMBER, description: '0.0 to 1.0' },
-                category: {
-                  type: Type.STRING,
-                  enum: ['subject', 'environment', 'cinematography', 'lighting', 'color', 'motion', 'detail', 'other'],
-                },
+                required: ['text', 'frame_numbers', 'confidence', 'category'],
               },
-              required: ['text', 'frame_numbers', 'confidence', 'category'],
             },
           },
+          required: ['mappings'],
         },
-        required: ['mappings'],
       },
-    },
-  });
-
-  type RawMapping = {
-    text: string;
-    frame_numbers: number[];
-    confidence: number;
-    category: EvidenceSentence['category'];
-  };
-
-  const raw: { mappings: RawMapping[] } = JSON.parse(response.text ?? '{"mappings":[]}');
-
-  // Build sentences array (0-based frame indices)
-  const sentences: EvidenceSentence[] = raw.mappings.map((m, i) => ({
-    id: `s${i}`,
-    text: m.text,
-    frameIndices: m.frame_numbers.map(n => n - 1), // convert 1-based → 0-based
-    confidence: Math.min(1, Math.max(0, m.confidence)),
-    category: m.category ?? 'other',
-  }));
-
-  // Build inverted index: frameIndex → sentenceIds
-  const frameIndex: Record<number, string[]> = {};
-  sentences.forEach(s => {
-    s.frameIndices.forEach(fi => {
-      if (!frameIndex[fi]) frameIndex[fi] = [];
-      frameIndex[fi].push(s.id);
     });
-  });
 
-  return { sentences, frameIndex };
+    type RawMapping = {
+      text: string;
+      frame_numbers: number[];
+      confidence: number;
+      category: EvidenceSentence['category'];
+    };
+
+    const raw: { mappings: RawMapping[] } = JSON.parse(response.text ?? '{"mappings":[]}');
+
+    // Build sentences array (0-based frame indices)
+    const sentences: EvidenceSentence[] = raw.mappings.map((m, i) => ({
+      id: `s${i}`,
+      text: m.text,
+      frameIndices: m.frame_numbers.map(n => n - 1), // convert 1-based → 0-based
+      confidence: Math.min(1, Math.max(0, m.confidence)),
+      category: m.category ?? 'other',
+    }));
+
+    // Build inverted index: frameIndex → sentenceIds
+    const frameIndex: Record<number, string[]> = {};
+    sentences.forEach(s => {
+      s.frameIndices.forEach(fi => {
+        if (!frameIndex[fi]) frameIndex[fi] = [];
+        frameIndex[fi].push(s.id);
+      });
+    });
+
+    return { sentences, frameIndex };
+  });
 };
