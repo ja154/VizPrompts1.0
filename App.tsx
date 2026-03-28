@@ -234,6 +234,120 @@ const App: React.FC = () => {
         }
     };
 
+    const handleRefinePrompt = async (mode: 'refine' | 'detail') => {
+        const isJson = structuredPrompt?.objective === 'JSON Format Output';
+        const inst = mode === 'detail' 
+            ? 'Expand this prompt with extreme production-level detail. Focus on micro-textures, cinematic lighting nuances, specific camera lens characteristics, and atmospheric depth.' 
+            : `Tone: ${refineTone}, Style: ${refineStyle}, Camera: ${refineCamera}, Light: ${refineLighting}. ${refineInstruction}`;
+        
+        mode === 'detail' ? setIsDetailing(true) : setIsRefining(true);
+        setError(''); // Clear previous errors
+
+        try {
+            const res = isJson 
+                ? await refineJsonPrompt(generatedPrompt, inst, negativePrompt) 
+                : await refinePrompt(generatedPrompt, inst, negativePrompt);
+            setGeneratedPrompt(res);
+        } catch (err: any) {
+            console.error(err);
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else {
+                setError('Failed to refine prompt. Please try again.');
+            }
+        } finally {
+            setIsDetailing(false);
+            setIsRefining(false);
+        }
+    };
+
+    const handleTestConsistency = async () => {
+        setIsTestingConsistency(true);
+        setShowConsistencyModal(true);
+        setError(''); // Clear previous errors
+
+        try {
+            const res = structuredPrompt?.objective === 'JSON Format Output' 
+                ? await testJsonConsistency(generatedPrompt, extractedFrames) 
+                : await testPromptConsistency(generatedPrompt, extractedFrames);
+            setConsistencyResult(res);
+        } catch (err: any) {
+            console.error(err);
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else {
+                setError('Consistency test failed.');
+            }
+        } finally {
+            setIsTestingConsistency(false);
+        }
+    };
+
+    const handleRemixStyleAction = async () => {
+        setIsRemixing(true);
+        setError(''); // Clear previous errors
+
+        try {
+            const res = await remixVideoStyle(extractedFrames, remixStyle);
+            setGeneratedPrompt(res);
+        } catch (err: any) {
+            console.error(err);
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else {
+                setError('Style remix failed.');
+            }
+        } finally {
+            setIsRemixing(false);
+        }
+    };
+
+    const handleConvertToJSONAction = async () => {
+        setIsConvertingToJson(true);
+        setError(''); // Clear previous errors
+
+        try {
+            const res = await convertPromptToJson(structuredPrompt!);
+            setGeneratedPrompt(res);
+            setStructuredPrompt(p => ({...p!, objective: 'JSON Format Output'}));
+        } catch (err: any) {
+            console.error(err);
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else {
+                setError('Conversion to JSON failed.');
+            }
+        } finally {
+            setIsConvertingToJson(false);
+        }
+    };
+
+    const handleGeneratePromptFromAnalysisAction = async () => {
+        setIsGeneratingPromptFromAnalysis(true);
+        setError(''); // Clear previous errors
+
+        try {
+            const res = await generatePromptFromAnalysis(videoAnalysisResult!);
+            setGeneratedPrompt(res.core_focus);
+            setStructuredPrompt(res);
+            setResultType('prompt');
+        } catch (err: any) {
+            console.error(err);
+            const msg = err?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setError('Studio quota exceeded. Please wait a moment and try again.');
+            } else {
+                setError('Failed to generate prompt from analysis.');
+            }
+        } finally {
+            setIsGeneratingPromptFromAnalysis(false);
+        }
+    };
+
     if (isAuthLoading) return <div className="h-screen flex items-center justify-center bg-background-dark"><SpinnerIcon className="size-10 text-primary" /></div>;
     if (!currentUser && !hasEnteredAsGuest) return <LoginPage onGuestAccess={() => setHasEnteredAsGuest(true)} />;
 
@@ -497,27 +611,61 @@ const App: React.FC = () => {
                                                 >
                                                     {resultType === 'prompt' ? (
                                                         <ResultsView 
-                                                            file={file} videoUrl={videoUrl} videoMeta={videoMeta} generatedPrompt={generatedPrompt} structuredPrompt={structuredPrompt} isCopied={isCopied} isRefining={isRefining} isDetailing={isDetailing} refineTone={refineTone} refineStyle={refineStyle} refineCamera={refineCamera} refineLighting={refineLighting} refineInstruction={refineInstruction} negativePrompt={negativePrompt} setNegativePrompt={setNegativePrompt} handlePromptChange={e => setGeneratedPrompt(e.target.value)} handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} handleRefinePrompt={async m => {
-                                                                const isJson = structuredPrompt?.objective === 'JSON Format Output';
-                                                                const inst = m === 'detail' ? 'Expand this prompt with extreme production-level detail. Focus on micro-textures, cinematic lighting nuances, specific camera lens characteristics, and atmospheric depth.' : `Tone: ${refineTone}, Style: ${refineStyle}, Camera: ${refineCamera}, Light: ${refineLighting}. ${refineInstruction}`;
-                                                                m === 'detail' ? setIsDetailing(true) : setIsRefining(true);
-                                                                const res = isJson ? await refineJsonPrompt(generatedPrompt, inst, negativePrompt) : await refinePrompt(generatedPrompt, inst, negativePrompt);
-                                                                setGeneratedPrompt(res);
-                                                                setIsDetailing(false); setIsRefining(false);
-                                                            }} setRefineTone={setRefineTone} setRefineStyle={setRefineStyle} setRefineCamera={setRefineCamera} setRefineLighting={setRefineLighting} setRefineInstruction={setRefineInstruction} isTestingConsistency={isTestingConsistency} consistencyResult={consistencyResult} showConsistencyModal={showConsistencyModal} onTestConsistency={async () => {
-                                                                setIsTestingConsistency(true); setShowConsistencyModal(true);
-                                                                const res = structuredPrompt?.objective === 'JSON Format Output' ? await testJsonConsistency(generatedPrompt, extractedFrames) : await testPromptConsistency(generatedPrompt, extractedFrames);
-                                                                setConsistencyResult(res); setIsTestingConsistency(false);
-                                                            }} onCloseConsistencyModal={() => setShowConsistencyModal(false)} onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false)}} onRegenerate={handleStartAnalysis} hasOriginalFrames={extractedFrames.length > 0} error={error} isRemixing={isRemixing} remixStyle={remixStyle} setRemixStyle={setRemixStyle} handleRemixStyle={async () => {
-                                                                setIsRemixing(true); const res = await remixVideoStyle(extractedFrames, remixStyle); setGeneratedPrompt(res); setIsRemixing(false);
-                                                            }} isConvertingToJson={isConvertingToJson} onConvertToJSON={async () => {
-                                                                setIsConvertingToJson(true); const res = await convertPromptToJson(structuredPrompt!); setGeneratedPrompt(res); setStructuredPrompt(p => ({...p!, objective: 'JSON Format Output'})); setIsConvertingToJson(false);
-                                                            }}
+                                                            file={file} 
+                                                            videoUrl={videoUrl} 
+                                                            videoMeta={videoMeta} 
+                                                            generatedPrompt={generatedPrompt} 
+                                                            structuredPrompt={structuredPrompt} 
+                                                            isCopied={isCopied} 
+                                                            isRefining={isRefining} 
+                                                            isDetailing={isDetailing} 
+                                                            refineTone={refineTone} 
+                                                            refineStyle={refineStyle} 
+                                                            refineCamera={refineCamera} 
+                                                            refineLighting={refineLighting} 
+                                                            refineInstruction={refineInstruction} 
+                                                            negativePrompt={negativePrompt} 
+                                                            setNegativePrompt={setNegativePrompt} 
+                                                            handlePromptChange={e => setGeneratedPrompt(e.target.value)} 
+                                                            handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} 
+                                                            handleRefinePrompt={handleRefinePrompt} 
+                                                            setRefineTone={setRefineTone} 
+                                                            setRefineStyle={setRefineStyle} 
+                                                            setRefineCamera={setRefineCamera} 
+                                                            setRefineLighting={setRefineLighting} 
+                                                            setRefineInstruction={setRefineInstruction} 
+                                                            isTestingConsistency={isTestingConsistency} 
+                                                            consistencyResult={consistencyResult} 
+                                                            showConsistencyModal={showConsistencyModal} 
+                                                            onTestConsistency={handleTestConsistency} 
+                                                            onCloseConsistencyModal={() => {setShowConsistencyModal(false); setError('');}} 
+                                                            onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false); setError('');}} 
+                                                            onRegenerate={handleStartAnalysis} 
+                                                            hasOriginalFrames={extractedFrames.length > 0} 
+                                                            error={error} 
+                                                            isRemixing={isRemixing} 
+                                                            remixStyle={remixStyle} 
+                                                            setRemixStyle={setRemixStyle} 
+                                                            handleRemixStyle={handleRemixStyleAction} 
+                                                            isConvertingToJson={isConvertingToJson} 
+                                                            onConvertToJSON={handleConvertToJSONAction}
                                                             extractedFrames={extractedFrames}
+                                                            onClearError={() => setError('')}
                                                         />
-                                                    ) : <VideoAnalysisView file={file} videoUrl={videoUrl} videoMeta={videoMeta} analysisResult={videoAnalysisResult!} isCopied={isCopied} handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} isGeneratingPrompt={isGeneratingPromptFromAnalysis} onGeneratePrompt={async () => {
-                                                        setIsGeneratingPromptFromAnalysis(true); const res = await generatePromptFromAnalysis(videoAnalysisResult!); setGeneratedPrompt(res.core_focus); setStructuredPrompt(res); setResultType('prompt'); setIsGeneratingPromptFromAnalysis(false);
-                                                    }} />}
+                                                    ) : (
+                                                        <VideoAnalysisView 
+                                                            file={file} 
+                                                            videoUrl={videoUrl} 
+                                                            videoMeta={videoMeta} 
+                                                            analysisResult={videoAnalysisResult!} 
+                                                            isCopied={isCopied} 
+                                                            handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} 
+                                                            isGeneratingPrompt={isGeneratingPromptFromAnalysis} 
+                                                            onGeneratePrompt={handleGeneratePromptFromAnalysisAction} 
+                                                            error={error}
+                                                            onClearError={() => setError('')}
+                                                        />
+                                                    )}
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>

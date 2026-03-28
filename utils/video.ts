@@ -60,14 +60,14 @@ export const extractFramesFromVideo = (
 
     if (!scanCtx || !captureCtx) {
       URL.revokeObjectURL(videoUrl);
-      return reject(new Error('Could not create canvas context.'));
+      return reject(new Error('Hardware acceleration or canvas support is unavailable. Please check your browser settings.'));
     }
 
     const cleanup = () => URL.revokeObjectURL(videoUrl);
 
     video.onerror = () => {
       cleanup();
-      reject(new Error('Could not process video. Try a different format (e.g. MP4).'));
+      reject(new Error('The video file could not be processed. It might be corrupted or in an unsupported format. Try converting it to MP4 (H.264).'));
     };
 
     video.onloadedmetadata = async () => {
@@ -77,7 +77,7 @@ export const extractFramesFromVideo = (
       const duration = video.duration;
       if (!isFinite(duration) || duration <= 0) {
         cleanup();
-        return reject(new Error('Video has an invalid duration.'));
+        return reject(new Error('The video duration could not be determined. The file might be truncated or have a broken header.'));
       }
 
       // --- Scan canvas: 160×90, used only for diff computation ---
@@ -255,7 +255,7 @@ export const getVideoMetadata = (file: File): Promise<{ duration: number; width:
     };
     video.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Failed to load video metadata.'));
+      reject(new Error('Failed to read video metadata. The file might be incompatible or corrupted.'));
     };
   });
 };
@@ -296,7 +296,7 @@ export const imageToDataUrl = (file: File): Promise<string> => {
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('File could not be loaded as an image.'));
+      reject(new Error('The image file could not be loaded. Please ensure it is a valid image (JPG, PNG, WebP).'));
     };
 
     img.src = url;

@@ -4,7 +4,7 @@ import { StructuredPrompt, ConsistencyResult, PromptEvidence, EvidenceSentence }
 const getAI = () => {
   const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error('Gemini API key is missing. Please configure it in settings or select a key.');
+    throw new Error('Gemini API key is missing. Please add your API key in the Studio Settings to enable AI analysis.');
   }
   return new GoogleGenAI({ apiKey });
 };

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
     Wand2, 
     Brain, 
@@ -233,6 +234,7 @@ interface ResultsViewProps {
     onRegenerate: (instruction?: string) => void;
     hasOriginalFrames: boolean;
     error: string;
+    onClearError: () => void;
     isRemixing: boolean;
     remixStyle: string;
     setRemixStyle: (value: string) => void;
@@ -251,7 +253,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     setRefineTone, setRefineStyle, setRefineCamera, setRefineLighting, setRefineInstruction,
     isTestingConsistency, consistencyResult, showConsistencyModal,
     onTestConsistency, onCloseConsistencyModal, onApplyImprovements, onRegenerate, hasOriginalFrames, error,
-    // FIX: Corrected duplicate destructuring of 'setRefineStyle' to 'setRemixStyle'
+    onClearError,
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
     isConvertingToJson, onConvertToJSON,
     extractedFrames
@@ -271,6 +273,29 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             onApplyImprovements={onApplyImprovements}
         />
         <div className="flex flex-col gap-8">
+            {/* Error Banner */}
+            <AnimatePresence>
+                {error && !showConsistencyModal && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between gap-4"
+                    >
+                        <div className="flex items-center gap-3 text-rose-500">
+                            <AlertCircle size={20} />
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                        <button 
+                            onClick={onClearError}
+                            className="p-1 hover:bg-rose-500/10 rounded-lg text-rose-500 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Tab switcher */}
             <div className="flex p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-black/5 dark:border-white/8">
                 <button

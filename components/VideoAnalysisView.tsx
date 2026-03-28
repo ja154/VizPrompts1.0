@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Brain, Film, Copy, Check, Wand2, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Brain, Film, Copy, Check, Wand2, Loader2, AlertCircle, X } from 'lucide-react';
 import BlurryButton from './Button';
 
 interface VideoAnalysisViewProps {
@@ -12,15 +13,40 @@ interface VideoAnalysisViewProps {
     handleCopy: (text: string) => void;
     isGeneratingPrompt: boolean;
     onGeneratePrompt: () => void;
+    error: string;
+    onClearError: () => void;
 }
 
 const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
-    file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt
+    file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt, error, onClearError
 }) => {
     const isVideo = videoMeta?.isVideo ?? (file?.type.startsWith('video/') || false);
 
     return (
         <div className="flex flex-col gap-8">
+            {/* Error Banner */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between gap-4"
+                    >
+                        <div className="flex items-center gap-3 text-rose-500">
+                            <AlertCircle size={20} />
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                        <button 
+                            onClick={onClearError}
+                            className="p-1 hover:bg-rose-500/10 rounded-lg text-rose-500 transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Media Preview Card */}
             <div className="glassmorphic-card rounded-[2rem] p-8">
                 <h2 className="text-lg font-bold mb-6 flex items-center gap-3 uppercase tracking-widest font-heading text-slate-900 dark:text-white">

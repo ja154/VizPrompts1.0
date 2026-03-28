@@ -57,9 +57,16 @@ const PromptLibrary: React.FC<PromptLibraryProps> = ({ isOpen, onClose, onSelect
                 });
             });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to remix prompt:", error);
-            setRemixError(error instanceof Error ? error.message : "An unknown error occurred during remix.");
+            const msg = error?.message?.toUpperCase() || '';
+            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+                setRemixError('Studio quota exceeded. Please wait a moment and try again.');
+            } else if (msg.includes('API KEY IS MISSING')) {
+                setRemixError('Gemini API key is missing. Please configure it in Studio Settings.');
+            } else {
+                setRemixError(error instanceof Error ? error.message : "An unknown error occurred during remix.");
+            }
         } finally {
             setRemixingId(null);
         }
