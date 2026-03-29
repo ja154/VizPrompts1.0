@@ -15,15 +15,18 @@ import {
     AlertCircle,
     X,
     Monitor,
-    Microscope
+    Microscope,
+    Activity
 } from 'lucide-react';
-import { ConsistencyResult, StructuredPrompt } from '../types.ts';
+import { ConsistencyResult, StructuredPrompt, PromptEvidence } from '../types.ts';
 import BlurryButton from './Button';
 import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
 import { remixStyles } from '../data/remixStyles.ts';
 import SyntaxHighlightedTextarea from './SyntaxHighlightedTextarea.tsx';
 import EvidenceView from './EvidenceView.tsx';
+import PromptVideoComparison from './PromptVideoComparison.tsx';
+import { generatePromptEvidence } from '../services/geminiService.ts';
 
 interface ScoreGaugeProps {
     score: number;
@@ -260,7 +263,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({
 }) => {
     const isVideo = videoMeta?.isVideo;
     const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
-    const [activeTab, setActiveTab] = useState<'prompt' | 'evidence'>('prompt');
+    const [activeTab, setActiveTab] = useState<'prompt' | 'evidence' | 'compare'>('prompt');
+    const [evidence, setEvidence] = useState<PromptEvidence | null>(null);
+    const [isEvidenceLoading, setIsEvidenceLoading] = useState(false);
+    const [evidenceError, setEvidenceError] = useState('');
+
+    const handleRunEvidenceAnalysis = async () => {
+        if (!structuredPrompt || extractedFrames.length === 0) return;
+        setIsEvidenceLoading(true);
+        setEvidenceError('');
+        try {
+            const result = await generatePromptEvidence(structuredPrompt.core_focus, extractedFrames);
+            setEvidence(result);
+        } catch (e) {
+            setEvidenceError(e instanceof Error ? e.message : 'Evidence analysis failed.');
+        } finally {
+            setIsEvidenceLoading(false);
+        }
+    };
 
     return (
         <>
@@ -314,12 +334,37 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                 <Microscope size={14} />
                 Evidence
                 </button>
+                {isVideo && (
+                    <button
+                    onClick={() => setActiveTab('compare')}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300
+                        ${activeTab === 'compare' ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-lg' : 'text-slate-500 dark:text-slate-400 hover:text-black dark:hover:text-white'}`}
+                    >
+                    <Activity size={14} />
+                    Compare
+                    </button>
+                )}
             </div>
 
             <div className={activeTab === 'evidence' ? 'block' : 'hidden'}>
                 <EvidenceView
                 frames={extractedFrames}
                 structuredPrompt={structuredPrompt!}
+                evidence={evidence}
+                isLoading={isEvidenceLoading}
+                error={evidenceError}
+                onRunAnalysis={handleRunEvidenceAnalysis}
+                onReset={() => setEvidence(null)}
+                />
+            </div>
+            <div className={activeTab === 'compare' ? 'block' : 'hidden'}>
+                <PromptVideoComparison
+                    videoUrl={videoUrl}
+                    frames={extractedFrames}
+                    structuredPrompt={structuredPrompt!}
+                    evidence={evidence}
+                    onRunAnalysis={handleRunEvidenceAnalysis}
+                    isLoading={isEvidenceLoading}
                 />
             </div>
             <div className={activeTab === 'prompt' ? 'block' : 'hidden'}>

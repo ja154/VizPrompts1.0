@@ -251,13 +251,22 @@ const StatsBar: React.FC<{ evidence: PromptEvidence }> = ({ evidence }) => {
 interface EvidenceViewProps {
   frames: string[];
   structuredPrompt: StructuredPrompt;
+  evidence: PromptEvidence | null;
+  isLoading: boolean;
+  error: string;
+  onRunAnalysis: () => void;
+  onReset: () => void;
 }
 
-const EvidenceView: React.FC<EvidenceViewProps> = ({ frames, structuredPrompt }) => {
-  const [evidence, setEvidence] = useState<PromptEvidence | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
+const EvidenceView: React.FC<EvidenceViewProps> = ({ 
+  frames, 
+  structuredPrompt,
+  evidence,
+  isLoading,
+  error,
+  onRunAnalysis,
+  onReset
+}) => {
   // Interaction state
   const [activeFrameIdx, setActiveFrameIdx] = useState<number | null>(null);
   const [activeSentenceId, setActiveSentenceId] = useState<string | null>(null);
@@ -286,19 +295,6 @@ const EvidenceView: React.FC<EvidenceViewProps> = ({ frames, structuredPrompt })
   const frameIsFocus = focusFrame !== null && focusSentence === null;
   const sentenceIsFocus = focusSentence !== null;
   const anyFocus = frameIsFocus || sentenceIsFocus;
-
-  const handleRunAnalysis = useCallback(async () => {
-    setIsLoading(true);
-    setError('');
-    try {
-      const result = await generatePromptEvidence(structuredPrompt.core_focus, frames);
-      setEvidence(result);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Evidence analysis failed.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [structuredPrompt.core_focus, frames]);
 
   const handleFrameClick = useCallback((idx: number) => {
     setActiveSentenceId(null);
@@ -330,7 +326,7 @@ const EvidenceView: React.FC<EvidenceViewProps> = ({ frames, structuredPrompt })
             Requires original media frames — re-analyse a video or image first.
           </div>
         ) : (
-          <BlurryButton onClick={handleRunAnalysis} className="px-10">
+          <BlurryButton onClick={onRunAnalysis} className="px-10">
             <Microscope size={18} />
             Run evidence analysis
           </BlurryButton>
@@ -358,7 +354,7 @@ const EvidenceView: React.FC<EvidenceViewProps> = ({ frames, structuredPrompt })
       <div className="glassmorphic-card rounded-[2rem] p-8 border border-rose-500/20 bg-rose-500/5 text-center space-y-4">
         <AlertCircle className="size-10 text-rose-400 mx-auto" />
         <p className="text-sm text-rose-300">{error}</p>
-        <BlurryButton onClick={handleRunAnalysis}>Retry</BlurryButton>
+        <BlurryButton onClick={onRunAnalysis}>Retry</BlurryButton>
       </div>
     );
   }
@@ -488,7 +484,7 @@ const EvidenceView: React.FC<EvidenceViewProps> = ({ frames, structuredPrompt })
       {/* Re-run button */}
       <div className="pt-4 border-t border-white/5">
         <button
-          onClick={() => { setEvidence(null); setActiveFrameIdx(null); setActiveSentenceId(null); }}
+          onClick={() => { onReset(); setActiveFrameIdx(null); setActiveSentenceId(null); }}
           className="text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-colors"
         >
           Reset analysis
