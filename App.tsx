@@ -375,7 +375,7 @@ const App: React.FC = () => {
 
             <motion.aside 
                 layout
-                className={`fixed sm:relative z-50 h-full flex flex-col p-4 glassmorphic-sidebar group/sidebar ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}`}
+                className={`fixed sm:relative z-50 h-full flex flex-col glassmorphic-sidebar group/sidebar ${isSidebarOpen ? 'translate-x-0 p-4' : '-translate-x-full sm:translate-x-0 p-4'}`}
                 initial={false}
                 animate={{ 
                     width: isSidebarOpen ? 288 : 80,
@@ -385,17 +385,20 @@ const App: React.FC = () => {
                 onHoverStart={() => !isSidebarOpen && window.innerWidth >= 640 && setIsSidebarOpen(true)}
                 onHoverEnd={() => isSidebarOpen && window.innerWidth >= 640 && setIsSidebarOpen(false)}
             >
-                <div className="flex items-center justify-between mb-10 px-2">
-                    <div className="flex items-center gap-4 overflow-hidden cursor-pointer" onClick={() => setCurrentView('main')}>
+                <div className={`flex items-center mb-10 ${isSidebarOpen ? 'justify-between px-2' : 'justify-center px-0'}`}>
+                    <div className="flex items-center gap-4 cursor-pointer" onClick={() => setCurrentView('main')}>
                         <div className="size-12 bg-background-dark dark:bg-white text-white dark:text-background-dark rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-white/10 glow-pulse">
                             <Zap size={24} fill="currentColor" />
                         </div>
-                        <motion.span 
-                            animate={{ opacity: isSidebarOpen ? 1 : 0 }}
-                            className="text-xl font-bold tracking-tighter font-heading uppercase whitespace-nowrap"
-                        >
-                            VizPrompts<span className="text-primary">.</span>
-                        </motion.span>
+                        {isSidebarOpen && (
+                            <motion.span 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="text-xl font-bold tracking-tighter font-heading uppercase whitespace-nowrap"
+                            >
+                                VizPrompts<span className="text-primary">.</span>
+                            </motion.span>
+                        )}
                     </div>
                     {isSidebarOpen && (
                         <button onClick={() => setIsSidebarOpen(false)} className="sm:hidden p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
@@ -411,20 +414,20 @@ const App: React.FC = () => {
                             <button 
                                 key={item.id} 
                                 onClick={item.action || (() => setCurrentView(item.id as any))} 
-                                className={`w-full flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 relative group/nav-item ${isActive ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-xl shadow-white/10 nav-item-active' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
+                                className={`w-full flex items-center rounded-2xl transition-all duration-300 relative group/nav-item ${isSidebarOpen ? 'p-3.5 gap-4' : 'p-3 justify-center'} ${isActive ? 'bg-background-dark dark:bg-white text-white dark:text-background-dark shadow-xl shadow-white/10 nav-item-active' : 'text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black dark:hover:text-white'}`}
                             >
                                 <div className={`shrink-0 transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover/nav-item:scale-110'}`}>
                                     {item.icon}
                                 </div>
-                                <motion.span 
-                                    animate={{ 
-                                        opacity: isSidebarOpen ? 1 : 0,
-                                        x: isSidebarOpen ? 0 : -10
-                                    }}
-                                    className="font-bold text-sm whitespace-nowrap uppercase tracking-wider"
-                                >
-                                    {item.label}
-                                </motion.span>
+                                {isSidebarOpen && (
+                                    <motion.span 
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className="font-bold text-sm whitespace-nowrap uppercase tracking-wider"
+                                    >
+                                        {item.label}
+                                    </motion.span>
+                                )}
                                 {isActive && (
                                     <motion.div 
                                         layoutId="active-nav-indicator"
@@ -437,26 +440,32 @@ const App: React.FC = () => {
                 </nav>
 
                 <div className="mt-auto space-y-4">
-                    <button onClick={() => setCurrentView('profile')} className={`w-full flex items-center gap-4 p-2.5 rounded-2xl transition-all group/profile ${currentView === 'profile' ? 'bg-black/5 dark:bg-white/5' : 'text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'}`}>
+                    <button onClick={() => setCurrentView('profile')} className={`w-full flex items-center rounded-2xl transition-all group/profile ${isSidebarOpen ? 'p-2.5 gap-4' : 'p-2 justify-center'} ${currentView === 'profile' ? 'bg-black/5 dark:bg-white/5' : 'text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'}`}>
                         <div className={`size-10 rounded-xl overflow-hidden ring-2 shrink-0 transition-all duration-300 ${currentView === 'profile' ? 'ring-primary' : 'ring-black/10 dark:ring-white/10 group-hover/profile:ring-primary/50'}`}>
                             <UserIcon imgSrc={currentUser?.profilePicture} className="size-full" />
                         </div>
-                        <motion.div 
-                            animate={{ opacity: isSidebarOpen ? 1 : 0 }}
-                            className="flex flex-col text-left truncate"
-                        >
-                            <span className="text-sm font-bold truncate uppercase tracking-tight">{currentUser?.fullName || 'Guest User'}</span>
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate uppercase tracking-widest">Studio Pro Plan</span>
-                        </motion.div>
+                        {isSidebarOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="flex flex-col text-left truncate"
+                            >
+                                <span className="text-sm font-bold truncate uppercase tracking-tight">{currentUser?.fullName || 'Guest User'}</span>
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate uppercase tracking-widest">Studio Pro Plan</span>
+                            </motion.div>
+                        )}
                     </button>
-                    <button onClick={logout} className="w-full flex items-center gap-4 p-3.5 rounded-2xl text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-400/10 transition-all group/logout">
+                    <button onClick={logout} className={`w-full flex items-center rounded-2xl text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-400/10 transition-all group/logout ${isSidebarOpen ? 'p-3.5 gap-4' : 'p-3 justify-center'}`}>
                         <LogOut size={20} className="shrink-0 transition-transform group-hover/logout:-translate-x-1" />
-                        <motion.span 
-                            animate={{ opacity: isSidebarOpen ? 1 : 0 }}
-                            className="font-bold text-sm uppercase tracking-wider whitespace-nowrap"
-                        >
-                            Exit Studio
-                        </motion.span>
+                        {isSidebarOpen && (
+                            <motion.span 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="font-bold text-sm uppercase tracking-wider whitespace-nowrap"
+                            >
+                                Exit Studio
+                            </motion.span>
+                        )}
                     </button>
                 </div>
             </motion.aside>
