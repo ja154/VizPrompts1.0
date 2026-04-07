@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Brain, Film, Copy, Check, Wand2, Loader2, AlertCircle, X } from 'lucide-react';
 import BlurryButton from './Button';
+import AnalysisStatus from './AnalysisStatus.tsx';
+import { AnalysisState } from '../types.ts';
 
 interface VideoAnalysisViewProps {
     file: File | null;
@@ -21,29 +23,41 @@ const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
     file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt, error, onClearError
 }) => {
     const isVideo = videoMeta?.isVideo ?? (file?.type.startsWith('video/') || false);
+    const [showSuccess, setShowSuccess] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowSuccess(false), 5000);
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <div className="flex flex-col gap-8">
-            {/* Error Banner */}
+            {/* Analysis Feedback */}
             <AnimatePresence>
+                {showSuccess && !error && !isGeneratingPrompt && (
+                    <AnalysisStatus 
+                        state={AnalysisState.SUCCESS}
+                        message=""
+                        progress={100}
+                        isCompact={true}
+                    />
+                )}
+                {isGeneratingPrompt && (
+                    <AnalysisStatus 
+                        state={AnalysisState.PROCESSING}
+                        message="Engineering Prompt..."
+                        progress={50}
+                        isCompact={true}
+                    />
+                )}
                 {error && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between gap-4"
-                    >
-                        <div className="flex items-center gap-3 text-rose-500">
-                            <AlertCircle size={20} />
-                            <p className="text-sm font-medium">{error}</p>
-                        </div>
-                        <button 
-                            onClick={onClearError}
-                            className="p-1 hover:bg-rose-500/10 rounded-lg text-rose-500 transition-colors"
-                        >
-                            <X size={16} />
-                        </button>
-                    </motion.div>
+                    <AnalysisStatus 
+                        state={AnalysisState.ERROR}
+                        message=""
+                        progress={0}
+                        error={error}
+                        isCompact={true}
+                    />
                 )}
             </AnimatePresence>
 

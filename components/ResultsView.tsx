@@ -18,7 +18,8 @@ import {
     Microscope,
     Activity
 } from 'lucide-react';
-import { ConsistencyResult, StructuredPrompt, PromptEvidence } from '../types.ts';
+import AnalysisStatus from './AnalysisStatus.tsx';
+import { ConsistencyResult, StructuredPrompt, PromptEvidence, AnalysisState } from '../types.ts';
 import BlurryButton from './Button';
 import AnimatedList from './AnimatedList.tsx';
 import { refinementOptions } from '../data/refinementOptions.ts';
@@ -282,6 +283,13 @@ const ResultsView: React.FC<ResultsViewProps> = ({
         }
     };
 
+    const [showSuccess, setShowSuccess] = useState(true);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => setShowSuccess(false), 5000);
+        return () => clearTimeout(timer);
+    }, []);
+
     return (
         <>
         <ConsistencyModal 
@@ -293,26 +301,24 @@ const ResultsView: React.FC<ResultsViewProps> = ({
             onApplyImprovements={onApplyImprovements}
         />
         <div className="flex flex-col gap-8">
-            {/* Error Banner */}
+            {/* Analysis Feedback */}
             <AnimatePresence>
+                {showSuccess && !error && (
+                    <AnalysisStatus 
+                        state={AnalysisState.SUCCESS}
+                        message=""
+                        progress={100}
+                        isCompact={true}
+                    />
+                )}
                 {error && !showConsistencyModal && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between gap-4"
-                    >
-                        <div className="flex items-center gap-3 text-rose-500">
-                            <AlertCircle size={20} />
-                            <p className="text-sm font-medium">{error}</p>
-                        </div>
-                        <button 
-                            onClick={onClearError}
-                            className="p-1 hover:bg-rose-500/10 rounded-lg text-rose-500 transition-colors"
-                        >
-                            <X size={16} />
-                        </button>
-                    </motion.div>
+                    <AnalysisStatus 
+                        state={AnalysisState.ERROR}
+                        message=""
+                        progress={0}
+                        error={error}
+                        isCompact={true}
+                    />
                 )}
             </AnimatePresence>
 

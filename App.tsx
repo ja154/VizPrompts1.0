@@ -41,6 +41,8 @@ type ResultType = 'prompt' | 'video_analysis';
 
 import Tooltip from './components/Tooltip.tsx';
 
+import AnalysisStatus from './components/AnalysisStatus.tsx';
+
 const App: React.FC = () => {
     const [theme, setTheme] = useState<Theme>('dark');
     const { currentUser, userHistory, addToHistory, logout, isLoading: isAuthLoading } = useAuth();
@@ -584,37 +586,21 @@ const App: React.FC = () => {
                                                 <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-black/5 dark:!bg-white/5 shadow-xl text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"><Brain size={24} /> Scene Analytics</BlurryButton>
                                             </div>
                                         )}
-
                                         {analysisState === AnalysisState.PROCESSING && (
-                                            <div className="p-10 rounded-[2.5rem] glassmorphic-card border-black/5 dark:border-white/5 text-center space-y-8">
-                                                <Loader2 className="size-16 mx-auto text-slate-900 dark:text-white animate-spin opacity-50" />
-                                                <div className="space-y-6">
-                                                    <p className="text-xl font-bold uppercase tracking-widest font-heading text-slate-900 dark:text-white">{progressMessage}</p>
-                                                    <div className="w-full bg-black/5 dark:bg-white/5 rounded-full h-1.5 overflow-hidden">
-                                                        <div className="bg-background-dark dark:bg-white h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(0,0,0,0.2)] dark:shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{width:`${progress}%`}} />
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <AnalysisStatus 
+                                                state={AnalysisState.PROCESSING}
+                                                message={progressMessage}
+                                                progress={progress}
+                                            />
                                         )}
 
                                         {analysisState === AnalysisState.ERROR && (
-                                            <div className="p-10 rounded-[2.5rem] glassmorphic-card border-rose-500/20 dark:border-rose-500/30 bg-rose-500/5 text-center space-y-8">
-                                                <div className="size-16 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500">
-                                                    <X size={32} />
-                                                </div>
-                                                <div className="space-y-4">
-                                                    <h3 className="text-2xl font-bold uppercase tracking-wider font-heading text-slate-900 dark:text-white">Analysis Interrupted</h3>
-                                                    <p className="text-slate-600 dark:text-slate-400 font-medium max-w-md mx-auto">{error || 'Studio intelligence encountered an unexpected error.'}</p>
-                                                </div>
-                                                <div className="flex flex-col gap-3">
-                                                    <BlurryButton onClick={() => handleStartAnalysis()} className="!bg-rose-500 !text-white hover:!bg-rose-600">
-                                                        <Zap size={20} /> Retry Intelligence
-                                                    </BlurryButton>
-                                                    <button onClick={resetState} className="text-sm font-bold uppercase tracking-widest text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
-                                                        Cancel & Start Over
-                                                    </button>
-                                                </div>
-                                            </div>
+                                            <AnalysisStatus 
+                                                state={AnalysisState.ERROR}
+                                                error={error}
+                                                onRetry={() => handleStartAnalysis()}
+                                                onReset={resetState}
+                                            />
                                         )}
                                     </div>
 
