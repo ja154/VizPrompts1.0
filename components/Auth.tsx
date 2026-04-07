@@ -15,6 +15,11 @@ declare global {
   }
 }
 
+// Global state to track Google Sign-In initialization and the current handler
+// to avoid "google.accounts.id.initialize() is called multiple times" warning.
+let isGoogleAuthInitialized = false;
+let googleAuthHandler: ((response: any) => void) | null = null;
+
 const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onAuthSuccess }) => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [error, setError] = useState('');
@@ -46,26 +51,22 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onAuthSuccess }) => {
       resetFormState();
     }
   }, [isOpen]);
-  
-  // Separate useEffect to handle Google library loading, which can be asynchronous.
-  useEffect(() => {
-      if (isOpen && activeTab === 'login') {
-          if (window.google) {
-              initializeGoogleSignIn();
-          } else {
-              // If the script hasn't loaded yet, we can't do anything.
-              // It will be initialized by the `async defer` script tag eventually.
-              console.warn("Google Sign-In script not loaded yet.");
-          }
-      }
-  }, [isOpen, activeTab]);
 
   const initializeGoogleSignIn = () => {
     try {
-      window.google.accounts.id.initialize({
-        client_id: document.querySelector('meta[name="google-client-id"]')?.getAttribute('content') || '',
-        callback: handleGoogleCredentialResponse,
-      });
+      // Initialize only once globally to avoid GSI_LOGGER warning.
+      if (!isGoogleAuthInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: document.querySelector('meta[name="google-client-id"]')?.getAttribute('content') || '',
+          callback: (response: any) => {
+            // Call the latest handler registered by the current Auth component instance.
+            if (googleAuthHandler) {
+              googleAuthHandler(response);
+            }
+          },
+        });
+        isGoogleAuthInitialized = true;
+      }
 
       if (googleButtonRef.current) {
         googleButtonRef.current.innerHTML = ''; // Clear previous button
@@ -127,6 +128,26 @@ const Auth: React.FC<AuthProps> = ({ isOpen, onClose, onAuthSuccess }) => {
           setIsLoading(false);
       }
   };
+
+  // Update the global handler to the current instance's version
+  useEffect(() => {
+    if (isOpen && activeTab === 'login') {
+      googleAuthHandler = handleGoogleCredentialResponse;
+    }
+  }, [isOpen, activeTab, handleGoogleCredentialResponse]);
+
+  // Separate useEffect to handle Google library loading, which can be asynchronous.
+  useEffect(() => {
+      if (isOpen && activeTab === 'login') {
+          if (window.google) {
+              initializeGoogleSignIn();
+          } else {
+              // If the script hasn't loaded yet, we can't do anything.
+              // It will be initialized by the `async defer` script tag eventually.
+              console.warn("Google Sign-In script not loaded yet.");
+          }
+      }
+  }, [isOpen, activeTab]);
 
   if (!isOpen) return null;
 
