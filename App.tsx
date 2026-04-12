@@ -386,8 +386,6 @@ const App: React.FC = () => {
                     x: isSidebarOpen ? 0 : (window.innerWidth < 640 ? -288 : 0)
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                onHoverStart={() => !isSidebarOpen && window.innerWidth >= 640 && setIsSidebarOpen(true)}
-                onHoverEnd={() => isSidebarOpen && window.innerWidth >= 640 && setIsSidebarOpen(false)}
             >
                 <div className={`flex items-center mb-10 ${isSidebarOpen ? 'justify-between px-2' : 'justify-center px-0'}`}>
                     <Tooltip text="Launchpad" isDisabled={isSidebarOpen}>
@@ -406,11 +404,13 @@ const App: React.FC = () => {
                             )}
                         </div>
                     </Tooltip>
-                    {isSidebarOpen && (
-                        <button onClick={() => setIsSidebarOpen(false)} className="sm:hidden p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">
-                            <X size={20} />
-                        </button>
-                    )}
+                    <button 
+                        onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+                        className={`p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors ${!isSidebarOpen && 'hidden sm:block absolute -right-3 top-12 bg-white dark:bg-background-dark border border-black/5 dark:border-white/10 rounded-full shadow-md z-50'}`}
+                    >
+                        {isSidebarOpen ? <X size={20} className="sm:hidden" /> : <ChevronRight size={14} className="hidden sm:block" />}
+                        {isSidebarOpen && <Menu size={20} className="hidden sm:block" />}
+                    </button>
                 </div>
 
                 <nav className="flex-1 space-y-3">
@@ -478,6 +478,16 @@ const App: React.FC = () => {
                             )}
                         </button>
                     </Tooltip>
+
+                    {isSidebarOpen && (
+                        <button 
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="hidden sm:flex w-full items-center justify-center p-3 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors border-t border-black/5 dark:border-white/5 mt-2"
+                        >
+                            <ChevronRight size={18} className="rotate-180" />
+                            <span className="ml-2 text-[10px] font-bold uppercase tracking-widest">Collapse Sidebar</span>
+                        </button>
+                    )}
                 </div>
             </motion.aside>
 
