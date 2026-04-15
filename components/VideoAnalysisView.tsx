@@ -17,18 +17,24 @@ interface VideoAnalysisViewProps {
     onGeneratePrompt: () => void;
     error: string;
     onClearError: () => void;
+    isNewResult: boolean;
 }
 
 const VideoAnalysisView: React.FC<VideoAnalysisViewProps> = ({
-    file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt, error, onClearError
+    file, videoUrl, videoMeta, analysisResult, isCopied, handleCopy, isGeneratingPrompt, onGeneratePrompt, error, onClearError, isNewResult
 }) => {
     const isVideo = videoMeta?.isVideo ?? (file?.type.startsWith('video/') || false);
-    const [showSuccess, setShowSuccess] = useState(true);
+    const [showSuccess, setShowSuccess] = useState(isNewResult);
 
     useEffect(() => {
-        const timer = setTimeout(() => setShowSuccess(false), 5000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (isNewResult) {
+            setShowSuccess(true);
+            const timer = setTimeout(() => setShowSuccess(false), 5000);
+            return () => clearTimeout(timer);
+        } else {
+            setShowSuccess(false);
+        }
+    }, [isNewResult]);
 
     return (
         <div className="flex flex-col gap-8">

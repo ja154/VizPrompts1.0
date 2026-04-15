@@ -11,7 +11,7 @@ export interface PromptTemplate {
 
 export interface PromptCategory {
     name: string;
-    icon: React.FC<{ className?: string }>;
+    icon: React.FC<{ className?: string; size?: number }>;
     prompts: PromptTemplate[];
 }
 

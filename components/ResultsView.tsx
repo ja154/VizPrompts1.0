@@ -246,6 +246,7 @@ interface ResultsViewProps {
     isConvertingToJson: boolean;
     onConvertToJSON: () => void;
     extractedFrames: string[];
+    isNewResult: boolean;
 }
 
 const ResultsView: React.FC<ResultsViewProps> = ({
@@ -260,7 +261,8 @@ const ResultsView: React.FC<ResultsViewProps> = ({
     onClearError,
     isRemixing, remixStyle, setRemixStyle, handleRemixStyle,
     isConvertingToJson, onConvertToJSON,
-    extractedFrames
+    extractedFrames,
+    isNewResult
 }) => {
     const isVideo = videoMeta?.isVideo;
     const isJsonOutput = structuredPrompt?.objective === 'JSON Format Output';
@@ -283,12 +285,17 @@ const ResultsView: React.FC<ResultsViewProps> = ({
         }
     };
 
-    const [showSuccess, setShowSuccess] = useState(true);
+    const [showSuccess, setShowSuccess] = useState(isNewResult);
 
     React.useEffect(() => {
-        const timer = setTimeout(() => setShowSuccess(false), 5000);
-        return () => clearTimeout(timer);
-    }, []);
+        if (isNewResult) {
+            setShowSuccess(true);
+            const timer = setTimeout(() => setShowSuccess(false), 5000);
+            return () => clearTimeout(timer);
+        } else {
+            setShowSuccess(false);
+        }
+    }, [isNewResult]);
 
     return (
         <>

@@ -43,7 +43,18 @@ import Tooltip from './components/Tooltip.tsx';
 
 import AnalysisStatus from './components/AnalysisStatus.tsx';
 
+const useWindowSize = () => {
+    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+    useEffect(() => {
+        const handleResize = () => setSize({ width: window.innerWidth, height: window.innerHeight });
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    return size;
+};
+
 const App: React.FC = () => {
+    const { width } = useWindowSize();
     const [theme, setTheme] = useState<Theme>('dark');
     const { currentUser, userHistory, addToHistory, logout, isLoading: isAuthLoading } = useAuth();
     const [hasEnteredAsGuest, setHasEnteredAsGuest] = useState(false);
@@ -98,6 +109,8 @@ const App: React.FC = () => {
         setVideoAnalysisResult(null);
         setExtractedFrames([]);
     }, [videoUrl]);
+
+    const [isNewResult, setIsNewResult] = useState(false);
 
     const handleFileSelect = async (selectedFile: File) => {
         resetState();
@@ -174,6 +187,7 @@ const App: React.FC = () => {
                 isVideo: !!isVideo,
             });
             setAnalysisState(AnalysisState.SUCCESS);
+            setIsNewResult(true);
         } catch (err: any) {
             console.error(err);
             setAnalysisState(AnalysisState.ERROR);
@@ -226,6 +240,7 @@ const App: React.FC = () => {
                 isVideo: !!isVideo,
             });
             setAnalysisState(AnalysisState.SUCCESS);
+            setIsNewResult(true);
         } catch (err: any) {
             console.error(err);
             setAnalysisState(AnalysisState.ERROR);
@@ -352,6 +367,14 @@ const App: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        return () => {
+            if (videoUrl && videoUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(videoUrl);
+            }
+        };
+    }, [videoUrl]);
+
     if (isAuthLoading) return <div className="h-screen flex items-center justify-center bg-background-dark"><SpinnerIcon className="size-10 text-primary" /></div>;
     if (!currentUser && !hasEnteredAsGuest) return <LoginPage onGuestAccess={() => setHasEnteredAsGuest(true)} />;
 
@@ -383,7 +406,7 @@ const App: React.FC = () => {
                 initial={false}
                 animate={{ 
                     width: isSidebarOpen ? 288 : 80,
-                    x: isSidebarOpen ? 0 : (window.innerWidth < 640 ? -288 : 0)
+                    x: isSidebarOpen ? 0 : (width < 640 ? -288 : 0)
                 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
@@ -504,9 +527,9 @@ const App: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-6">
                         <ThemeSwitch theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
-                        <div className="hidden sm:flex items-center gap-2 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5">
-                            <div className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Engine Online</span>
+                        <div className="hidden sm:flex items-center gap-2 bg-black/5 dark:bg-white/5 px-3 py-1.5 rounded-full border border-black/5 dark:border-white/5 group/engine">
+                            <div className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.5)] group-hover/engine:scale-150 transition-transform"></div>
+                            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 group-hover/engine:text-emerald-500 transition-colors">Engine Online</span>
                         </div>
                     </div>
                 </header>
@@ -607,6 +630,8 @@ const App: React.FC = () => {
                                         {analysisState === AnalysisState.ERROR && (
                                             <AnalysisStatus 
                                                 state={AnalysisState.ERROR}
+                                                message=""
+                                                progress={0}
                                                 error={error}
                                                 onRetry={() => handleStartAnalysis()}
                                                 onReset={resetState}
@@ -665,6 +690,7 @@ const App: React.FC = () => {
                                                             onConvertToJSON={handleConvertToJSONAction}
                                                             extractedFrames={extractedFrames}
                                                             onClearError={() => setError('')}
+                                                            isNewResult={isNewResult}
                                                         />
                                                     ) : (
                                                         <VideoAnalysisView 
@@ -678,6 +704,7 @@ const App: React.FC = () => {
                                                             onGeneratePrompt={handleGeneratePromptFromAnalysisAction} 
                                                             error={error}
                                                             onClearError={() => setError('')}
+                                                            isNewResult={isNewResult}
                                                         />
                                                     )}
                                                 </motion.div>
@@ -694,6 +721,7 @@ const App: React.FC = () => {
                     {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={item => { 
                         resetState(); 
                         setAnalysisState(AnalysisState.SUCCESS); 
+                        setIsNewResult(false);
                         if (item.analysis) {
                             setResultType('video_analysis');
                             setVideoAnalysisResult(item.analysis);
