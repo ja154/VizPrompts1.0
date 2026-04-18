@@ -112,7 +112,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ theme, onToggleTheme }) => 
                                 <div className="flex flex-col sm:flex-row items-center gap-8">
                                     <div className="relative group size-32 rounded-[2rem] overflow-hidden bg-white/5 border-2 border-white/10 shadow-2xl">
                                         {profilePicture ? (
-                                            <img src={profilePicture} alt="Avatar" className="size-full object-cover" />
+                                            <img src={profilePicture} referrerPolicy="no-referrer" alt="Avatar" className="size-full object-cover" />
                                         ) : (
                                             <div className="size-full flex items-center justify-center">
                                                 <User size={48} className="text-slate-700" />

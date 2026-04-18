@@ -102,7 +102,7 @@ const ProfilePage: React.FC = () => {
                         <div className="relative mb-8">
                             <div className="w-32 h-32 rounded-full bg-white/5 border-2 border-white/10 flex items-center justify-center overflow-hidden shadow-2xl">
                                 {currentUser.profilePicture ? (
-                                    <img src={currentUser.profilePicture} alt={currentUser.fullName} className="w-full h-full object-cover" />
+                                    <img src={currentUser.profilePicture} referrerPolicy="no-referrer" alt={currentUser.fullName} className="w-full h-full object-cover" />
                                 ) : (
                                     <User className="w-16 h-16 text-slate-600" />
                                 )}

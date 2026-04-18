@@ -48,6 +48,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ history, onSelectHistoryItem 
                            <div className="relative overflow-hidden aspect-video">
                                 <img 
                                     src={item.thumbnail} 
+                                    referrerPolicy="no-referrer"
                                     alt="Thumbnail" 
                                     className="w-full h-full object-cover bg-black transition-transform duration-700 ease-out group-hover:scale-110" 
                                 />

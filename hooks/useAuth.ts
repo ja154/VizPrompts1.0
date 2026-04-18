@@ -236,7 +236,7 @@ export const useAuth = () => {
         if (!currentUser) return;
 
         setUserHistory(prev => {
-            const newHistory = [item, ...prev].slice(0, 5); // Keep only the last 5
+            const newHistory = [item, ...prev].slice(0, 20); // Keep only the last 20
             try {
                 const historyKey = `${HISTORY_KEY_PREFIX}${currentUser.username}`;
                 localStorage.setItem(historyKey, JSON.stringify(newHistory));

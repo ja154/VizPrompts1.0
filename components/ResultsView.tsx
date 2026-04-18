@@ -391,7 +391,7 @@ const ResultsView: React.FC<ResultsViewProps> = ({
                     {isVideo ? (
                         <video src={videoUrl} controls className="w-full h-full object-contain" key={videoUrl}></video>
                     ) : (
-                        <img src={videoUrl} alt="Image Preview" className="w-full h-full object-contain" />
+                        <img src={videoUrl} referrerPolicy="no-referrer" alt="Image Preview" className="w-full h-full object-contain" />
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">

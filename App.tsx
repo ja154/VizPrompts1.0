@@ -127,14 +127,25 @@ const App: React.FC = () => {
             } else {
                 const dataUrl = await imageToDataUrl(selectedFile);
                 setVideoUrl(dataUrl);
-                const img = new Image();
-                img.src = dataUrl;
-                await img.decode();
-                setVideoMeta({ 
-                    duration: 'N/A', 
-                    resolution: `${img.naturalWidth}x${img.naturalHeight}`,
-                    isVideo: false
-                });
+                
+                // Wrap image decoding in a timeout to prevent absolute hanging
+                const decodeImage = async () => {
+                    return new Promise<void>((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            setVideoMeta({ 
+                                duration: 'N/A', 
+                                resolution: `${img.naturalWidth}x${img.naturalHeight}`,
+                                isVideo: false
+                            });
+                            resolve();
+                        };
+                        img.onerror = () => reject(new Error('Failed to decode image'));
+                        img.src = dataUrl;
+                    });
+                };
+                
+                await decodeImage();
             }
             setAnalysisState(AnalysisState.PREVIEW);
         } catch (err) { 
@@ -535,209 +546,244 @@ const App: React.FC = () => {
                 </header>
 
                 <div className="max-w-7xl mx-auto p-8 space-y-12 pb-32">
-                    {currentView === 'main' && (
-                        <motion.div 
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4 }}
-                            className="space-y-16 py-8"
-                        >
-                            {analysisState === AnalysisState.IDLE ? (
-                                <div className="space-y-16">
-                                    <div className="text-center space-y-8 max-w-4xl mx-auto">
-                                        <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter leading-[1.1] text-slate-900 dark:text-white font-heading uppercase">
-                                            Visual <br/>Intelligence <br/><span className="text-primary italic">for Prompters.</span>
-                                        </h1>
-                                        <p className="text-lg text-slate-600 dark:text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
-                                            Analyze cinematic motion and high-fidelity photos to extract perfect generation prompts for Sora, Kling, and Midjourney.
-                                        </p>
-                                    </div>
+                    <AnimatePresence mode="wait">
+                        {currentView === 'main' && (
+                            <motion.div 
+                                key="main-view"
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-16 py-8"
+                            >
+                                {analysisState === AnalysisState.IDLE ? (
+                                    <div className="space-y-16">
+                                        <div className="text-center space-y-8 max-w-4xl mx-auto">
+                                            <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter leading-[1.1] text-slate-900 dark:text-white font-heading uppercase">
+                                                Visual <br/>Intelligence <br/><span className="text-primary italic">for Prompters.</span>
+                                            </h1>
+                                            <p className="text-lg text-slate-600 dark:text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto">
+                                                Analyze cinematic motion and high-fidelity photos to extract perfect generation prompts for Sora, Kling, and Midjourney.
+                                            </p>
+                                        </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                                        <div className="md:col-span-2 group p-[1px] rounded-[2rem] bg-gradient-to-br from-black/10 dark:from-white/20 via-black/5 dark:via-white/5 to-transparent shadow-2xl">
-                                            <label className="block h-full bg-white/40 dark:bg-background-dark/40 rounded-[1.95rem] p-12 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-500 border border-black/5 dark:border-white/5">
-                                                <input type="file" className="hidden" accept="video/*,image/*" onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
-                                                <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
-                                                    <div className="size-24 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-inner border border-black/10 dark:border-white/10">
-                                                        <Sparkles className="size-10 text-slate-900 dark:text-white" />
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                            <div className="md:col-span-2 group p-[1px] rounded-[2rem] bg-gradient-to-br from-black/10 dark:from-white/20 via-black/5 dark:via-white/5 to-transparent shadow-2xl">
+                                                <label className="block h-full bg-white/40 dark:bg-background-dark/40 rounded-[1.95rem] p-12 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-all duration-500 border border-black/5 dark:border-white/5">
+                                                    <input type="file" className="hidden" accept="video/*,image/*" onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0])} />
+                                                    <div className="flex flex-col items-center justify-center h-full text-center space-y-8">
+                                                        <div className="size-24 bg-black/5 dark:bg-white/5 rounded-full flex items-center justify-center group-hover:scale-110 transition-all duration-500 shadow-inner border border-black/10 dark:border-white/10">
+                                                            <Sparkles className="size-10 text-slate-900 dark:text-white" />
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="text-2xl font-bold uppercase tracking-wider font-heading text-slate-900 dark:text-white">Drop visual script</h3>
+                                                            <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium tracking-wide">MP4, MOV, RAW, JPEG up to 4K resolution</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+
+                                            <div className="flex flex-col gap-8">
+                                                <div onClick={() => setIsLibraryOpen(true)} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
+                                                    <div className="size-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-900 dark:text-white mb-6 group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-500">
+                                                        <Library size={24} />
                                                     </div>
                                                     <div>
-                                                        <h3 className="text-2xl font-bold uppercase tracking-wider font-heading text-slate-900 dark:text-white">Drop visual script</h3>
-                                                        <p className="text-slate-500 dark:text-slate-400 mt-3 font-medium tracking-wide">MP4, MOV, RAW, JPEG up to 4K resolution</p>
+                                                        <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2 text-slate-900 dark:text-white">Library</h3>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Browse 50+ curated templates for visual consistency.</p>
                                                     </div>
                                                 </div>
-                                            </label>
-                                        </div>
-
-                                        <div className="flex flex-col gap-8">
-                                            <div onClick={() => setIsLibraryOpen(true)} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
-                                                <div className="size-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-900 dark:text-white mb-6 group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-500">
-                                                    <Library size={24} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2 text-slate-900 dark:text-white">Library</h3>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Browse 50+ curated templates for visual consistency.</p>
-                                                </div>
-                                            </div>
-                                            <div onClick={() => setCurrentView('history')} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
-                                                <div className="size-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-900 dark:text-white mb-6 group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-500">
-                                                    <History size={24} />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2 text-slate-900 dark:text-white">History</h3>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Recover your previous visual engineering sessions.</p>
+                                                <div onClick={() => setCurrentView('history')} className="flex-1 p-8 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/5 shadow-xl hover:-translate-y-2 cursor-pointer transition-all duration-500 group flex flex-col justify-between">
+                                                    <div className="size-14 bg-black/5 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-900 dark:text-white mb-6 group-hover:bg-background-dark dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-background-dark transition-all duration-500">
+                                                        <History size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-lg font-bold uppercase tracking-wider font-heading mb-2 text-slate-900 dark:text-white">History</h3>
+                                                        <p className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed">Recover your previous visual engineering sessions.</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        <FAQ />
                                     </div>
-                                    <FAQ />
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-                                    <div className="lg:col-span-5 space-y-8 sticky top-28">
-                                        <div className="p-2 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/10 shadow-2xl">
-                                            <div className="aspect-video bg-black/40 rounded-[1.8rem] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-inner relative flex items-center justify-center group">
-                                                {file?.type.startsWith('video/') ? (
-                                                    <video src={videoUrl} controls className="size-full object-contain" />
-                                                ) : (
-                                                    <img src={videoUrl} className="size-full object-contain" />
-                                                )}
-                                                <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/80 rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100 text-white"><X size={20} /></button>
-                                            </div>
-                                            <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
-                                                <span className="truncate max-w-[200px]">{file?.name}</span>
-                                                <div className="flex gap-6">
-                                                    {videoMeta?.isVideo && <span>{videoMeta?.duration}</span>}
-                                                    <span>{videoMeta?.resolution}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {analysisState === AnalysisState.PREVIEW && (
-                                            <div className="flex flex-col gap-4">
-                                                <BlurryButton onClick={() => handleStartAnalysis()} className="!p-6 !text-lg uppercase tracking-widest font-heading"><Wand2 size={24} /> Engineer Prompt</BlurryButton>
-                                                <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-black/5 dark:!bg-white/5 shadow-xl text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"><Brain size={24} /> Scene Analytics</BlurryButton>
-                                            </div>
-                                        )}
-                                        {analysisState === AnalysisState.PROCESSING && (
-                                            <AnalysisStatus 
-                                                state={AnalysisState.PROCESSING}
-                                                message={progressMessage}
-                                                progress={progress}
-                                            />
-                                        )}
-
-                                        {analysisState === AnalysisState.ERROR && (
-                                            <AnalysisStatus 
-                                                state={AnalysisState.ERROR}
-                                                message=""
-                                                progress={0}
-                                                error={error}
-                                                onRetry={() => handleStartAnalysis()}
-                                                onReset={resetState}
-                                            />
-                                        )}
-                                    </div>
-
-                                    <div className="lg:col-span-7">
-                                        <AnimatePresence mode="wait">
-                                            {analysisState === AnalysisState.SUCCESS && (
-                                                <motion.div 
-                                                    initial={{ opacity: 0, x: 20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    exit={{ opacity: 0, x: -20 }}
-                                                    transition={{ duration: 0.5 }}
-                                                >
-                                                    {resultType === 'prompt' ? (
-                                                        <ResultsView 
-                                                            file={file} 
-                                                            videoUrl={videoUrl} 
-                                                            videoMeta={videoMeta} 
-                                                            generatedPrompt={generatedPrompt} 
-                                                            structuredPrompt={structuredPrompt} 
-                                                            isCopied={isCopied} 
-                                                            isRefining={isRefining} 
-                                                            isDetailing={isDetailing} 
-                                                            refineTone={refineTone} 
-                                                            refineStyle={refineStyle} 
-                                                            refineCamera={refineCamera} 
-                                                            refineLighting={refineLighting} 
-                                                            refineInstruction={refineInstruction} 
-                                                            negativePrompt={negativePrompt} 
-                                                            setNegativePrompt={setNegativePrompt} 
-                                                            handlePromptChange={e => setGeneratedPrompt(e.target.value)} 
-                                                            handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} 
-                                                            handleRefinePrompt={handleRefinePrompt} 
-                                                            setRefineTone={setRefineTone} 
-                                                            setRefineStyle={setRefineStyle} 
-                                                            setRefineCamera={setRefineCamera} 
-                                                            setRefineLighting={setRefineLighting} 
-                                                            setRefineInstruction={setRefineInstruction} 
-                                                            isTestingConsistency={isTestingConsistency} 
-                                                            consistencyResult={consistencyResult} 
-                                                            showConsistencyModal={showConsistencyModal} 
-                                                            onTestConsistency={handleTestConsistency} 
-                                                            onCloseConsistencyModal={() => {setShowConsistencyModal(false); setError('');}} 
-                                                            onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false); setError('');}} 
-                                                            onRegenerate={handleStartAnalysis} 
-                                                            hasOriginalFrames={extractedFrames.length > 0} 
-                                                            error={error} 
-                                                            isRemixing={isRemixing} 
-                                                            remixStyle={remixStyle} 
-                                                            setRemixStyle={setRemixStyle} 
-                                                            handleRemixStyle={handleRemixStyleAction} 
-                                                            isConvertingToJson={isConvertingToJson} 
-                                                            onConvertToJSON={handleConvertToJSONAction}
-                                                            extractedFrames={extractedFrames}
-                                                            onClearError={() => setError('')}
-                                                            isNewResult={isNewResult}
-                                                        />
+                                ) : (
+                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                                        <div className="lg:col-span-5 space-y-8 sticky top-28">
+                                            <div className="p-2 rounded-[2rem] glassmorphic-card border-black/5 dark:border-white/10 shadow-2xl">
+                                                <div className="aspect-video bg-black/40 rounded-[1.8rem] overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-inner relative flex items-center justify-center group">
+                                                    {file?.type.startsWith('video/') ? (
+                                                        <video src={videoUrl} controls className="size-full object-contain" />
                                                     ) : (
-                                                        <VideoAnalysisView 
-                                                            file={file} 
-                                                            videoUrl={videoUrl} 
-                                                            videoMeta={videoMeta} 
-                                                            analysisResult={videoAnalysisResult!} 
-                                                            isCopied={isCopied} 
-                                                            handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} 
-                                                            isGeneratingPrompt={isGeneratingPromptFromAnalysis} 
-                                                            onGeneratePrompt={handleGeneratePromptFromAnalysisAction} 
-                                                            error={error}
-                                                            onClearError={() => setError('')}
-                                                            isNewResult={isNewResult}
-                                                        />
+                                                        <img src={videoUrl} referrerPolicy="no-referrer" alt="Uploaded asset" className="size-full object-contain" />
                                                     )}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
-                                </div>
-                            )}
-                        </motion.div>
-                    )}
+                                                    <button onClick={resetState} className="absolute top-6 right-6 size-12 bg-black/80 rounded-full flex items-center justify-center hover:bg-rose-500 transition-all duration-300 opacity-0 group-hover:opacity-100 text-white"><X size={20} /></button>
+                                                </div>
+                                                <div className="px-6 py-5 flex justify-between items-center text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">
+                                                    <span className="truncate max-w-[200px]">{file?.name}</span>
+                                                    <div className="flex gap-6">
+                                                        {videoMeta?.isVideo && <span>{videoMeta?.duration}</span>}
+                                                        <span>{videoMeta?.resolution}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                    {currentView === 'profile' && <ProfilePage />}
-                    {currentView === 'settings' && <SettingsPage theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />}
-                    {currentView === 'history' && <HistoryPage history={userHistory} onSelectHistoryItem={item => { 
-                        resetState(); 
-                        setAnalysisState(AnalysisState.SUCCESS); 
-                        setIsNewResult(false);
-                        if (item.analysis) {
-                            setResultType('video_analysis');
-                            setVideoAnalysisResult(item.analysis);
-                        } else {
-                            setResultType('prompt');
-                            if (item.structuredPrompt) setStructuredPrompt(item.structuredPrompt);
-                            setGeneratedPrompt(item.prompt);
-                        }
-                        setVideoUrl(item.thumbnail); 
-                        setVideoMeta({
-                            duration: item.isVideo ? 'Restored' : 'N/A',
-                            resolution: 'Restored',
-                            isVideo: !!item.isVideo
-                        });
-                        setCurrentView('main'); 
-                    }} />}
+                                            {analysisState === AnalysisState.PREVIEW && (
+                                                <div className="flex flex-col gap-4">
+                                                    <BlurryButton onClick={() => handleStartAnalysis()} className="!p-6 !text-lg uppercase tracking-widest font-heading"><Wand2 size={24} /> Engineer Prompt</BlurryButton>
+                                                    <BlurryButton onClick={handleStartVideoAnalysis} className="!p-6 !text-lg uppercase tracking-widest font-heading !bg-black/5 dark:!bg-white/5 shadow-xl text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white"><Brain size={24} /> Scene Analytics</BlurryButton>
+                                                </div>
+                                            )}
+                                            {analysisState === AnalysisState.PROCESSING && (
+                                                <AnalysisStatus 
+                                                    state={AnalysisState.PROCESSING}
+                                                    message={progressMessage}
+                                                    progress={progress}
+                                                />
+                                            )}
+
+                                            {analysisState === AnalysisState.ERROR && (
+                                                <AnalysisStatus 
+                                                    state={AnalysisState.ERROR}
+                                                    message=""
+                                                    progress={0}
+                                                    error={error}
+                                                    onRetry={() => handleStartAnalysis()}
+                                                    onReset={resetState}
+                                                />
+                                            )}
+                                        </div>
+
+                                        <div className="lg:col-span-7">
+                                            <AnimatePresence mode="wait">
+                                                {analysisState === AnalysisState.SUCCESS && (
+                                                    <motion.div 
+                                                        key="analysis-success"
+                                                        initial={{ opacity: 0, x: 20 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        exit={{ opacity: 0, x: -20 }}
+                                                        transition={{ duration: 0.5 }}
+                                                    >
+                                                        {resultType === 'prompt' ? (
+                                                            <ResultsView 
+                                                                file={file} 
+                                                                videoUrl={videoUrl} 
+                                                                videoMeta={videoMeta} 
+                                                                generatedPrompt={generatedPrompt} 
+                                                                structuredPrompt={structuredPrompt} 
+                                                                isCopied={isCopied} 
+                                                                isRefining={isRefining} 
+                                                                isDetailing={isDetailing} 
+                                                                refineTone={refineTone} 
+                                                                refineStyle={refineStyle} 
+                                                                refineCamera={refineCamera} 
+                                                                refineLighting={refineLighting} 
+                                                                refineInstruction={refineInstruction} 
+                                                                negativePrompt={negativePrompt} 
+                                                                setNegativePrompt={setNegativePrompt} 
+                                                                handlePromptChange={e => setGeneratedPrompt(e.target.value)} 
+                                                                handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} 
+                                                                handleRefinePrompt={handleRefinePrompt} 
+                                                                setRefineTone={setRefineTone} 
+                                                                setRefineStyle={setRefineStyle} 
+                                                                setRefineCamera={setRefineCamera} 
+                                                                setRefineLighting={setRefineLighting} 
+                                                                setRefineInstruction={setRefineInstruction} 
+                                                                isTestingConsistency={isTestingConsistency} 
+                                                                consistencyResult={consistencyResult} 
+                                                                showConsistencyModal={showConsistencyModal} 
+                                                                onTestConsistency={handleTestConsistency} 
+                                                                onCloseConsistencyModal={() => {setShowConsistencyModal(false); setError('');}} 
+                                                                onApplyImprovements={p => {setGeneratedPrompt(p); setShowConsistencyModal(false); setError('');}} 
+                                                                onRegenerate={handleStartAnalysis} 
+                                                                hasOriginalFrames={extractedFrames.length > 0} 
+                                                                error={error} 
+                                                                isRemixing={isRemixing} 
+                                                                remixStyle={remixStyle} 
+                                                                setRemixStyle={setRemixStyle} 
+                                                                handleRemixStyle={handleRemixStyleAction} 
+                                                                isConvertingToJson={isConvertingToJson} 
+                                                                onConvertToJSON={handleConvertToJSONAction}
+                                                                extractedFrames={extractedFrames}
+                                                                onClearError={() => setError('')}
+                                                                isNewResult={isNewResult}
+                                                            />
+                                                        ) : (
+                                                            <VideoAnalysisView 
+                                                                file={file} 
+                                                                videoUrl={videoUrl} 
+                                                                videoMeta={videoMeta} 
+                                                                analysisResult={videoAnalysisResult!} 
+                                                                isCopied={isCopied} 
+                                                                handleCopy={t => {navigator.clipboard.writeText(t); setIsCopied(true); setTimeout(()=>setIsCopied(false),2000)}} 
+                                                                isGeneratingPrompt={isGeneratingPromptFromAnalysis} 
+                                                                onGeneratePrompt={handleGeneratePromptFromAnalysisAction} 
+                                                                error={error}
+                                                                onClearError={() => setError('')}
+                                                                isNewResult={isNewResult}
+                                                            />
+                                                        )}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {currentView === 'profile' && (
+                            <motion.div
+                                key="profile-view"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <ProfilePage />
+                            </motion.div>
+                        )}
+                        {currentView === 'settings' && (
+                            <motion.div
+                                key="settings-view"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <SettingsPage theme={theme} onToggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} />
+                            </motion.div>
+                        )}
+                        {currentView === 'history' && (
+                            <motion.div
+                                key="history-view"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <HistoryPage history={userHistory} onSelectHistoryItem={item => { 
+                                    resetState(); 
+                                    setAnalysisState(AnalysisState.SUCCESS); 
+                                    setIsNewResult(false);
+                                    if (item.analysis) {
+                                        setResultType('video_analysis');
+                                        setVideoAnalysisResult(item.analysis);
+                                    } else {
+                                        setResultType('prompt');
+                                        if (item.structuredPrompt) setStructuredPrompt(item.structuredPrompt);
+                                        setGeneratedPrompt(item.prompt);
+                                    }
+                                    setVideoUrl(item.thumbnail); 
+                                    setVideoMeta({
+                                        duration: item.isVideo ? 'Restored' : 'N/A',
+                                        resolution: 'Restored',
+                                        isVideo: !!item.isVideo
+                                    });
+                                    setCurrentView('main'); 
+                                }} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </main>
 

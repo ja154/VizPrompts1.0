@@ -29,17 +29,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onGuestAccess }) => {
 
     const { login, signup, loginWithGoogle } = useAuth();
     const googleButtonRef = useRef<HTMLDivElement>(null);
+    const isGoogleInitialized = useRef(false);
 
     useEffect(() => {
         // Initialize Google Sign-In
         if (activeTab === 'login' && window.google) {
             try {
+                if (!isGoogleInitialized.current) {
+                    window.google.accounts.id.initialize({
+                        client_id: document.querySelector('meta[name="google-client-id"]')?.getAttribute('content') || '',
+                        callback: handleGoogleCredentialResponse,
+                    });
+                    isGoogleInitialized.current = true;
+                }
+
                 setTimeout(() => {
                      if (googleButtonRef.current) {
-                        window.google.accounts.id.initialize({
-                            client_id: document.querySelector('meta[name="google-client-id"]')?.getAttribute('content') || '',
-                            callback: handleGoogleCredentialResponse,
-                        });
                         googleButtonRef.current.innerHTML = ''; 
                         window.google.accounts.id.renderButton(
                             googleButtonRef.current,

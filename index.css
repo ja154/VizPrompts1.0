@@ -2,6 +2,8 @@
    VizPrompts Studio — Global Stylesheet
    ============================================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
 /* ── Scrollbar (thin, themed) ─────────────────────────────── */
 .scrollbar-thin::-webkit-scrollbar          { width: 4px; height: 4px; }
 .scrollbar-thin::-webkit-scrollbar-track    { background: transparent; }
